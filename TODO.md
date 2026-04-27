@@ -2,7 +2,7 @@
 
 ## High prio
 
-- reload file when changed from another editor
+-
 
 ## Low prio
 
