@@ -1,5 +1,13 @@
 import AppKit
 
+private final class NonScrollingClipView: NSClipView {
+    override func constrainBoundsRect(_ proposedBounds: NSRect) -> NSRect {
+        var bounds = super.constrainBoundsRect(proposedBounds)
+        bounds.origin = .zero
+        return bounds
+    }
+}
+
 final class OpenFilesSidebarViewController: NSViewController, NSTableViewDataSource, NSTableViewDelegate {
     private enum Constants {
         static let headerFontSize: CGFloat = 14
@@ -8,15 +16,24 @@ final class OpenFilesSidebarViewController: NSViewController, NSTableViewDataSou
     }
 
     private weak var initialDocument: Document?
+    private let foldersViewController = OpenFoldersSidebarViewController()
     private let headerContainer = NSView()
     private let headerLabel = NSTextField(labelWithString: "OPEN FILES")
     private let scrollView = NSScrollView()
     private let tableView = NSTableView()
+    private var openFilesHeightConstraint: NSLayoutConstraint?
+    private var foldersTopConstraint: NSLayoutConstraint?
+    private var foldersBottomConstraint: NSLayoutConstraint?
+    private var foldersHiddenHeightConstraint: NSLayoutConstraint?
     private var isReloadingSelection = false
 
     init(initialDocument: Document) {
         self.initialDocument = initialDocument
         super.init(nibName: nil, bundle: nil)
+        foldersViewController.onFileSelected = { [weak self] url in
+            guard let window = self?.view.window else { return }
+            OpenURLRouter.open([url], tabbedIn: window)
+        }
     }
 
     @available(*, unavailable)
@@ -44,14 +61,28 @@ final class OpenFilesSidebarViewController: NSViewController, NSTableViewDataSou
 
         view = visualEffectView
         view.translatesAutoresizingMaskIntoConstraints = false
+        addChild(foldersViewController)
 
         configureHeaderContainer()
         configureHeaderLabel()
         configureTableView()
 
+        let foldersView = foldersViewController.view
+        foldersView.translatesAutoresizingMaskIntoConstraints = false
+
+        let openFilesHeightConstraint = scrollView.heightAnchor.constraint(equalToConstant: 0)
+        let foldersTopConstraint = foldersView.topAnchor.constraint(equalTo: scrollView.bottomAnchor, constant: 8)
+        let foldersBottomConstraint = foldersView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+        let foldersHiddenHeightConstraint = foldersView.heightAnchor.constraint(equalToConstant: 0)
+        self.openFilesHeightConstraint = openFilesHeightConstraint
+        self.foldersTopConstraint = foldersTopConstraint
+        self.foldersBottomConstraint = foldersBottomConstraint
+        self.foldersHiddenHeightConstraint = foldersHiddenHeightConstraint
+
         view.addSubview(headerContainer)
         headerContainer.addSubview(headerLabel)
         view.addSubview(scrollView)
+        view.addSubview(foldersView)
 
         NSLayoutConstraint.activate([
             headerContainer.leadingAnchor.constraint(equalTo: view.leadingAnchor),
@@ -66,8 +97,14 @@ final class OpenFilesSidebarViewController: NSViewController, NSTableViewDataSou
             scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             scrollView.topAnchor.constraint(equalTo: headerContainer.bottomAnchor),
-            scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            openFilesHeightConstraint,
+
+            foldersView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            foldersView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            foldersTopConstraint,
         ])
+
+        updateFoldersVisibility()
     }
 
     override func viewDidLoad() {
@@ -84,6 +121,12 @@ final class OpenFilesSidebarViewController: NSViewController, NSTableViewDataSou
             self,
             selector: #selector(windowDidBecomeMain(_:)),
             name: NSWindow.didBecomeMainNotification,
+            object: nil
+        )
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(updateFoldersVisibility),
+            name: OpenFoldersStore.didChangeNotification,
             object: nil
         )
     }
@@ -133,6 +176,7 @@ final class OpenFilesSidebarViewController: NSViewController, NSTableViewDataSou
     private func reloadDocuments() {
         isReloadingSelection = true
         tableView.reloadData()
+        updateOpenFilesHeight()
 
         guard let currentDocument = owningDocument else {
             tableView.deselectAll(nil)
@@ -183,12 +227,38 @@ final class OpenFilesSidebarViewController: NSViewController, NSTableViewDataSou
         tableView.doubleAction = #selector(activateSelection)
 
         scrollView.translatesAutoresizingMaskIntoConstraints = false
+        scrollView.contentView = NonScrollingClipView()
         scrollView.borderType = .noBorder
-        scrollView.hasVerticalScroller = true
+        scrollView.hasVerticalScroller = false
+        scrollView.hasHorizontalScroller = false
+        scrollView.verticalScrollElasticity = .none
+        scrollView.horizontalScrollElasticity = .none
         scrollView.autohidesScrollers = true
         scrollView.drawsBackground = false
         scrollView.backgroundColor = .clear
         scrollView.documentView = tableView
+    }
+
+    private func updateOpenFilesHeight() {
+        let height: CGFloat
+        if documents.isEmpty {
+            height = 0
+        } else {
+            height = tableView.rect(ofRow: documents.count - 1).maxY
+        }
+
+        openFilesHeightConstraint?.constant = height
+        tableView.frame.size.height = height
+        scrollView.contentView.scroll(to: .zero)
+    }
+
+    @objc
+    private func updateFoldersVisibility() {
+        let hasFolders = !OpenFoldersStore.shared.folderURLs.isEmpty
+        foldersViewController.view.isHidden = !hasFolders
+        foldersTopConstraint?.constant = hasFolders ? 8 : 0
+        foldersBottomConstraint?.isActive = hasFolders
+        foldersHiddenHeightConstraint?.isActive = !hasFolders
     }
 
     private func makeCellView(identifier: NSUserInterfaceItemIdentifier) -> NSTableCellView {

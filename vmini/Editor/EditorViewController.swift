@@ -6,7 +6,7 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
     }
 
     var onTextChanged: ((String) -> Void)?
-    var onFileURLsDropped: (([URL]) -> Void)?
+    var onFileSystemURLsDropped: (([URL]) -> Void)?
 
     private let scrollView = NSScrollView()
     private let textView = FileDropTextView()
@@ -126,8 +126,8 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
         textView.isAutomaticDashSubstitutionEnabled = false
         textView.isAutomaticTextReplacementEnabled = false
         textView.isContinuousSpellCheckingEnabled = false
-        textView.onFileURLsDropped = { [weak self] urls in
-            self?.onFileURLsDropped?(urls)
+        textView.onFileSystemURLsDropped = { [weak self] urls in
+            self?.onFileSystemURLsDropped?(urls)
         }
         applyEditorFontSize(EditorSettings.currentFontSize())
         applyParagraphStyle()

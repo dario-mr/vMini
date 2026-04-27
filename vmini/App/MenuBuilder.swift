@@ -46,7 +46,8 @@ enum MenuBuilder {
         let menu = NSMenu(title: "File")
 
         menu.addItem(withTitle: "New", action: #selector(NSDocumentController.newDocument(_:)), keyEquivalent: "n")
-        menu.addItem(withTitle: "Open…", action: #selector(NSDocumentController.openDocument(_:)), keyEquivalent: "o")
+        let openItem = menu.addItem(withTitle: "Open…", action: #selector(AppDelegate.openDocumentOrFolder(_:)), keyEquivalent: "o")
+        openItem.target = NSApp.delegate as AnyObject?
 
         menu.addItem(.separator())
         menu.addItem(withTitle: "Close", action: #selector(NSWindow.performClose(_:)), keyEquivalent: "w")

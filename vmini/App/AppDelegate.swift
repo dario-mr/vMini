@@ -31,6 +31,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func toggleWordWrap(_ sender: Any?) {
         EditorSettings.toggleWordWrap()
     }
+
+    @objc
+    func openDocumentOrFolder(_ sender: Any?) {
+        let openPanel = NSOpenPanel()
+        openPanel.showsHiddenFiles = true
+        openPanel.canChooseFiles = true
+        openPanel.canChooseDirectories = true
+        openPanel.allowsMultipleSelection = true
+
+        openPanel.begin { response in
+            guard response == .OK else { return }
+            Task { @MainActor in
+                OpenURLRouter.open(openPanel.urls, tabbedIn: NSApp.keyWindow ?? NSApp.mainWindow)
+            }
+        }
+    }
 }
 
 extension AppDelegate: NSMenuItemValidation {

@@ -27,6 +27,8 @@
 		A0000000000000000000011E /* EditorWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000010E /* EditorWindowController.swift */; };
 		A0000000000000000000011F /* ResizeHandleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000010F /* ResizeHandleView.swift */; };
 		A00000000000000000000126 /* FileDropHandling.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000127 /* FileDropHandling.swift */; };
+		A00000000000000000000128 /* OpenFoldersStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000012A /* OpenFoldersStore.swift */; };
+		A00000000000000000000129 /* OpenFoldersSidebar.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000012B /* OpenFoldersSidebar.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -52,6 +54,8 @@
 		A0000000000000000000010E /* EditorWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorWindowController.swift; sourceTree = "<group>"; };
 		A0000000000000000000010F /* ResizeHandleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResizeHandleView.swift; sourceTree = "<group>"; };
 		A00000000000000000000127 /* FileDropHandling.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileDropHandling.swift; sourceTree = "<group>"; };
+		A0000000000000000000012A /* OpenFoldersStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenFoldersStore.swift; sourceTree = "<group>"; };
+		A0000000000000000000012B /* OpenFoldersSidebar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenFoldersSidebar.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -125,6 +129,8 @@
 			isa = PBXGroup;
 			children = (
 				A0000000000000000000010A /* OpenFilesSidebar.swift */,
+				A0000000000000000000012B /* OpenFoldersSidebar.swift */,
+				A0000000000000000000012A /* OpenFoldersStore.swift */,
 				A0000000000000000000010B /* SidebarSelectionRowView.swift */,
 			);
 			path = Sidebar;
@@ -246,6 +252,8 @@
 				A0000000000000000000011E /* EditorWindowController.swift in Sources */,
 				A00000000000000000000126 /* FileDropHandling.swift in Sources */,
 				A0000000000000000000011F /* ResizeHandleView.swift in Sources */,
+				A00000000000000000000129 /* OpenFoldersSidebar.swift in Sources */,
+				A00000000000000000000128 /* OpenFoldersStore.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -2,7 +2,7 @@ import AppKit
 
 @MainActor
 protocol FileDropContentViewDelegate: AnyObject {
-    func fileDropContentView(_ view: FileDropContentView, didReceiveFileURLs urls: [URL])
+    func fileDropContentView(_ view: FileDropContentView, didReceiveFileSystemURLs urls: [URL])
 }
 
 final class FileDropContentView: NSView {
@@ -27,59 +27,71 @@ final class FileDropContentView: NSView {
     }
 
     override func performDragOperation(_ sender: NSDraggingInfo) -> Bool {
-        let urls = sender.draggingPasteboard.fileURLs()
+        let urls = sender.draggingPasteboard.fileSystemURLs()
         guard !urls.isEmpty else { return false }
 
-        dropDelegate?.fileDropContentView(self, didReceiveFileURLs: urls)
+        dropDelegate?.fileDropContentView(self, didReceiveFileSystemURLs: urls)
         return true
     }
 
     private func dragOperation(for sender: NSDraggingInfo) -> NSDragOperation {
-        sender.draggingPasteboard.fileURLs().isEmpty ? [] : .copy
+        sender.draggingPasteboard.fileSystemURLs().isEmpty ? [] : .copy
     }
 }
 
 final class FileDropTextView: NSTextView {
-    var onFileURLsDropped: (([URL]) -> Void)?
+    var onFileSystemURLsDropped: (([URL]) -> Void)?
 
     override func draggingEntered(_ sender: NSDraggingInfo) -> NSDragOperation {
-        sender.draggingPasteboard.fileURLs().isEmpty ? super.draggingEntered(sender) : .copy
+        sender.draggingPasteboard.fileSystemURLs().isEmpty ? super.draggingEntered(sender) : .copy
     }
 
     override func draggingUpdated(_ sender: NSDraggingInfo) -> NSDragOperation {
-        sender.draggingPasteboard.fileURLs().isEmpty ? super.draggingUpdated(sender) : .copy
+        sender.draggingPasteboard.fileSystemURLs().isEmpty ? super.draggingUpdated(sender) : .copy
     }
 
     override func performDragOperation(_ sender: NSDraggingInfo) -> Bool {
-        let urls = sender.draggingPasteboard.fileURLs()
+        let urls = sender.draggingPasteboard.fileSystemURLs()
         guard !urls.isEmpty else {
             return super.performDragOperation(sender)
         }
 
-        onFileURLsDropped?(urls)
+        onFileSystemURLsDropped?(urls)
         return true
     }
 }
 
 extension NSPasteboard {
-    func fileURLs() -> [URL] {
+    func fileSystemURLs() -> [URL] {
         let options: [ReadingOptionKey: Any] = [
             .urlReadingFileURLsOnly: true,
         ]
 
         return readObjects(forClasses: [NSURL.self], options: options)?
-            .compactMap { $0 as? URL }
-            .filter { !$0.hasDirectoryPath } ?? []
+            .compactMap { ($0 as? URL)?.standardizedFileURL } ?? []
     }
 }
 
 @MainActor
-enum DroppedFileOpener {
-    static func open(_ urls: [URL], tabbedIn targetWindow: NSWindow) {
+enum OpenURLRouter {
+    static func open(_ urls: [URL], tabbedIn targetWindow: NSWindow?) {
+        let folders = urls.filter(isDirectory)
+        let files = urls.filter { !isDirectory($0) }
+
+        OpenFoldersStore.shared.add(folders)
+        openFiles(files, tabbedIn: targetWindow)
+    }
+
+    private static func openFiles(_ urls: [URL], tabbedIn targetWindow: NSWindow?) {
         for url in urls {
             NSDocumentController.shared.openDocument(withContentsOf: url, display: true) { document, _, error in
                 if let error {
                     NSLog("Could not open dropped file %@: %@", url.path as NSString, error.localizedDescription)
+                    return
+                }
+
+                guard let targetWindow else {
+                    document?.windowControllers.first?.window?.makeKeyAndOrderFront(nil)
                     return
                 }
 
@@ -95,5 +107,10 @@ enum DroppedFileOpener {
                 openedWindow.makeKeyAndOrderFront(nil)
             }
         }
+    }
+
+    private static func isDirectory(_ url: URL) -> Bool {
+        var isDirectory: ObjCBool = false
+        return FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirectory) && isDirectory.boolValue
     }
 }
