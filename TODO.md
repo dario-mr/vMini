@@ -9,4 +9,3 @@
 - themes
 - fonts
 - syntax highlight
-- better icon
