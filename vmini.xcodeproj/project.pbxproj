@@ -15,6 +15,7 @@
 		A00000000000000000000113 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000103 /* main.swift */; };
 		A00000000000000000000120 /* UserDefaultsKeys.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000110 /* UserDefaultsKeys.swift */; };
 		A00000000000000000000114 /* Document.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000104 /* Document.swift */; };
+		A0000000000000000000012C /* DocumentFileWatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000012D /* DocumentFileWatcher.swift */; };
 		A00000000000000000000115 /* OpenDocumentsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000105 /* OpenDocumentsStore.swift */; };
 		A00000000000000000000116 /* SessionRestorer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000106 /* SessionRestorer.swift */; };
 		A00000000000000000000117 /* EditorSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000107 /* EditorSettings.swift */; };
@@ -42,6 +43,7 @@
 		A00000000000000000000103 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		A00000000000000000000110 /* UserDefaultsKeys.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserDefaultsKeys.swift; sourceTree = "<group>"; };
 		A00000000000000000000104 /* Document.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Document.swift; sourceTree = "<group>"; };
+		A0000000000000000000012D /* DocumentFileWatcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentFileWatcher.swift; sourceTree = "<group>"; };
 		A00000000000000000000105 /* OpenDocumentsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenDocumentsStore.swift; sourceTree = "<group>"; };
 		A00000000000000000000106 /* SessionRestorer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionRestorer.swift; sourceTree = "<group>"; };
 		A00000000000000000000107 /* EditorSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorSettings.swift; sourceTree = "<group>"; };
@@ -109,6 +111,7 @@
 			isa = PBXGroup;
 			children = (
 				A00000000000000000000104 /* Document.swift */,
+				A0000000000000000000012D /* DocumentFileWatcher.swift */,
 				A00000000000000000000105 /* OpenDocumentsStore.swift */,
 				A00000000000000000000106 /* SessionRestorer.swift */,
 			);
@@ -240,6 +243,7 @@
 				A00000000000000000000120 /* UserDefaultsKeys.swift in Sources */,
 				A00000000000000000000113 /* main.swift in Sources */,
 				A00000000000000000000114 /* Document.swift in Sources */,
+				A0000000000000000000012C /* DocumentFileWatcher.swift in Sources */,
 				A00000000000000000000115 /* OpenDocumentsStore.swift in Sources */,
 				A00000000000000000000116 /* SessionRestorer.swift in Sources */,
 				A00000000000000000000117 /* EditorSettings.swift in Sources */,

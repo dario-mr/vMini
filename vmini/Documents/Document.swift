@@ -7,6 +7,7 @@ final class Document: NSDocument {
 
     private var text = ""
     private weak var editorViewController: EditorViewController?
+    private let externalChangeWatcher = DocumentFileWatcher()
 
     var sidebarTitle: String {
         fileURL?.lastPathComponent ?? displayName
@@ -28,6 +29,9 @@ final class Document: NSDocument {
     override var fileURL: URL? {
         didSet {
             Task { @MainActor in
+                externalChangeWatcher.watch(fileURL: fileURL) { [weak self] restartWatcher in
+                    self?.reloadFromDiskAfterExternalChange(restartWatcher: restartWatcher)
+                }
                 updateWindowTitles()
                 OpenDocumentsStore.postDidChange()
             }
@@ -68,6 +72,7 @@ final class Document: NSDocument {
     }
 
     override func close() {
+        externalChangeWatcher.stop()
         super.close()
         OpenDocumentsStore.postDidChange()
     }
@@ -85,6 +90,28 @@ final class Document: NSDocument {
     private func updateWindowTitles() {
         for case let windowController as EditorWindowController in windowControllers {
             windowController.updateTitles(for: self)
+        }
+    }
+
+    private func reloadFromDiskAfterExternalChange(restartWatcher: Bool) {
+        guard let fileURL else { return }
+        guard FileManager.default.fileExists(atPath: fileURL.path) else { return }
+
+        do {
+            let typeName = try NSDocumentController.shared.typeForContents(of: fileURL)
+            let data = try Data(contentsOf: fileURL, options: [.mappedIfSafe])
+            try read(from: data, ofType: typeName)
+            updateChangeCount(.changeCleared)
+            undoManager?.removeAllActions()
+            OpenDocumentsStore.postDidChange()
+
+            if restartWatcher {
+                externalChangeWatcher.watch(fileURL: fileURL) { [weak self] restartWatcher in
+                    self?.reloadFromDiskAfterExternalChange(restartWatcher: restartWatcher)
+                }
+            }
+        } catch {
+            NSLog("Could not reload externally changed file %@: %@", fileURL.path as NSString, error.localizedDescription)
         }
     }
 
