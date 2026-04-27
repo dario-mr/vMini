@@ -15,7 +15,7 @@ final class EditorWindow: NSWindow {
         }
 
         if modifiers == [.command], characters == "o" {
-            NSDocumentController.shared.openDocument(self)
+            (NSApp.delegate as? AppDelegate)?.openDocumentOrFolder(self)
             return true
         }
 

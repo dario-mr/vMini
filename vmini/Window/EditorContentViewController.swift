@@ -18,8 +18,8 @@ final class EditorContentViewController: NSViewController {
         self.sidebarViewController = OpenFilesSidebarViewController(initialDocument: document)
         self.editorViewController = editorViewController
         super.init(nibName: nil, bundle: nil)
-        editorViewController.onFileURLsDropped = { [weak self] urls in
-            self?.openDroppedFiles(urls)
+        editorViewController.onFileSystemURLsDropped = { [weak self] urls in
+            self?.openFileSystemURLs(urls)
         }
     }
 
@@ -109,12 +109,12 @@ final class EditorContentViewController: NSViewController {
 }
 
 extension EditorContentViewController: FileDropContentViewDelegate {
-    func fileDropContentView(_ view: FileDropContentView, didReceiveFileURLs urls: [URL]) {
-        openDroppedFiles(urls)
+    func fileDropContentView(_ view: FileDropContentView, didReceiveFileSystemURLs urls: [URL]) {
+        openFileSystemURLs(urls)
     }
 
-    private func openDroppedFiles(_ urls: [URL]) {
+    private func openFileSystemURLs(_ urls: [URL]) {
         guard let targetWindow = view.window else { return }
-        DroppedFileOpener.open(urls, tabbedIn: targetWindow)
+        OpenURLRouter.open(urls, tabbedIn: targetWindow)
     }
 }
