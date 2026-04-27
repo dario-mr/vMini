@@ -1,6 +1,6 @@
-# TextEditorApp
+# vMini
 
-Native macOS text editor MVP built with Swift, AppKit, `NSDocument`, and `NSTextView`.
+Native macOS text editor .
 
 ## External-editor workflow
 
@@ -24,36 +24,14 @@ Build the app:
 ./scripts/build.sh
 ```
 
-Run the app after building:
+Build and run the app:
 
 ```bash
 ./scripts/run.sh
 ```
 
-Clean the build products:
+Regenerate app icon for all resolutions, based on source `icon_512x512@2x.png`:
 
 ```bash
-./scripts/clean.sh
+./scripts/generate-app-icon-set.sh
 ```
-
-Print the resolved `.app` path:
-
-```bash
-./scripts/app-path.sh
-```
-
-## Suggested IntelliJ setup
-
-1. Open this folder in IntelliJ IDEA.
-2. Edit files under `TextEditorApp/`.
-3. Create run configurations that call:
-    - `./scripts/build.sh`
-    - `./scripts/run.sh`
-4. Keep Xcode installed, but only open it when you need macOS-specific debugging or project
-   settings.
-
-## Project layout
-
-- `TextEditorApp/`: AppKit source files
-- `vmini.xcodeproj/`: Xcode project wrapper
-- `scripts/`: terminal-friendly build and run entry points
