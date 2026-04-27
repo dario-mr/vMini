@@ -42,11 +42,42 @@ final class EditorWindowController: NSWindowController {
             return
         }
 
-        window?.representedURL = document.fileURL
-        window?.tab.title = document.sidebarTitle
+        applyTitles(for: document)
     }
 
     func updateTitles(for document: Document) {
         synchronizeWindowTitleWithDocumentName()
+    }
+
+    private func applyTitles(for document: Document) {
+        window?.representedURL = document.fileURL
+        window?.tab.title = document.sidebarTitle
+    }
+
+    static func refreshTabGroupTitles(for window: NSWindow?) {
+        guard let window else { return }
+
+        if let tabGroup = window.tabGroup {
+            for tabbedWindow in tabGroup.windows {
+                guard
+                    let controller = tabbedWindow.windowController as? EditorWindowController,
+                    let document = controller.document as? Document
+                else {
+                    continue
+                }
+
+                controller.applyTitles(for: document)
+            }
+            return
+        }
+
+        guard
+            let controller = window.windowController as? EditorWindowController,
+            let document = controller.document as? Document
+        else {
+            return
+        }
+
+        controller.applyTitles(for: document)
     }
 }
