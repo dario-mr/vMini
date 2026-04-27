@@ -50,7 +50,8 @@ final class OpenFoldersSidebarViewController: NSViewController, NSOutlineViewDat
     private enum Constants {
         static let headerFontSize: CGFloat = 14
         static let rowFontSize: CGFloat = 13
-        static let rowHeight: CGFloat = 23
+        static let rowHeight: CGFloat = rowFontSize * 2
+        static let rootFolderRowHeight: CGFloat = 32
     }
 
     var onFileSelected: ((URL) -> Void)?
@@ -134,7 +135,11 @@ final class OpenFoldersSidebarViewController: NSViewController, NSOutlineViewDat
     }
 
     func outlineView(_ outlineView: NSOutlineView, heightOfRowByItem item: Any) -> CGFloat {
-        Constants.rowHeight
+        if let node = node(for: item), rootNodes.contains(where: { $0 === node }) {
+            return Constants.rootFolderRowHeight
+        }
+
+        return Constants.rowHeight
     }
 
     func outlineView(_ outlineView: NSOutlineView, rowViewForItem item: Any) -> NSTableRowView? {

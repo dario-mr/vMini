@@ -1,4 +1,5 @@
 import AppKit
+import UniformTypeIdentifiers
 
 private final class NonScrollingClipView: NSClipView {
     override func constrainBoundsRect(_ proposedBounds: NSRect) -> NSRect {
@@ -11,8 +12,8 @@ private final class NonScrollingClipView: NSClipView {
 final class OpenFilesSidebarViewController: NSViewController, NSTableViewDataSource, NSTableViewDelegate {
     private enum Constants {
         static let headerFontSize: CGFloat = 14
-        static let rowFontSize: CGFloat = 14
-        static let rowHeight: CGFloat = 28
+        static let rowFontSize: CGFloat = 13
+        static let rowHeight: CGFloat = rowFontSize * 2
     }
 
     private weak var initialDocument: Document?
@@ -158,6 +159,7 @@ final class OpenFilesSidebarViewController: NSViewController, NSTableViewDataSou
             ?? makeCellView(identifier: identifier)
         let document = documents[row]
         let isEdited = document.isDocumentEdited
+        cellView.imageView?.image = icon(for: document)
         cellView.textField?.attributedStringValue = attributedTitle(
             for: document,
             isEdited: isEdited
@@ -265,22 +267,45 @@ final class OpenFilesSidebarViewController: NSViewController, NSTableViewDataSou
         let cellView = NSTableCellView()
         cellView.identifier = identifier
 
+        let imageView = NSImageView()
+        imageView.translatesAutoresizingMaskIntoConstraints = false
+        imageView.imageScaling = .scaleProportionallyDown
+
         let textField = NSTextField(labelWithString: "")
         textField.translatesAutoresizingMaskIntoConstraints = false
         textField.lineBreakMode = .byTruncatingMiddle
         textField.textColor = NSColor(white: 0.88, alpha: 1.0)
         textField.font = NSFont.systemFont(ofSize: Constants.rowFontSize, weight: .medium)
 
+        cellView.imageView = imageView
         cellView.textField = textField
+        cellView.addSubview(imageView)
         cellView.addSubview(textField)
 
         NSLayoutConstraint.activate([
-            textField.leadingAnchor.constraint(equalTo: cellView.leadingAnchor, constant: 12),
+            imageView.leadingAnchor.constraint(equalTo: cellView.leadingAnchor, constant: 14),
+            imageView.centerYAnchor.constraint(equalTo: cellView.centerYAnchor),
+            imageView.widthAnchor.constraint(equalToConstant: 16),
+            imageView.heightAnchor.constraint(equalToConstant: 16),
+
+            textField.leadingAnchor.constraint(equalTo: imageView.trailingAnchor, constant: 6),
             textField.trailingAnchor.constraint(equalTo: cellView.trailingAnchor, constant: -12),
             textField.centerYAnchor.constraint(equalTo: cellView.centerYAnchor),
         ])
 
         return cellView
+    }
+
+    private func icon(for document: Document) -> NSImage {
+        let icon: NSImage
+        if let fileURL = document.fileURL {
+            icon = NSWorkspace.shared.icon(forFile: fileURL.path)
+        } else {
+            icon = NSWorkspace.shared.icon(for: .plainText)
+        }
+
+        icon.size = NSSize(width: 16, height: 16)
+        return icon
     }
 
     private func attributedTitle(for document: Document, isEdited: Bool) -> NSAttributedString {
