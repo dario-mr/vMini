@@ -34,7 +34,7 @@
 
 /* Begin PBXFileReference section */
 		A00000000000000000000006 /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = System/Library/Frameworks/Cocoa.framework; sourceTree = SDKROOT; };
-		A00000000000000000000007 /* vmini.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = vmini.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A00000000000000000000007 /* vMini.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = vMini.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A00000000000000000000008 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A00000000000000000000122 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A00000000000000000000101 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
@@ -162,7 +162,7 @@
 		A00000000000000000000034 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				A00000000000000000000007 /* vmini.app */,
+				A00000000000000000000007 /* vMini.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -170,9 +170,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		A00000000000000000000041 /* TextEditorApp */ = {
+		A00000000000000000000041 /* vMini */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = A00000000000000000000051 /* Build configuration list for PBXNativeTarget "TextEditorApp" */;
+			buildConfigurationList = A00000000000000000000051 /* Build configuration list for PBXNativeTarget "vMini" */;
 			buildPhases = (
 				A00000000000000000000020 /* Sources */,
 				A00000000000000000000021 /* Frameworks */,
@@ -182,9 +182,9 @@
 			);
 			dependencies = (
 			);
-			name = TextEditorApp;
-			productName = TextEditorApp;
-			productReference = A00000000000000000000007 /* vmini.app */;
+			name = vMini;
+			productName = vMini;
+			productReference = A00000000000000000000007 /* vMini.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -202,7 +202,7 @@
 					};
 				};
 			};
-			buildConfigurationList = A00000000000000000000052 /* Build configuration list for PBXProject "TextEditorApp" */;
+			buildConfigurationList = A00000000000000000000052 /* Build configuration list for PBXProject "vMini" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -216,7 +216,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				A00000000000000000000041 /* TextEditorApp */,
+				A00000000000000000000041 /* vMini */,
 			);
 		};
 /* End PBXProject section */
@@ -353,7 +353,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		A00000000000000000000051 /* Build configuration list for PBXNativeTarget "TextEditorApp" */ = {
+		A00000000000000000000051 /* Build configuration list for PBXNativeTarget "vMini" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				A00000000000000000000071 /* Debug */,
@@ -362,7 +362,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		A00000000000000000000052 /* Build configuration list for PBXProject "TextEditorApp" */ = {
+		A00000000000000000000052 /* Build configuration list for PBXProject "vMini" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				A00000000000000000000061 /* Debug */,
