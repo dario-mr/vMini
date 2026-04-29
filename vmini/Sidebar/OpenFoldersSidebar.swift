@@ -156,7 +156,7 @@ final class OpenFoldersSidebarViewController: NSViewController, NSOutlineViewDat
         cellView.imageView?.image = icon(for: node)
         cellView.textField?.stringValue = node.title
         cellView.textField?.font = NSFont.systemFont(ofSize: Constants.rowFontSize, weight: node.isDirectory ? .semibold : .regular)
-        cellView.textField?.textColor = NSColor(white: 0.86, alpha: 1.0)
+        cellView.textField?.textColor = AppColors.folderSidebarText
         return cellView
     }
 
@@ -219,7 +219,7 @@ final class OpenFoldersSidebarViewController: NSViewController, NSOutlineViewDat
     private func configureHeaderLabel() {
         headerLabel.translatesAutoresizingMaskIntoConstraints = false
         headerLabel.font = NSFont.systemFont(ofSize: Constants.headerFontSize, weight: .semibold)
-        headerLabel.textColor = NSColor(white: 0.84, alpha: 1.0)
+        headerLabel.textColor = AppColors.sidebarHeaderText
         headerLabel.alignment = .left
         headerLabel.drawsBackground = false
         headerLabel.backgroundColor = .clear

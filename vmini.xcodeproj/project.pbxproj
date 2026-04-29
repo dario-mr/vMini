@@ -10,10 +10,12 @@
 		A00000000000000000000016 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A00000000000000000000006 /* Cocoa.framework */; };
 		A00000000000000000000123 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000122 /* Assets.xcassets */; };
 		A00000000000000000000111 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000101 /* AppDelegate.swift */; };
+		A0000000000000000000013C /* AppColors.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000013D /* AppColors.swift */; };
 		A00000000000000000000124 /* DocumentController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000125 /* DocumentController.swift */; };
 		A00000000000000000000112 /* MenuBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000102 /* MenuBuilder.swift */; };
 		A00000000000000000000113 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000103 /* main.swift */; };
 		A00000000000000000000120 /* UserDefaultsKeys.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000110 /* UserDefaultsKeys.swift */; };
+			A0000000000000000000013A /* WorkspaceWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000013B /* WorkspaceWindowController.swift */; };
 		A00000000000000000000114 /* Document.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000104 /* Document.swift */; };
 		A0000000000000000000012C /* DocumentFileWatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000012D /* DocumentFileWatcher.swift */; };
 		A00000000000000000000115 /* OpenDocumentsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000105 /* OpenDocumentsStore.swift */; };
@@ -38,10 +40,12 @@
 		A00000000000000000000008 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A00000000000000000000122 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A00000000000000000000101 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		A0000000000000000000013D /* AppColors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppColors.swift; sourceTree = "<group>"; };
 		A00000000000000000000125 /* DocumentController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentController.swift; sourceTree = "<group>"; };
 		A00000000000000000000102 /* MenuBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBuilder.swift; sourceTree = "<group>"; };
 		A00000000000000000000103 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		A00000000000000000000110 /* UserDefaultsKeys.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserDefaultsKeys.swift; sourceTree = "<group>"; };
+			A0000000000000000000013B /* WorkspaceWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceWindowController.swift; sourceTree = "<group>"; };
 		A00000000000000000000104 /* Document.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Document.swift; sourceTree = "<group>"; };
 		A0000000000000000000012D /* DocumentFileWatcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentFileWatcher.swift; sourceTree = "<group>"; };
 		A00000000000000000000105 /* OpenDocumentsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenDocumentsStore.swift; sourceTree = "<group>"; };
@@ -98,11 +102,12 @@
 		A00000000000000000000131 /* App */ = {
 			isa = PBXGroup;
 			children = (
+				A0000000000000000000013D /* AppColors.swift */,
 				A00000000000000000000101 /* AppDelegate.swift */,
-				A00000000000000000000125 /* DocumentController.swift */,
-				A00000000000000000000102 /* MenuBuilder.swift */,
-				A00000000000000000000110 /* UserDefaultsKeys.swift */,
-				A00000000000000000000103 /* main.swift */,
+					A00000000000000000000125 /* DocumentController.swift */,
+					A00000000000000000000102 /* MenuBuilder.swift */,
+					A00000000000000000000110 /* UserDefaultsKeys.swift */,
+					A00000000000000000000103 /* main.swift */,
 			);
 			path = App;
 			sourceTree = "<group>";
@@ -147,6 +152,7 @@
 				A0000000000000000000010E /* EditorWindowController.swift */,
 				A00000000000000000000127 /* FileDropHandling.swift */,
 				A0000000000000000000010F /* ResizeHandleView.swift */,
+				A0000000000000000000013B /* WorkspaceWindowController.swift */,
 			);
 			path = Window;
 			sourceTree = "<group>";
@@ -237,11 +243,13 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A0000000000000000000013C /* AppColors.swift in Sources */,
 				A00000000000000000000111 /* AppDelegate.swift in Sources */,
 				A00000000000000000000124 /* DocumentController.swift in Sources */,
 				A00000000000000000000112 /* MenuBuilder.swift in Sources */,
-				A00000000000000000000120 /* UserDefaultsKeys.swift in Sources */,
-				A00000000000000000000113 /* main.swift in Sources */,
+					A00000000000000000000120 /* UserDefaultsKeys.swift in Sources */,
+					A00000000000000000000113 /* main.swift in Sources */,
+				A0000000000000000000013A /* WorkspaceWindowController.swift in Sources */,
 				A00000000000000000000114 /* Document.swift in Sources */,
 				A0000000000000000000012C /* DocumentFileWatcher.swift in Sources */,
 				A00000000000000000000115 /* OpenDocumentsStore.swift in Sources */,

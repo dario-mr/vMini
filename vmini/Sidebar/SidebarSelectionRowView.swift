@@ -11,7 +11,7 @@ final class SidebarSelectionRowView: NSTableRowView {
             return
         }
 
-        NSColor(white: 1.0, alpha: 0.09).setFill()
+        AppColors.subtleSelectionFill.setFill()
         let selectionRect = bounds.insetBy(dx: 10, dy: 1)
         NSBezierPath(roundedRect: selectionRect, xRadius: 5, yRadius: 5).fill()
     }

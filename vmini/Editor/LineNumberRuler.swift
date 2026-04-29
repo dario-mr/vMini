@@ -1,12 +1,14 @@
 import AppKit
 
-final class LineNumberRulerView: NSRulerView {
+final class LineNumberRulerView: NSView {
     private enum Constants {
         static let minThickness: CGFloat = 36
         static let horizontalPadding: CGFloat = 8
     }
 
     private weak var textView: NSTextView?
+    var onRuleThicknessChanged: ((CGFloat) -> Void)?
+    private(set) var ruleThickness = Constants.minThickness
     private let paragraphStyle: NSParagraphStyle = {
         let style = NSMutableParagraphStyle()
         style.alignment = .right
@@ -15,9 +17,10 @@ final class LineNumberRulerView: NSRulerView {
 
     init(textView: NSTextView) {
         self.textView = textView
-        super.init(scrollView: textView.enclosingScrollView, orientation: .verticalRuler)
-        clientView = textView
-        ruleThickness = Constants.minThickness
+        super.init(frame: .zero)
+        translatesAutoresizingMaskIntoConstraints = false
+        wantsLayer = true
+        layer?.backgroundColor = AppColors.editorBackground.cgColor
     }
 
     @available(*, unavailable)
@@ -29,12 +32,20 @@ final class LineNumberRulerView: NSRulerView {
         true
     }
 
+    override var isFlipped: Bool {
+        true
+    }
+
     func invalidateLineNumbers() {
-        ruleThickness = requiredThickness()
+        let requiredThickness = requiredThickness()
+        if abs(ruleThickness - requiredThickness) > 0.5 {
+            ruleThickness = requiredThickness
+            onRuleThicknessChanged?(requiredThickness)
+        }
         needsDisplay = true
     }
 
-    override func drawHashMarksAndLabels(in rect: NSRect) {
+    override func draw(_ dirtyRect: NSRect) {
         guard
             let textView,
             let layoutManager = textView.layoutManager,
@@ -43,7 +54,7 @@ final class LineNumberRulerView: NSRulerView {
             return
         }
 
-        NSColor(calibratedRed: 0.08, green: 0.16, blue: 0.20, alpha: 1.0).setFill()
+        AppColors.editorBackground.setFill()
         bounds.fill()
 
         let visibleRect = textView.visibleRect
@@ -51,7 +62,7 @@ final class LineNumberRulerView: NSRulerView {
         guard glyphRange.length > 0 else {
             drawLineNumber(
                 1,
-                atY: textView.textContainerInset.height,
+                atY: textView.textContainerInset.height - visibleRect.minY,
                 lineHeight: textView.font?.boundingRectForFont.height ?? 16,
                 isSelected: true
             )
@@ -74,14 +85,9 @@ final class LineNumberRulerView: NSRulerView {
 
             if characterIndex == lineStart {
                 let lineNumber = lineNumber(forCharacterAt: characterIndex)
-                let pointInTextView = NSPoint(
-                    x: 0,
-                    y: lineRect.minY + textView.textContainerOrigin.y
-                )
-                let pointInRuler = convert(pointInTextView, from: textView)
                 drawLineNumber(
                     lineNumber,
-                    atY: pointInRuler.y,
+                    atY: viewportY(forDocumentY: lineRect.minY + textView.textContainerOrigin.y),
                     lineHeight: lineRect.height,
                     isSelected: lineStart == selectedLineStart
                 )
@@ -99,13 +105,13 @@ final class LineNumberRulerView: NSRulerView {
 
     private func drawLineNumber(_ lineNumber: Int, atY y: CGFloat, lineHeight: CGFloat, isSelected: Bool) {
         if isSelected {
-            NSColor(white: 1.0, alpha: 0.09).setFill()
+            AppColors.subtleSelectionFill.setFill()
             NSRect(x: 0, y: y, width: bounds.width, height: lineHeight).fill()
         }
 
         let attributes: [NSAttributedString.Key: Any] = [
             .font: lineNumberFont(),
-            .foregroundColor: isSelected ? NSColor(white: 0.84, alpha: 1.0) : NSColor(white: 0.62, alpha: 1.0),
+            .foregroundColor: isSelected ? AppColors.sidebarHeaderText : AppColors.lineNumberText,
             .paragraphStyle: paragraphStyle,
         ]
         let string = "\(lineNumber)" as NSString
@@ -154,19 +160,22 @@ final class LineNumberRulerView: NSRulerView {
             return
         }
 
-        let pointInTextView = NSPoint(
-            x: 0,
-            y: extraLineRect.minY + textView.textContainerOrigin.y
-        )
-        let pointInRuler = convert(pointInTextView, from: textView)
         let lineNumber = lineNumber(forCharacterAt: string.length)
 
         drawLineNumber(
             lineNumber,
-            atY: pointInRuler.y,
+            atY: viewportY(forDocumentY: extraLineRect.minY + textView.textContainerOrigin.y),
             lineHeight: extraLineRect.height,
             isSelected: selectedLineStart == string.length
         )
+    }
+
+    private func viewportY(forDocumentY documentY: CGFloat) -> CGFloat {
+        guard let textView else {
+            return documentY
+        }
+
+        return documentY - textView.visibleRect.minY
     }
 
     private func lineNumber(forCharacterAt characterIndex: Int) -> Int {

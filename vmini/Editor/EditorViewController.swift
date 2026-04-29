@@ -11,6 +11,7 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
     private let scrollView = NSScrollView()
     private let textView = FileDropTextView()
     private lazy var lineNumberRulerView = LineNumberRulerView(textView: textView)
+    private var lineNumberRulerWidthConstraint: NSLayoutConstraint?
     private var hasCompletedInitialViewportReset = false
 
     var text: String {
@@ -39,10 +40,18 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
         configureTextView()
         configureLineNumberRuler()
 
+        view.addSubview(lineNumberRulerView)
         view.addSubview(scrollView)
 
+        let lineNumberRulerWidthConstraint = lineNumberRulerView.widthAnchor.constraint(equalToConstant: lineNumberRulerView.ruleThickness)
+        self.lineNumberRulerWidthConstraint = lineNumberRulerWidthConstraint
         NSLayoutConstraint.activate([
-            scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            lineNumberRulerView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            lineNumberRulerView.topAnchor.constraint(equalTo: view.topAnchor),
+            lineNumberRulerView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            lineNumberRulerWidthConstraint,
+
+            scrollView.leadingAnchor.constraint(equalTo: lineNumberRulerView.trailingAnchor),
             scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             scrollView.topAnchor.constraint(equalTo: view.topAnchor),
             scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
@@ -77,7 +86,7 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
 
     override func viewDidAppear() {
         super.viewDidAppear()
-        view.window?.makeFirstResponder(textView)
+        focusTextView()
         resetInitialViewportIfNeeded()
     }
 
@@ -108,9 +117,14 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
         EditorSettings.decreaseFontSize()
     }
 
+    func focusTextView() {
+        view.window?.makeFirstResponder(textView)
+    }
+
     private func configureScrollView() {
         scrollView.translatesAutoresizingMaskIntoConstraints = false
         scrollView.borderType = .noBorder
+        scrollView.drawsBackground = false
         scrollView.hasVerticalScroller = true
         scrollView.hasHorizontalScroller = true
         scrollView.autohidesScrollers = true
@@ -131,7 +145,7 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
         }
         applyEditorFontSize(EditorSettings.currentFontSize())
         applyParagraphStyle()
-        textView.backgroundColor = NSColor(calibratedRed: 0.08, green: 0.16, blue: 0.20, alpha: 1.0)
+        textView.backgroundColor = AppColors.editorBackground
         textView.minSize = NSSize(width: 0, height: 0)
         textView.maxSize = NSSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude)
         textView.isHorizontallyResizable = true
@@ -149,14 +163,15 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
     }
 
     private func configureLineNumberRuler() {
-        scrollView.hasVerticalRuler = true
-        scrollView.rulersVisible = true
-        scrollView.verticalRulerView = lineNumberRulerView
+        lineNumberRulerView.onRuleThicknessChanged = { [weak self] ruleThickness in
+            self?.lineNumberRulerWidthConstraint?.constant = ruleThickness
+            self?.synchronizeWordWrapLayout()
+        }
         lineNumberRulerView.invalidateLineNumbers()
     }
 
     private func applyEditorFontSize(_ fontSize: CGFloat) {
-        textView.font = NSFont.monospacedSystemFont(ofSize: fontSize, weight: .regular)
+        textView.font = NSFont.monospacedSystemFont(ofSize: fontSize, weight: .light)
     }
 
     private func applyParagraphStyle() {
@@ -208,8 +223,7 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
     }
 
     private func wrappedViewportWidth() -> CGFloat {
-        let rulerCompensation = scrollView.hasVerticalRuler ? lineNumberRulerView.ruleThickness : 0
-        return max(scrollView.contentSize.width - rulerCompensation, 1)
+        max(scrollView.contentSize.width, 1)
     }
 
     private func wrappedContainerWidth() -> CGFloat {
@@ -294,6 +308,6 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
     }
 
     private func leftmostViewportOriginX() -> CGFloat {
-        scrollView.hasVerticalRuler ? -lineNumberRulerView.ruleThickness : 0
+        0
     }
 }

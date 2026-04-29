@@ -53,7 +53,6 @@ final class DocumentFileWatcher {
         pendingReload = Task { [weak self] in
             try? await Task.sleep(for: .milliseconds(150))
             guard !Task.isCancelled else { return }
-
             self?.onChange?(restartWatcher)
         }
     }

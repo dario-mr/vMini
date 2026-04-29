@@ -45,14 +45,18 @@ enum MenuBuilder {
     private static func makeFileMenu() -> NSMenu {
         let menu = NSMenu(title: "File")
 
-        menu.addItem(withTitle: "New", action: #selector(NSDocumentController.newDocument(_:)), keyEquivalent: "n")
+        let newItem = menu.addItem(withTitle: "New", action: #selector(AppDelegate.newDocument(_:)), keyEquivalent: "n")
+        newItem.target = NSApp.delegate as AnyObject?
         let openItem = menu.addItem(withTitle: "Open…", action: #selector(AppDelegate.openDocumentOrFolder(_:)), keyEquivalent: "o")
         openItem.target = NSApp.delegate as AnyObject?
 
         menu.addItem(.separator())
-        menu.addItem(withTitle: "Close", action: #selector(NSWindow.performClose(_:)), keyEquivalent: "w")
-        menu.addItem(withTitle: "Save", action: #selector(NSDocument.save(_:)), keyEquivalent: "s")
-        menu.addItem(withTitle: "Save As…", action: #selector(NSDocument.saveAs(_:)), keyEquivalent: "S")
+        let closeItem = menu.addItem(withTitle: "Close", action: #selector(AppDelegate.closeCurrentDocument(_:)), keyEquivalent: "w")
+        closeItem.target = NSApp.delegate as AnyObject?
+        let saveItem = menu.addItem(withTitle: "Save", action: #selector(AppDelegate.saveCurrentDocument(_:)), keyEquivalent: "s")
+        saveItem.target = NSApp.delegate as AnyObject?
+        let saveAsItem = menu.addItem(withTitle: "Save As…", action: #selector(AppDelegate.saveCurrentDocumentAs(_:)), keyEquivalent: "S")
+        saveAsItem.target = NSApp.delegate as AnyObject?
 
         return menu
     }
