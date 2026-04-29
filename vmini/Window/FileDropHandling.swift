@@ -79,46 +79,7 @@ enum OpenURLRouter {
         let files = urls.filter { !isDirectory($0) }
 
         OpenFoldersStore.shared.add(folders)
-        openFiles(files, tabbedIn: targetWindow, at: 0)
-    }
-
-    private static func openFiles(_ urls: [URL], tabbedIn targetWindow: NSWindow?, at index: Int) {
-        guard index < urls.count else {
-            EditorWindowController.refreshTabGroupTitles(for: targetWindow)
-            return
-        }
-
-        let url = urls[index]
-        NSDocumentController.shared.openDocument(withContentsOf: url, display: true) { document, _, error in
-            if let error {
-                NSLog("Could not open dropped file %@: %@", url.path as NSString, error.localizedDescription)
-                openFiles(urls, tabbedIn: targetWindow, at: index + 1)
-                return
-            }
-
-            guard let targetWindow else {
-                let openedWindow = document?.windowControllers.first?.window
-                openedWindow?.makeKeyAndOrderFront(nil)
-                EditorWindowController.refreshTabGroupTitles(for: openedWindow)
-                openFiles(urls, tabbedIn: targetWindow, at: index + 1)
-                return
-            }
-
-            guard
-                let openedWindow = document?.windowControllers.first?.window,
-                openedWindow !== targetWindow
-            else {
-                targetWindow.makeKeyAndOrderFront(nil)
-                EditorWindowController.refreshTabGroupTitles(for: targetWindow)
-                openFiles(urls, tabbedIn: targetWindow, at: index + 1)
-                return
-            }
-
-            targetWindow.addTabbedWindow(openedWindow, ordered: .above)
-            openedWindow.makeKeyAndOrderFront(nil)
-            EditorWindowController.refreshTabGroupTitles(for: targetWindow)
-            openFiles(urls, tabbedIn: targetWindow, at: index + 1)
-        }
+        WorkspaceWindowController.shared.open(urls: files, activate: files.last)
     }
 
     private static func isDirectory(_ url: URL) -> Bool {

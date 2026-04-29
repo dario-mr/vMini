@@ -16,7 +16,6 @@ final class OpenFilesSidebarViewController: NSViewController, NSTableViewDataSou
         static let rowHeight: CGFloat = rowFontSize * 2
     }
 
-    private weak var initialDocument: Document?
     private let foldersViewController = OpenFoldersSidebarViewController()
     private let headerContainer = NSView()
     private let headerLabel = NSTextField(labelWithString: "OPEN FILES")
@@ -28,12 +27,10 @@ final class OpenFilesSidebarViewController: NSViewController, NSTableViewDataSou
     private var foldersHiddenHeightConstraint: NSLayoutConstraint?
     private var isReloadingSelection = false
 
-    init(initialDocument: Document) {
-        self.initialDocument = initialDocument
+    init() {
         super.init(nibName: nil, bundle: nil)
-        foldersViewController.onFileSelected = { [weak self] url in
-            guard let window = self?.view.window else { return }
-            OpenURLRouter.open([url], tabbedIn: window)
+        foldersViewController.onFileSelected = { url in
+            WorkspaceWindowController.shared.open(urls: [url], activate: url)
         }
     }
 
@@ -47,11 +44,7 @@ final class OpenFilesSidebarViewController: NSViewController, NSTableViewDataSou
     }
 
     private var owningDocument: Document? {
-        if let document = view.window?.windowController?.document as? Document {
-            return document
-        }
-
-        return initialDocument
+        OpenDocumentsStore.shared.activeDocument
     }
 
     override func loadView() {
@@ -199,7 +192,7 @@ final class OpenFilesSidebarViewController: NSViewController, NSTableViewDataSou
     private func configureHeaderLabel() {
         headerLabel.translatesAutoresizingMaskIntoConstraints = false
         headerLabel.font = NSFont.systemFont(ofSize: Constants.headerFontSize, weight: .semibold)
-        headerLabel.textColor = NSColor(white: 0.84, alpha: 1.0)
+        headerLabel.textColor = AppColors.sidebarHeaderText
         headerLabel.alignment = .left
         headerLabel.drawsBackground = false
         headerLabel.backgroundColor = .clear
@@ -274,7 +267,7 @@ final class OpenFilesSidebarViewController: NSViewController, NSTableViewDataSou
         let textField = NSTextField(labelWithString: "")
         textField.translatesAutoresizingMaskIntoConstraints = false
         textField.lineBreakMode = .byTruncatingMiddle
-        textField.textColor = NSColor(white: 0.88, alpha: 1.0)
+        textField.textColor = AppColors.sidebarText
         textField.font = NSFont.systemFont(ofSize: Constants.rowFontSize, weight: .medium)
 
         cellView.imageView = imageView
@@ -297,13 +290,13 @@ final class OpenFilesSidebarViewController: NSViewController, NSTableViewDataSou
     }
 
     private func icon(for document: Document) -> NSImage {
-        let icon: NSImage
         if let fileURL = document.fileURL {
-            icon = NSWorkspace.shared.icon(forFile: fileURL.path)
-        } else {
-            icon = NSWorkspace.shared.icon(for: .plainText)
+            let icon = NSWorkspace.shared.icon(forFile: fileURL.path)
+            icon.size = NSSize(width: 16, height: 16)
+            return icon
         }
 
+        let icon = NSWorkspace.shared.icon(for: .plainText)
         icon.size = NSSize(width: 16, height: 16)
         return icon
     }
@@ -314,7 +307,7 @@ final class OpenFilesSidebarViewController: NSViewController, NSTableViewDataSou
             string: title,
             attributes: [
                 .font: NSFont.systemFont(ofSize: Constants.rowFontSize, weight: .medium),
-                .foregroundColor: NSColor(white: 0.88, alpha: 1.0),
+                .foregroundColor: AppColors.sidebarText,
             ]
         )
     }
@@ -325,11 +318,7 @@ final class OpenFilesSidebarViewController: NSViewController, NSTableViewDataSou
         guard row >= 0, row < documents.count else { return }
 
         let document = documents[row]
-        guard let windowController = document.windowControllers.first, let window = windowController.window else {
-            return
-        }
-
-        window.makeKeyAndOrderFront(nil)
+        WorkspaceWindowController.shared.present(document: document)
     }
 
     @objc

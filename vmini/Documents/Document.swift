@@ -6,7 +6,7 @@ final class Document: NSDocument {
     static let supportedTypes: [UTType] = [.plainText, .text]
 
     private var text = ""
-    private weak var editorViewController: EditorViewController?
+    private var editorViewController: EditorViewController?
     private let externalChangeWatcher = DocumentFileWatcher()
 
     var sidebarTitle: String {
@@ -29,9 +29,8 @@ final class Document: NSDocument {
     override var fileURL: URL? {
         didSet {
             Task { @MainActor in
-                externalChangeWatcher.watch(fileURL: fileURL) { [weak self] restartWatcher in
-                    self?.reloadFromDiskAfterExternalChange(restartWatcher: restartWatcher)
-                }
+                guard fileURL != oldValue else { return }
+                restartExternalChangeWatcher()
                 updateWindowTitles()
                 OpenDocumentsStore.postDidChange()
             }
@@ -51,45 +50,41 @@ final class Document: NSDocument {
     }
 
     override func makeWindowControllers() {
-        let editorViewController = EditorViewController()
-        editorViewController.text = text
-        editorViewController.onTextChanged = { [weak self] updatedText in
-            guard let self else { return }
-            let wasEdited = isDocumentEdited
-            text = updatedText
-            updateChangeCount(.changeDone)
-
-            if wasEdited != isDocumentEdited {
-                OpenDocumentsStore.postDidChange()
-            }
-        }
-
-        let windowController = EditorWindowController(document: self, editorViewController: editorViewController)
-        addWindowController(windowController)
-        self.editorViewController = editorViewController
-        updateWindowTitles()
-        OpenDocumentsStore.postDidChange()
+        WorkspaceWindowController.shared.present(document: self)
     }
 
     override func close() {
         externalChangeWatcher.stop()
+        editorViewController = nil
         super.close()
-        OpenDocumentsStore.postDidChange()
+        if OpenDocumentsStore.shared.activeDocument === self {
+            OpenDocumentsStore.shared.select(OpenDocumentsStore.shared.documents.first)
+        } else {
+            OpenDocumentsStore.postDidChange()
+        }
     }
 
     override func save(_ sender: Any?) {
+        externalChangeWatcher.stop()
         super.save(sender)
+        restartExternalChangeWatcher()
         OpenDocumentsStore.postDidChange()
     }
 
     override func saveAs(_ sender: Any?) {
+        externalChangeWatcher.stop()
         super.saveAs(sender)
+        restartExternalChangeWatcher()
         OpenDocumentsStore.postDidChange()
     }
 
     private func updateWindowTitles() {
-        for case let windowController as EditorWindowController in windowControllers {
-            windowController.updateTitles(for: self)
+        OpenDocumentsStore.postDidChange()
+    }
+
+    private func restartExternalChangeWatcher() {
+        externalChangeWatcher.watch(fileURL: fileURL) { [weak self] restartWatcher in
+            self?.reloadFromDiskAfterExternalChange(restartWatcher: restartWatcher)
         }
     }
 
@@ -115,12 +110,8 @@ final class Document: NSDocument {
         }
     }
 
-    override func data(ofType typeName: String) throws -> Data {
-        guard let data = text.data(using: .utf8) else {
-            throw CocoaError(.fileWriteInapplicableStringEncoding)
-        }
-
-        return data
+    override func write(to url: URL, ofType typeName: String) throws {
+        try MainActor.assumeIsolated { text }.write(to: url, atomically: true, encoding: .utf8)
     }
 
     override func read(from data: Data, ofType typeName: String) throws {
@@ -133,5 +124,28 @@ final class Document: NSDocument {
         }
 
         throw CocoaError(.fileReadInapplicableStringEncoding)
+    }
+
+    func resolvedEditorViewController(onFileSystemURLsDropped: @escaping ([URL]) -> Void) -> EditorViewController {
+        if let editorViewController {
+            editorViewController.onFileSystemURLsDropped = onFileSystemURLsDropped
+            return editorViewController
+        }
+
+        let editorViewController = EditorViewController()
+        editorViewController.text = text
+        editorViewController.onTextChanged = { [weak self] updatedText in
+            guard let self else { return }
+            let wasEdited = isDocumentEdited
+            text = updatedText
+            updateChangeCount(.changeDone)
+
+            if wasEdited != isDocumentEdited {
+                OpenDocumentsStore.postDidChange()
+            }
+        }
+        editorViewController.onFileSystemURLsDropped = onFileSystemURLsDropped
+        self.editorViewController = editorViewController
+        return editorViewController
     }
 }

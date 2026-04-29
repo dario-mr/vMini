@@ -10,7 +10,7 @@ final class EditorWindow: NSWindow {
         let characters = event.charactersIgnoringModifiers?.lowercased()
 
         if modifiers == [.command], characters == "n" {
-            NSDocumentController.shared.newDocument(self)
+            (NSApp.delegate as? AppDelegate)?.newDocument(self)
             return true
         }
 
@@ -20,17 +20,17 @@ final class EditorWindow: NSWindow {
         }
 
         if modifiers == [.command], characters == "s" {
-            NSApp.sendAction(#selector(NSDocument.save(_:)), to: nil, from: self)
+            (NSApp.delegate as? AppDelegate)?.saveCurrentDocument(self)
             return true
         }
 
         if modifiers == [.command, .shift], characters == "s" {
-            NSApp.sendAction(#selector(NSDocument.saveAs(_:)), to: nil, from: self)
+            (NSApp.delegate as? AppDelegate)?.saveCurrentDocumentAs(self)
             return true
         }
 
         if modifiers == [.command], characters == "w" {
-            performClose(self)
+            (NSApp.delegate as? AppDelegate)?.closeCurrentDocument(self)
             return true
         }
 
