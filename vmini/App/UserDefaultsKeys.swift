@@ -1,6 +1,7 @@
 enum UserDefaultsKeys {
     static let editorFontSize = "EditorFontSize"
     static let editorWordWrapEnabled = "EditorWordWrapEnabled"
+    static let workspaceWindowFrame = "WorkspaceWindowFrame"
     static let openFilesSidebarWidth = "OpenFilesSidebarWidth"
     static let sessionRestorerOpenFiles = "SessionRestorer.openFiles"
     static let sessionRestorerActiveFile = "SessionRestorer.activeFile"

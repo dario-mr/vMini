@@ -5,7 +5,6 @@ final class WorkspaceWindowController: NSWindowController {
     static let shared = WorkspaceWindowController()
 
     private let workspaceViewController = EditorContentViewController()
-    private let frameAutosaveName = "WorkspaceWindow"
 
     private init() {
         let window = EditorWindow(
@@ -18,11 +17,10 @@ final class WorkspaceWindowController: NSWindowController {
         window.contentViewController = workspaceViewController
         window.titleVisibility = .visible
         window.backgroundColor = AppColors.windowBackground
-        window.setFrameAutosaveName(frameAutosaveName)
-        window.setFrameUsingName(frameAutosaveName)
+        window.setFrame(Self.restoredWindowFrame() ?? Self.defaultWindowFrame(), display: false)
 
         super.init(window: window)
-        shouldCascadeWindows = true
+        shouldCascadeWindows = false
         synchronizeWindowState()
 
         NotificationCenter.default.addObserver(
@@ -40,7 +38,7 @@ final class WorkspaceWindowController: NSWindowController {
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(persistWindowFrame),
-            name: NSWindow.didEndLiveResizeNotification,
+            name: NSWindow.didResizeNotification,
             object: window
         )
     }
@@ -113,7 +111,72 @@ final class WorkspaceWindowController: NSWindowController {
     @objc
     private func persistWindowFrame() {
         guard let window else { return }
-        window.saveFrame(usingName: frameAutosaveName)
+        UserDefaults.standard.set(NSStringFromRect(window.frame), forKey: UserDefaultsKeys.workspaceWindowFrame)
+    }
+
+    private static func defaultWindowFrame() -> NSRect {
+        let visibleFrame = NSScreen.main?.visibleFrame ?? NSRect(x: 0, y: 0, width: 1000, height: 700)
+        let size = NSSize(
+            width: min(1000, visibleFrame.width),
+            height: min(700, visibleFrame.height)
+        )
+        return NSRect(
+            x: visibleFrame.midX - size.width / 2,
+            y: visibleFrame.midY - size.height / 2,
+            width: size.width,
+            height: size.height
+        )
+    }
+
+    private static func restoredWindowFrame() -> NSRect? {
+        guard
+            let storedFrame = UserDefaults.standard.string(forKey: UserDefaultsKeys.workspaceWindowFrame),
+            let frame = windowFrame(from: storedFrame)
+        else {
+            return nil
+        }
+
+        return constrainedWindowFrame(frame)
+    }
+
+    private static func windowFrame(from storedFrame: String) -> NSRect? {
+        let rect = NSRectFromString(storedFrame)
+        if rect.width > 0, rect.height > 0 {
+            return rect
+        }
+
+        let values = storedFrame
+            .split(whereSeparator: \.isWhitespace)
+            .compactMap { Double($0) }
+        guard values.count >= 4, values[2] > 0, values[3] > 0 else {
+            return nil
+        }
+
+        return NSRect(x: values[0], y: values[1], width: values[2], height: values[3])
+    }
+
+    private static func constrainedWindowFrame(_ frame: NSRect) -> NSRect {
+        let screen = NSScreen.screens
+            .max { lhs, rhs in
+                area(of: lhs.visibleFrame.intersection(frame)) < area(of: rhs.visibleFrame.intersection(frame))
+            } ?? NSScreen.main
+
+        guard let visibleFrame = screen?.visibleFrame else {
+            return frame
+        }
+
+        let width = min(frame.width, visibleFrame.width)
+        let height = min(frame.height, visibleFrame.height)
+        return NSRect(
+            x: min(max(frame.minX, visibleFrame.minX), visibleFrame.maxX - width),
+            y: min(max(frame.minY, visibleFrame.minY), visibleFrame.maxY - height),
+            width: width,
+            height: height
+        )
+    }
+
+    private static func area(of rect: NSRect) -> CGFloat {
+        max(rect.width, 0) * max(rect.height, 0)
     }
 
     private func open(_ urls: [URL], index: Int, activate activeURL: URL?) {
