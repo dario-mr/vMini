@@ -18,7 +18,7 @@ private final class DocumentTabView: NSView {
 
     private enum Typography {
         static let fontSize: CGFloat = 12
-        static let activeWeight: NSFont.Weight = .light
+        static let activeWeight: NSFont.Weight = .regular
         static let inactiveWeight: NSFont.Weight = .regular
     }
 
@@ -26,6 +26,8 @@ private final class DocumentTabView: NSView {
 
     var onSelect: ((Document) -> Void)?
     var onClose: ((Document) -> Void)?
+    var onCloseOthers: ((Document) -> Void)?
+    var onCloseAll: (() -> Void)?
     var onDragStarted: ((DocumentTabView, NSPoint) -> Void)?
     var onDragMoved: ((DocumentTabView, NSPoint) -> Void)?
     var onDragEnded: ((DocumentTabView) -> Void)?
@@ -140,6 +142,15 @@ private final class DocumentTabView: NSView {
         onClose?(document)
     }
 
+    override func rightMouseDown(with event: NSEvent) {
+        guard document != nil else {
+            super.rightMouseDown(with: event)
+            return
+        }
+
+        NSMenu.popUpContextMenu(makeContextMenu(), with: event, for: self)
+    }
+
     override func mouseEntered(with event: NSEvent) {
         isHovered = true
         applyAppearance()
@@ -245,6 +256,36 @@ private final class DocumentTabView: NSView {
     private func handleCloseButton() {
         guard let document else { return }
         onClose?(document)
+    }
+
+    private func makeContextMenu() -> NSMenu {
+        let menu = NSMenu()
+        menu.addItem(NSMenuItem(title: "Close", action: #selector(closeFromMenu), keyEquivalent: ""))
+        menu.addItem(NSMenuItem(title: "Close Others", action: #selector(closeOthersFromMenu), keyEquivalent: ""))
+        menu.addItem(NSMenuItem(title: "Close All", action: #selector(closeAllFromMenu), keyEquivalent: ""))
+
+        for item in menu.items {
+            item.target = self
+        }
+
+        return menu
+    }
+
+    @objc
+    private func closeFromMenu() {
+        guard let document else { return }
+        onClose?(document)
+    }
+
+    @objc
+    private func closeOthersFromMenu() {
+        guard let document else { return }
+        onCloseOthers?(document)
+    }
+
+    @objc
+    private func closeAllFromMenu() {
+        onCloseAll?()
     }
 }
 
@@ -465,6 +506,12 @@ final class EditorContentViewController: NSViewController {
         tabView.onClose = { [weak self] document in
             self?.close(document)
         }
+        tabView.onCloseOthers = { [weak self] document in
+            self?.closeAll(except: document)
+        }
+        tabView.onCloseAll = { [weak self] in
+            self?.closeAll()
+        }
         tabView.onDragStarted = { [weak self] tabView, locationInWindow in
             self?.beginTabDrag(for: tabView, locationInWindow: locationInWindow)
         }
@@ -615,6 +662,20 @@ final class EditorContentViewController: NSViewController {
 
     private func close(_ document: Document) {
         WorkspaceWindowController.shared.close(document: document)
+    }
+
+    private func closeAll(except documentToKeep: Document) {
+        close(OpenDocumentsStore.shared.documents.filter { $0 !== documentToKeep })
+    }
+
+    private func closeAll() {
+        close(OpenDocumentsStore.shared.documents)
+    }
+
+    private func close(_ documents: [Document]) {
+        for document in documents {
+            WorkspaceWindowController.shared.close(document: document)
+        }
     }
 
     private func displayActiveDocumentIfNeeded() {
