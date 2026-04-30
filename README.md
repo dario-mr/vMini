@@ -1,6 +1,6 @@
 # vMini
 
-Native macOS text editor, aimed at simplicity and resource usage.
+Native macOS text editor, aimed at simplicity and minimum resource usage.
 
 ## External editor workflow
 
