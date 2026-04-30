@@ -1,11 +1,12 @@
 import AppKit
 
-final class EditorViewController: NSViewController, NSTextViewDelegate {
+@MainActor
+final class EditorViewController: NSViewController, NSTextViewDelegate, @preconcurrency NSTextStorageDelegate {
     private enum Constants {
         static let lineSpacing: CGFloat = 2
     }
 
-    var onTextChanged: ((String) -> Void)?
+    var onTextChanged: (() -> Void)?
     var onFileSystemURLsDropped: (([URL]) -> Void)?
 
     private let scrollView = NSScrollView()
@@ -100,9 +101,25 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
     }
 
     func textDidChange(_ notification: Notification) {
-        lineNumberRulerView.invalidateLineNumbers()
         synchronizeWordWrapLayout()
-        onTextChanged?(textView.string)
+        onTextChanged?()
+    }
+
+    func textStorage(
+        _ textStorage: NSTextStorage,
+        didProcessEditing editedMask: NSTextStorageEditActions,
+        range editedRange: NSRange,
+        changeInLength delta: Int
+    ) {
+        guard editedMask.contains(.editedCharacters) else {
+            return
+        }
+
+        lineNumberRulerView.noteTextStorageDidEdit(
+            textStorage,
+            editedRange: editedRange,
+            changeInLength: delta
+        )
     }
 
     func textViewDidChangeSelection(_ notification: Notification) {
@@ -156,6 +173,8 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
             textContainer.widthTracksTextView = false
             textContainer.containerSize = NSSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude)
         }
+
+        textView.textStorage?.delegate = self
 
         // Future syntax highlighting should flow through NSTextStorage attributes in one place.
         scrollView.documentView = textView

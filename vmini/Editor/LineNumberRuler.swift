@@ -9,6 +9,7 @@ final class LineNumberRulerView: NSView {
     private weak var textView: NSTextView?
     var onRuleThicknessChanged: ((CGFloat) -> Void)?
     private(set) var ruleThickness = Constants.minThickness
+    private var lineStarts: [Int] = [0]
     private let paragraphStyle: NSParagraphStyle = {
         let style = NSMutableParagraphStyle()
         style.alignment = .right
@@ -37,11 +38,18 @@ final class LineNumberRulerView: NSView {
     }
 
     func invalidateLineNumbers() {
-        let requiredThickness = requiredThickness()
-        if abs(ruleThickness - requiredThickness) > 0.5 {
-            ruleThickness = requiredThickness
-            onRuleThicknessChanged?(requiredThickness)
-        }
+        rebuildLineCache()
+        synchronizeRuleThickness()
+        needsDisplay = true
+    }
+
+    func noteTextStorageDidEdit(_ textStorage: NSTextStorage, editedRange: NSRange, changeInLength: Int) {
+        updateLineCache(
+            text: textStorage.string as NSString,
+            editedRange: editedRange,
+            changeInLength: changeInLength
+        )
+        synchronizeRuleThickness()
         needsDisplay = true
     }
 
@@ -179,26 +187,152 @@ final class LineNumberRulerView: NSView {
     }
 
     private func lineNumber(forCharacterAt characterIndex: Int) -> Int {
-        guard let text = textView?.string, characterIndex > 0 else {
-            return 1
+        var low = 0
+        var high = lineStarts.count
+        while low < high {
+            let mid = (low + high) / 2
+            if lineStarts[mid] <= characterIndex {
+                low = mid + 1
+            } else {
+                high = mid
+            }
+        }
+        return max(low, 1)
+    }
+
+    private func rebuildLineCache() {
+        guard let text = textView?.string else {
+            lineStarts = [0]
+            return
         }
 
-        let prefix = (text as NSString).substring(to: min(characterIndex, (text as NSString).length))
-        return prefix.reduce(1) { lineNumber, character in
-            character == "\n" ? lineNumber + 1 : lineNumber
+        lineStarts = Self.allLineStarts(in: text as NSString)
+    }
+
+    private func updateLineCache(text: NSString, editedRange: NSRange, changeInLength: Int) {
+        guard !lineStarts.isEmpty else {
+            lineStarts = Self.allLineStarts(in: text)
+            return
+        }
+
+        guard changeInLength >= 0, editedRange.length == changeInLength else {
+            lineStarts = Self.allLineStarts(in: text)
+            return
+        }
+
+        let lineIndex = lineIndex(containing: editedRange.location)
+        let preservedPrefix = Array(lineStarts.prefix(lineIndex + 1))
+
+        let oldNextLineIndex = firstLineIndex(startingAfter: editedRange.location)
+        let oldNextLineStart = oldNextLineIndex < lineStarts.count ? lineStarts[oldNextLineIndex] : nil
+
+        let newNextLineStart = oldNextLineStart.map { $0 + changeInLength } ?? text.length
+        let scannedRange = NSRange(
+            location: editedRange.location,
+            length: max(newNextLineStart - editedRange.location, 0)
+        )
+
+        var replacementStarts = Self.lineStarts(in: text, range: scannedRange)
+        if replacementStarts.first == preservedPrefix.last {
+            replacementStarts.removeFirst()
+        }
+
+        let shiftedSuffix: [Int]
+        if oldNextLineIndex < lineStarts.count {
+            shiftedSuffix = lineStarts[oldNextLineIndex...].map { $0 + changeInLength }
+        } else {
+            shiftedSuffix = []
+        }
+
+        lineStarts = Self.uniquedLineStarts(preservedPrefix + replacementStarts + shiftedSuffix)
+        if lineStarts.isEmpty || lineStarts[0] != 0 {
+            lineStarts.insert(0, at: 0)
         }
     }
 
-    private func requiredThickness() -> CGFloat {
-        guard let text = textView?.string else {
-            return Constants.minThickness
-        }
-
-        let lineCount = max(1, text.reduce(1) { $1 == "\n" ? $0 + 1 : $0 })
+    private func synchronizeRuleThickness() {
+        let lineCount = max(1, lineStarts.count)
         let digitCount = "\(lineCount)".count
         let digitWidth = "0".size(withAttributes: [
             .font: lineNumberFont(),
         ]).width
-        return max(Constants.minThickness, ceil(CGFloat(digitCount) * digitWidth + Constants.horizontalPadding * 2))
+        let requiredThickness = max(Constants.minThickness, ceil(CGFloat(digitCount) * digitWidth + Constants.horizontalPadding * 2))
+        if abs(ruleThickness - requiredThickness) > 0.5 {
+            ruleThickness = requiredThickness
+            onRuleThicknessChanged?(requiredThickness)
+        }
+    }
+
+    private func lineIndex(containing location: Int) -> Int {
+        max(lineNumber(forCharacterAt: location) - 1, 0)
+    }
+
+    private func firstLineIndex(startingAtOrAfter location: Int) -> Int {
+        var low = 0
+        var high = lineStarts.count
+        while low < high {
+            let mid = (low + high) / 2
+            if lineStarts[mid] < location {
+                low = mid + 1
+            } else {
+                high = mid
+            }
+        }
+        return low
+    }
+
+    private func firstLineIndex(startingAfter location: Int) -> Int {
+        var low = 0
+        var high = lineStarts.count
+        while low < high {
+            let mid = (low + high) / 2
+            if lineStarts[mid] <= location {
+                low = mid + 1
+            } else {
+                high = mid
+            }
+        }
+        return low
+    }
+
+    private static func allLineStarts(in text: NSString) -> [Int] {
+        uniquedLineStarts([0] + lineStarts(in: text, range: NSRange(location: 0, length: text.length)))
+    }
+
+    private static func lineStarts(in text: NSString, range: NSRange) -> [Int] {
+        guard range.length > 0 else {
+            return []
+        }
+
+        var starts: [Int] = []
+        var searchLocation = range.location
+        let rangeEnd = NSMaxRange(range)
+        while searchLocation < rangeEnd {
+            let newlineRange = text.range(
+                of: "\n",
+                options: [],
+                range: NSRange(location: searchLocation, length: rangeEnd - searchLocation)
+            )
+            guard newlineRange.location != NSNotFound else {
+                break
+            }
+
+            let nextLineStart = newlineRange.location + newlineRange.length
+            if nextLineStart <= text.length {
+                starts.append(nextLineStart)
+            }
+            searchLocation = nextLineStart
+        }
+
+        return starts
+    }
+
+    private static func uniquedLineStarts(_ starts: [Int]) -> [Int] {
+        var result: [Int] = []
+        result.reserveCapacity(starts.count)
+        for start in starts where result.last != start {
+            result.append(start)
+        }
+        return result
     }
 }

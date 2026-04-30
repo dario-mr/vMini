@@ -111,7 +111,11 @@ final class Document: NSDocument {
     }
 
     override func write(to url: URL, ofType typeName: String) throws {
-        try MainActor.assumeIsolated { text }.write(to: url, atomically: true, encoding: .utf8)
+        try MainActor.assumeIsolated {
+            let currentText = editorViewController?.text ?? text
+            text = currentText
+            return currentText
+        }.write(to: url, atomically: true, encoding: .utf8)
     }
 
     override func read(from data: Data, ofType typeName: String) throws {
@@ -134,10 +138,9 @@ final class Document: NSDocument {
 
         let editorViewController = EditorViewController()
         editorViewController.text = text
-        editorViewController.onTextChanged = { [weak self] updatedText in
+        editorViewController.onTextChanged = { [weak self] in
             guard let self else { return }
             let wasEdited = isDocumentEdited
-            text = updatedText
             updateChangeCount(.changeDone)
 
             if wasEdited != isDocumentEdited {

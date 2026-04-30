@@ -5,6 +5,7 @@ private enum TabLayout {
     static let maximumTabWidth: CGFloat = 240
     static let tabBarHeight: CGFloat = 30
     static let tabHeight: CGFloat = 28
+    static let tabBarHorizontalInset: CGFloat = 2
 }
 
 private final class DocumentTabView: NSView {
@@ -480,7 +481,7 @@ final class EditorContentViewController: NSViewController {
     private func layoutTabViews(animated: Bool) {
         let activeDocument = OpenDocumentsStore.shared.activeDocument
         let documents = OpenDocumentsStore.shared.documents
-        var nextMinX: CGFloat = 0
+        var nextMinX = TabLayout.tabBarHorizontalInset
         var activeTabView: NSView?
 
         for document in documents {
@@ -509,7 +510,7 @@ final class EditorContentViewController: NSViewController {
         tabContentView.frame = NSRect(
             x: 0,
             y: 0,
-            width: max(tabScrollView.contentSize.width, nextMinX + 10),
+            width: max(tabScrollView.contentSize.width, nextMinX + TabLayout.tabBarHorizontalInset),
             height: TabLayout.tabBarHeight
         )
 
@@ -543,8 +544,9 @@ final class EditorContentViewController: NSViewController {
         }
 
         let locationInContent = tabContentView.convert(locationInWindow, from: nil)
-        let maxX = max(0, tabContentView.frame.width - tabView.frame.width)
-        let clampedMinX = min(max(locationInContent.x - currentTabDrag.pointerOffset, 0), maxX)
+        let minX = TabLayout.tabBarHorizontalInset
+        let maxX = max(minX, tabContentView.frame.width - tabView.frame.width - TabLayout.tabBarHorizontalInset)
+        let clampedMinX = min(max(locationInContent.x - currentTabDrag.pointerOffset, minX), maxX)
         tabView.frame.origin.x = clampedMinX
         tabView.frame.origin.y = 0
 
