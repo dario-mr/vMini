@@ -44,6 +44,11 @@ final class EditorWindow: NSWindow {
             return true
         }
 
+        if modifiers == [.command], characters == "/" {
+            (contentViewController as? EditorContentViewController)?.toggleLineComment()
+            return true
+        }
+
         return super.performKeyEquivalent(with: event)
     }
 }

@@ -399,6 +399,10 @@ final class EditorContentViewController: NSViewController {
         currentEditorViewController?.focusTextView()
     }
 
+    func toggleLineComment() {
+        currentEditorViewController?.toggleLineComment()
+    }
+
     private func storedSidebarWidth() -> CGFloat {
         let width = UserDefaults.standard.double(forKey: UserDefaultsKeys.openFilesSidebarWidth)
         guard width > 0 else { return Constants.sidebarDefaultWidth }

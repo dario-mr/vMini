@@ -6,6 +6,16 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
         static let lineSpacing: CGFloat = 2
     }
 
+    private struct CommentEdit {
+        let location: Int
+        let removedLength: Int
+        let insertedText: String
+
+        var insertedLength: Int {
+            (insertedText as NSString).length
+        }
+    }
+
     var onTextChanged: (() -> Void)?
     var onFileSystemURLsDropped: (([URL]) -> Void)?
 
@@ -136,6 +146,40 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
 
     func focusTextView() {
         view.window?.makeFirstResponder(textView)
+    }
+
+    func toggleLineComment() {
+        guard let textStorage = textView.textStorage else { return }
+
+        let selectedRange = textView.selectedRange()
+        let text = textView.string as NSString
+        let affectedRange = affectedLineRange(in: text, selectedRange: selectedRange)
+        let edits = commentEdits(in: text, affectedRange: affectedRange)
+        guard !edits.isEmpty else { return }
+
+        let replacement = NSMutableString(string: text.substring(with: affectedRange))
+        for edit in edits.reversed() {
+            replacement.replaceCharacters(
+                in: NSRange(location: edit.location - affectedRange.location, length: edit.removedLength),
+                with: edit.insertedText
+            )
+        }
+
+        let replacementString = replacement as String
+        guard textView.shouldChangeText(in: affectedRange, replacementString: replacementString) else {
+            return
+        }
+
+        let newSelectionStart = transformedPosition(selectedRange.location, byApplying: edits)
+        let newSelectionEnd = transformedPosition(NSMaxRange(selectedRange), byApplying: edits)
+        let newSelectedRange = NSRange(
+            location: min(newSelectionStart, newSelectionEnd),
+            length: abs(newSelectionEnd - newSelectionStart)
+        )
+
+        textStorage.replaceCharacters(in: affectedRange, with: replacementString)
+        textView.didChangeText()
+        textView.setSelectedRange(newSelectedRange)
     }
 
     private func configureScrollView() {
@@ -328,5 +372,68 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
 
     private func leftmostViewportOriginX() -> CGFloat {
         0
+    }
+
+    private func affectedLineRange(in text: NSString, selectedRange: NSRange) -> NSRange {
+        let textLength = text.length
+        let selectedLocation = min(selectedRange.location, textLength)
+
+        guard selectedRange.length > 0 else {
+            return text.lineRange(for: NSRange(location: selectedLocation, length: 0))
+        }
+
+        let selectionEnd = min(NSMaxRange(selectedRange), textLength)
+        let lastSelectedCharacter = max(selectedLocation, selectionEnd - 1)
+        let firstLineRange = text.lineRange(for: NSRange(location: selectedLocation, length: 0))
+        let lastLineRange = text.lineRange(for: NSRange(location: lastSelectedCharacter, length: 0))
+        return NSRange(
+            location: firstLineRange.location,
+            length: NSMaxRange(lastLineRange) - firstLineRange.location
+        )
+    }
+
+    private func commentEdits(in text: NSString, affectedRange: NSRange) -> [CommentEdit] {
+        let affectedEnd = NSMaxRange(affectedRange)
+        var edits: [CommentEdit] = []
+        var lineLocation = affectedRange.location
+
+        repeat {
+            let lineRange = text.lineRange(for: NSRange(location: min(lineLocation, text.length), length: 0))
+            let hasCommentPrefix = lineRange.location + 2 <= text.length
+                && text.substring(with: NSRange(location: lineRange.location, length: 2)) == "//"
+
+            edits.append(CommentEdit(
+                location: lineRange.location,
+                removedLength: hasCommentPrefix ? 2 : 0,
+                insertedText: hasCommentPrefix ? "" : "//"
+            ))
+
+            let nextLineLocation = NSMaxRange(lineRange)
+            guard nextLineLocation > lineLocation else {
+                break
+            }
+
+            lineLocation = nextLineLocation
+        } while lineLocation < affectedEnd
+
+        return edits
+    }
+
+    private func transformedPosition(_ position: Int, byApplying edits: [CommentEdit]) -> Int {
+        var delta = 0
+
+        for edit in edits {
+            if position < edit.location {
+                break
+            }
+
+            if edit.removedLength > 0, position <= edit.location + edit.removedLength {
+                return edit.location + delta + min(position - edit.location, edit.insertedLength)
+            }
+
+            delta += edit.insertedLength - edit.removedLength
+        }
+
+        return position + delta
     }
 }
