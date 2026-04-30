@@ -2,7 +2,7 @@
 
 ## High prio
 
-- shortcut: `cmd /` to comment/uncomment line
+- 
 
 ## Low prio
 
