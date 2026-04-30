@@ -2,7 +2,6 @@
 
 ## High prio
 
-- tab right click: close, close others, close all
 - shortcut: `cmd /` to comment/uncomment line
 
 ## Low prio
