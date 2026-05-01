@@ -1,6 +1,4 @@
 .DS_Store
-DerivedData/
-build/
 *.swp
 *.swo
 
@@ -8,3 +6,13 @@ xcuserdata/
 *.xcuserstate
 
 .idea
+
+# SwiftPM
+.build/
+.swiftpm/
+Package.resolved
+
+# Xcode
+DerivedData/
+build/
+*.xcuserdata/
