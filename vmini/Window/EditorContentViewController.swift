@@ -228,7 +228,7 @@ private final class DocumentTabView: NSView {
     }
 
     private func makeTopRoundedMaskLayer() -> CAShapeLayer {
-        let radius: CGFloat = 7
+        let radius: CGFloat = 6
         let rect = bounds
         let path = CGMutablePath()
 
