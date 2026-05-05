@@ -6,6 +6,7 @@ final class Document: NSDocument {
     static let supportedTypes: [UTType] = [.plainText, .text]
 
     private var text = ""
+    private var typeIdentifier: String?
     private var editorViewController: EditorViewController?
     private let externalChangeWatcher = DocumentFileWatcher()
 
@@ -21,6 +22,10 @@ final class Document: NSDocument {
         return (fileURL.path as NSString).abbreviatingWithTildeInPath
     }
 
+    var syntaxLanguage: SyntaxLanguage {
+        SyntaxLanguageResolver.resolve(fileURL: fileURL, typeIdentifier: typeIdentifier)
+    }
+
     override init() {
         super.init()
         hasUndoManager = true
@@ -31,6 +36,7 @@ final class Document: NSDocument {
             Task { @MainActor in
                 guard fileURL != oldValue else { return }
                 restartExternalChangeWatcher()
+                editorViewController?.syntaxLanguage = syntaxLanguage
                 updateWindowTitles()
                 OpenDocumentsStore.postDidChange()
             }
@@ -121,8 +127,10 @@ final class Document: NSDocument {
     override func read(from data: Data, ofType typeName: String) throws {
         if let decoded = String(data: data, encoding: .utf8) {
             MainActor.assumeIsolated {
+                typeIdentifier = typeName
                 text = decoded
                 editorViewController?.text = decoded
+                editorViewController?.syntaxLanguage = syntaxLanguage
             }
             return
         }
@@ -138,6 +146,7 @@ final class Document: NSDocument {
 
         let editorViewController = EditorViewController()
         editorViewController.text = text
+        editorViewController.syntaxLanguage = syntaxLanguage
         editorViewController.onTextChanged = { [weak self] in
             guard let self else { return }
             let wasEdited = isDocumentEdited

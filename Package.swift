@@ -15,6 +15,11 @@ let package = Package(
                 "Assets.xcassets",
                 "Info.plist"
             ]
+        ),
+        .testTarget(
+            name: "vminiTests",
+            dependencies: ["vmini"],
+            path: "Tests/vminiTests"
         )
     ]
 )

@@ -21,9 +21,19 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
 
     private let scrollView = NSScrollView()
     private let textView = FileDropTextView()
+    private let syntaxTheme = SyntaxTheme.default
+    private let highlighterRegistry = HighlighterRegistry.shared
     private lazy var lineNumberRulerView = LineNumberRulerView(textView: textView)
     private var lineNumberRulerWidthConstraint: NSLayoutConstraint?
     private var hasCompletedInitialViewportReset = false
+    private var isApplyingSyntaxHighlighting = false
+
+    var syntaxLanguage: SyntaxLanguage = .plaintext {
+        didSet {
+            guard syntaxLanguage != oldValue else { return }
+            refreshSyntaxHighlighting()
+        }
+    }
 
     var text: String {
         get { textView.string }
@@ -33,6 +43,8 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
             textView.setSelectedRange(NSRange(location: 0, length: 0))
             hasCompletedInitialViewportReset = false
             if isViewLoaded {
+                applyParagraphStyle()
+                refreshSyntaxHighlighting()
                 lineNumberRulerView.invalidateLineNumbers()
                 resetInitialViewportIfNeeded()
             }
@@ -121,6 +133,10 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
         range editedRange: NSRange,
         changeInLength delta: Int
     ) {
+        if editedMask.contains(.editedCharacters), !isApplyingSyntaxHighlighting {
+            applySyntaxHighlighting(around: editedRange)
+        }
+
         guard editedMask.contains(.editedCharacters) else {
             return
         }
@@ -201,6 +217,7 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
         textView.isAutomaticDashSubstitutionEnabled = false
         textView.isAutomaticTextReplacementEnabled = false
         textView.isContinuousSpellCheckingEnabled = false
+        textView.textColor = AppColors.primaryText
         textView.onFileSystemURLsDropped = { [weak self] urls in
             self?.onFileSystemURLsDropped?(urls)
         }
@@ -219,10 +236,9 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
         }
 
         textView.textStorage?.delegate = self
-
-        // Future syntax highlighting should flow through NSTextStorage attributes in one place.
         scrollView.documentView = textView
         applyEditorWordWrap(EditorSettings.isWordWrapEnabled())
+        refreshSyntaxHighlighting()
     }
 
     private func configureLineNumberRuler() {
@@ -248,6 +264,40 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
             let fullRange = NSRange(location: 0, length: textStorage.length)
             textStorage.addAttribute(.paragraphStyle, value: paragraphStyle, range: fullRange)
         }
+    }
+
+    private func refreshSyntaxHighlighting() {
+        guard isViewLoaded else { return }
+        applySyntaxHighlighting(around: nil)
+    }
+
+    private func applySyntaxHighlighting(around editedRange: NSRange?) {
+        guard let textStorage = textView.textStorage else { return }
+
+        let highlighter = highlighterRegistry.highlighter(for: syntaxLanguage)
+        let text = textStorage.string as NSString
+        let fullRange = NSRange(location: 0, length: textStorage.length)
+        let targetRange: NSRange
+        if let editedRange {
+            targetRange = highlighter.expandedHighlightRange(for: editedRange, in: text).clamped(toLength: text.length)
+        } else {
+            targetRange = fullRange
+        }
+
+        guard targetRange.length > 0 else { return }
+
+        isApplyingSyntaxHighlighting = true
+        textStorage.beginEditing()
+        textStorage.applyForegroundColor(syntaxTheme.plainText, range: targetRange)
+        textStorage.applyBackgroundColor(nil, range: targetRange)
+        highlighter.highlight(
+            textStorage: textStorage,
+            in: targetRange,
+            theme: syntaxTheme,
+            registry: highlighterRegistry
+        )
+        textStorage.endEditing()
+        isApplyingSyntaxHighlighting = false
     }
 
     private func applyEditorWordWrap(_ isEnabled: Bool) {
