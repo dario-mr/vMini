@@ -65,7 +65,12 @@ final class WorkspaceWindowController: NSWindowController {
 
     func open(urls: [URL], activate activeURL: URL? = nil) {
         let standardized = urls.map(\.standardizedFileURL)
-        open(standardized, index: 0, activate: activeURL?.standardizedFileURL)
+        open(
+            standardized,
+            index: 0,
+            activate: activeURL?.standardizedFileURL,
+            fallbackDocument: OpenDocumentsStore.shared.activeDocument
+        )
     }
 
     func createUntitledDocument() {
@@ -179,13 +184,18 @@ final class WorkspaceWindowController: NSWindowController {
         max(rect.width, 0) * max(rect.height, 0)
     }
 
-    private func open(_ urls: [URL], index: Int, activate activeURL: URL?) {
+    private func open(_ urls: [URL], index: Int, activate activeURL: URL?, fallbackDocument: Document?) {
         guard index < urls.count else {
             if
                 let activeURL,
                 let document = NSDocumentController.shared.document(for: activeURL) as? Document
             {
                 present(document: document)
+            } else if
+                let fallbackDocument,
+                OpenDocumentsStore.shared.documents.contains(where: { $0 === fallbackDocument })
+            {
+                present(document: fallbackDocument)
             } else if let first = OpenDocumentsStore.shared.documents.first {
                 present(document: first)
             } else {
@@ -208,7 +218,7 @@ final class WorkspaceWindowController: NSWindowController {
             NSLog("Could not open file %@: %@", url.path as NSString, error.localizedDescription)
         }
 
-        open(urls, index: index + 1, activate: activeURL)
+        open(urls, index: index + 1, activate: activeURL, fallbackDocument: fallbackDocument)
     }
 
     private func openDocument(at url: URL) throws -> Document {
