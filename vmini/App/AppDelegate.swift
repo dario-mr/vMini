@@ -75,6 +75,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func closeCurrentDocument(_ sender: Any?) {
         WorkspaceWindowController.shared.closeCurrentDocument()
     }
+
+    @objc
+    func formatJSON(_ sender: Any?) {
+        let editorController = (NSApp.keyWindow?.contentViewController as? EditorContentViewController)
+            ?? (NSApp.mainWindow?.contentViewController as? EditorContentViewController)
+        editorController?.formatJSON()
+    }
 }
 
 extension AppDelegate: NSMenuItemValidation {
@@ -90,7 +97,8 @@ extension AppDelegate: NSMenuItemValidation {
 
         if menuItem.action == #selector(saveCurrentDocument(_:))
             || menuItem.action == #selector(saveCurrentDocumentAs(_:))
-            || menuItem.action == #selector(closeCurrentDocument(_:)) {
+            || menuItem.action == #selector(closeCurrentDocument(_:))
+            || menuItem.action == #selector(formatJSON(_:)) {
             return OpenDocumentsStore.shared.activeDocument != nil
         }
 
