@@ -150,6 +150,19 @@ final class SyntaxHighlightingTests: XCTestCase {
         assertColor(ThemeCatalog.palette(for: .default).syntaxTheme.plainText, at: nsText.range(of: "#").location, in: storage)
     }
 
+    func testEditorViewControllerUsesShellCommentPrefixForBash() throws {
+        let viewController = EditorViewController()
+        viewController.loadViewIfNeeded()
+        viewController.syntaxLanguage = .bash
+        viewController.text = "echo hi"
+
+        let textView = try XCTUnwrap(findTextView(in: viewController.view))
+        textView.setSelectedRange(NSRange(location: 0, length: 0))
+        viewController.toggleLineComment()
+
+        XCTAssertEqual(viewController.text, "#echo hi")
+    }
+
     func testDocumentSyntaxLanguageUsesDotfileNameAndShebangContent() throws {
         let dotfileDocument = Document()
         dotfileDocument.fileURL = URL(fileURLWithPath: "/tmp/.zshenv")
@@ -174,6 +187,20 @@ final class SyntaxHighlightingTests: XCTestCase {
             registry: HighlighterRegistry.shared
         )
         return storage
+    }
+
+    private func findTextView(in view: NSView) -> NSTextView? {
+        if let textView = view as? NSTextView {
+            return textView
+        }
+
+        for subview in view.subviews {
+            if let textView = findTextView(in: subview) {
+                return textView
+            }
+        }
+
+        return nil
     }
 
     private func assertColor(_ expected: NSColor, at location: Int, in storage: NSTextStorage, file: StaticString = #filePath, line: UInt = #line) {

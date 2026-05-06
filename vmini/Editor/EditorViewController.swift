@@ -446,6 +446,15 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
         0
     }
 
+    private var lineCommentPrefix: String {
+        switch syntaxLanguage {
+        case .bash:
+            "#"
+        case .plaintext, .markdown:
+            "//"
+        }
+    }
+
     private func affectedLineRange(in text: NSString, selectedRange: NSRange) -> NSRange {
         let textLength = text.length
         let selectedLocation = min(selectedRange.location, textLength)
@@ -468,16 +477,18 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
         let affectedEnd = NSMaxRange(affectedRange)
         var edits: [CommentEdit] = []
         var lineLocation = affectedRange.location
+        let commentPrefix = lineCommentPrefix
+        let prefixLength = (commentPrefix as NSString).length
 
         repeat {
             let lineRange = text.lineRange(for: NSRange(location: min(lineLocation, text.length), length: 0))
-            let hasCommentPrefix = lineRange.location + 2 <= text.length
-                && text.substring(with: NSRange(location: lineRange.location, length: 2)) == "//"
+            let hasCommentPrefix = lineRange.location + prefixLength <= text.length
+                && text.substring(with: NSRange(location: lineRange.location, length: prefixLength)) == commentPrefix
 
             edits.append(CommentEdit(
                 location: lineRange.location,
-                removedLength: hasCommentPrefix ? 2 : 0,
-                insertedText: hasCommentPrefix ? "" : "//"
+                removedLength: hasCommentPrefix ? prefixLength : 0,
+                insertedText: hasCommentPrefix ? "" : commentPrefix
             ))
 
             let nextLineLocation = NSMaxRange(lineRange)
