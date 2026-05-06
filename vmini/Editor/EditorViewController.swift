@@ -450,7 +450,7 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
         switch syntaxLanguage {
         case .bash, .sshconfig:
             "#"
-        case .plaintext, .markdown:
+        case .plaintext, .markdown, .json:
             "//"
         }
     }

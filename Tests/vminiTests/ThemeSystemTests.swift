@@ -48,6 +48,7 @@ final class ThemeSystemTests: XCTestCase {
         XCTAssertTrue(syntaxTheme.linkURL.isEqual(palette.syntaxLinkURL))
         XCTAssertTrue(syntaxTheme.keyword.isEqual(palette.syntaxKeyword))
         XCTAssertTrue(syntaxTheme.comment.isEqual(palette.syntaxComment))
+        XCTAssertTrue(syntaxTheme.propertyKey.isEqual(palette.syntaxPropertyKey))
     }
 
     func testAbsolutelyThemeMatchesCodexAnchors() {
@@ -74,6 +75,7 @@ final class ThemeSystemTests: XCTestCase {
         XCTAssertTrue(palette.syntaxLinkURL.isEqual(NSColor(calibratedRed: 80.0 / 255.0, green: 250.0 / 255.0, blue: 123.0 / 255.0, alpha: 1.0)))
         XCTAssertTrue(palette.syntaxComment.isEqual(NSColor(calibratedRed: 139.0 / 255.0, green: 146.0 / 255.0, blue: 178.0 / 255.0, alpha: 1.0)))
         XCTAssertTrue(palette.syntaxBuiltin.isEqual(NSColor(calibratedRed: 255.0 / 255.0, green: 184.0 / 255.0, blue: 108.0 / 255.0, alpha: 1.0)))
+        XCTAssertTrue(palette.syntaxPropertyKey.isEqual(NSColor(calibratedRed: 139.0 / 255.0, green: 233.0 / 255.0, blue: 253.0 / 255.0, alpha: 1.0)))
     }
 
     private func makeUserDefaults() -> UserDefaults {

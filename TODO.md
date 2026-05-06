@@ -7,5 +7,4 @@
 ## Low prio
 
 - fonts
-- syntax highlight: json
 - format json

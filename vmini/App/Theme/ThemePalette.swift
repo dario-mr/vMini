@@ -57,6 +57,7 @@ struct ThemePalette {
     let syntaxKeyword: NSColor
     let syntaxOperator: NSColor
     let syntaxBuiltin: NSColor
+    let syntaxPropertyKey: NSColor
 
     var syntaxTheme: SyntaxTheme {
         SyntaxTheme(
@@ -77,7 +78,8 @@ struct ThemePalette {
             variable: syntaxVariable,
             keyword: syntaxKeyword,
             operator: syntaxOperator,
-            builtin: syntaxBuiltin
+            builtin: syntaxBuiltin,
+            propertyKey: syntaxPropertyKey
         )
     }
 }
@@ -121,7 +123,8 @@ enum ThemeCatalog {
                 syntaxVariable: NSColor(calibratedRed: 0.77, green: 0.69, blue: 0.95, alpha: 1.0),
                 syntaxKeyword: NSColor(calibratedRed: 0.96, green: 0.37, blue: 0.41, alpha: 1.0),
                 syntaxOperator: NSColor(calibratedRed: 0.57, green: 0.83, blue: 0.92, alpha: 1.0),
-                syntaxBuiltin: NSColor(calibratedRed: 0.98, green: 0.69, blue: 0.31, alpha: 1.0)
+                syntaxBuiltin: NSColor(calibratedRed: 0.98, green: 0.69, blue: 0.31, alpha: 1.0),
+                syntaxPropertyKey: NSColor(calibratedRed: 0.98, green: 0.69, blue: 0.31, alpha: 1.0)
             )
         case .absolutely:
             ThemePalette(
@@ -159,7 +162,8 @@ enum ThemeCatalog {
                 syntaxVariable: NSColor(hex: 0xF2C6B5),
                 syntaxKeyword: NSColor(hex: 0xCC7D5E),
                 syntaxOperator: NSColor(hex: 0xE9E2D6),
-                syntaxBuiltin: NSColor(hex: 0xCC7D5E)
+                syntaxBuiltin: NSColor(hex: 0xCC7D5E),
+                syntaxPropertyKey: NSColor(hex: 0xCC7D5E)
             )
         case .dracula:
             ThemePalette(
@@ -197,7 +201,8 @@ enum ThemeCatalog {
                 syntaxVariable: NSColor(hex: 0xBD93F9),
                 syntaxKeyword: NSColor(hex: 0xFF79C6),
                 syntaxOperator: NSColor(hex: 0xFF79C6),
-                syntaxBuiltin: NSColor(hex: 0xFFB86C)
+                syntaxBuiltin: NSColor(hex: 0xFFB86C),
+                syntaxPropertyKey: NSColor(hex: 0x8BE9FD)
             )
         }
     }
