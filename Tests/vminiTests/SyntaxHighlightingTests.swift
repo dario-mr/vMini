@@ -16,6 +16,13 @@ final class SyntaxHighlightingTests: XCTestCase {
         )
     }
 
+    func testLanguageResolverRecognizesJSONExtensions() {
+        XCTAssertEqual(
+            SyntaxLanguageResolver.resolve(fileURL: URL(fileURLWithPath: "/tmp/data.json"), typeIdentifier: UTType.json.identifier),
+            .json
+        )
+    }
+
     func testLanguageResolverRecognizesShellFilesAndShebangs() {
         XCTAssertEqual(
             SyntaxLanguageResolver.resolve(fileURL: URL(fileURLWithPath: "/tmp/script.sh"), typeIdentifier: UTType.plainText.identifier),
@@ -48,6 +55,7 @@ final class SyntaxHighlightingTests: XCTestCase {
         XCTAssertEqual(SyntaxLanguageResolver.resolveFenceInfoString("bash"), .bash)
         XCTAssertEqual(SyntaxLanguageResolver.resolveFenceInfoString("zsh"), .bash)
         XCTAssertEqual(SyntaxLanguageResolver.resolveFenceInfoString("shell"), .bash)
+        XCTAssertEqual(SyntaxLanguageResolver.resolveFenceInfoString("json"), .json)
     }
 
     func testLanguageResolverDefaultsOtherTextFilesToPlaintext() {
@@ -153,6 +161,33 @@ final class SyntaxHighlightingTests: XCTestCase {
         assertColor(theme.keyword, at: nsText.range(of: "Host ").location, in: storage)
         assertColor(theme.string, at: nsText.range(of: "github-personal").location, in: storage)
         assertColor(theme.comment, at: nsText.range(of: "# comment").location, in: storage)
+    }
+
+    func testJSONHighlighterStylesKeysValuesLiteralsAndPunctuation() {
+        let text = """
+        {
+          "name": "vmini",
+          "enabled": true,
+          "count": 42,
+          "ratio": -3.5e+2,
+          "data": null,
+          "items": [1, false]
+        }
+        """
+
+        let storage = makeHighlightedStorage(text, language: .json)
+        let theme = ThemeCatalog.palette(for: .default).syntaxTheme
+        let nsText = text as NSString
+
+        assertColor(theme.operator, at: nsText.range(of: "{").location, in: storage)
+        assertColor(theme.propertyKey, at: nsText.range(of: "\"name\"").location + 1, in: storage)
+        assertColor(theme.string, at: nsText.range(of: "\"vmini\"").location + 1, in: storage)
+        assertColor(theme.keyword, at: nsText.range(of: "true").location, in: storage)
+        assertColor(theme.variable, at: nsText.range(of: "42").location, in: storage)
+        assertColor(theme.variable, at: nsText.range(of: "-3.5e+2").location, in: storage)
+        assertColor(theme.keyword, at: nsText.range(of: "null").location, in: storage)
+        assertColor(theme.operator, at: nsText.range(of: "[").location, in: storage)
+        assertColor(theme.keyword, at: nsText.range(of: "false").location, in: storage)
     }
 
     func testEditorViewControllerAppliesAndClearsMarkdownHighlighting() throws {

@@ -6,6 +6,7 @@ enum SyntaxLanguage: String {
     case markdown
     case bash
     case sshconfig
+    case json
 }
 
 enum SyntaxLanguageResolver {
@@ -18,6 +19,10 @@ enum SyntaxLanguageResolver {
     private static let markdownFileExtensionMap: [String: SyntaxLanguage] = [
         "md": .markdown,
         "markdown": .markdown,
+    ]
+
+    private static let jsonFileExtensionMap: [String: SyntaxLanguage] = [
+        "json": .json,
     ]
 
     private static let fileNameMap: [String: SyntaxLanguage] = [
@@ -38,6 +43,7 @@ enum SyntaxLanguageResolver {
         "shell": .bash,
         "md": .markdown,
         "markdown": .markdown,
+        "json": .json,
     ]
 
     static func resolve(fileURL: URL?, typeIdentifier: String?, content: String? = nil) -> SyntaxLanguage {
@@ -53,6 +59,11 @@ enum SyntaxLanguageResolver {
 
         if hasShellShebang(in: content) {
             return .bash
+        }
+
+        if let fileExtension = fileURL?.pathExtension.lowercased(),
+           let language = jsonFileExtensionMap[fileExtension] {
+            return language
         }
 
         if let fileExtension = fileURL?.pathExtension.lowercased(),
@@ -124,6 +135,7 @@ enum SyntaxColorRole {
     case keyword
     case `operator`
     case builtin
+    case propertyKey
 }
 
 struct SyntaxTheme {
@@ -145,6 +157,7 @@ struct SyntaxTheme {
     let keyword: NSColor
     let `operator`: NSColor
     let builtin: NSColor
+    let propertyKey: NSColor
 
     func color(for role: SyntaxColorRole) -> NSColor {
         switch role {
@@ -184,6 +197,8 @@ struct SyntaxTheme {
             self.operator
         case .builtin:
             builtin
+        case .propertyKey:
+            propertyKey
         }
     }
 }
@@ -213,6 +228,7 @@ final class HighlighterRegistry {
             BashSyntaxHighlighter(),
             SSHConfigSyntaxHighlighter(),
             MarkdownSyntaxHighlighter(),
+            JSONSyntaxHighlighter(),
         ]
         self.highlighters = Dictionary(uniqueKeysWithValues: resolvedHighlighters.map { ($0.language, $0) })
     }
