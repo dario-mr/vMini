@@ -31,7 +31,7 @@ final class SyntaxHighlightingTests: XCTestCase {
                 typeIdentifier: UTType.text.identifier,
                 content: "#!/usr/bin/env bash\nexport PATH=/tmp"
             ),
-            .bash
+            .sshconfig
         )
         XCTAssertEqual(
             SyntaxLanguageResolver.resolve(
@@ -39,7 +39,7 @@ final class SyntaxHighlightingTests: XCTestCase {
                 typeIdentifier: UTType.text.identifier,
                 content: "plain text"
             ),
-            .plaintext
+            .sshconfig
         )
     }
 
@@ -57,7 +57,7 @@ final class SyntaxHighlightingTests: XCTestCase {
         )
         XCTAssertEqual(
             SyntaxLanguageResolver.resolve(fileURL: URL(fileURLWithPath: "/tmp/config"), typeIdentifier: UTType.text.identifier),
-            .plaintext
+            .sshconfig
         )
     }
 
@@ -136,6 +136,25 @@ final class SyntaxHighlightingTests: XCTestCase {
         assertColor(theme.string, at: nsText.range(of: "'$USER'").location, in: storage)
     }
 
+    func testSSHConfigHighlighterStylesKeywordsValuesAndComments() {
+        let text = """
+        Include ~/.colima/ssh_config
+        Host github-personal
+          HostName github.com
+        # comment
+        """
+
+        let storage = makeHighlightedStorage(text, language: .sshconfig)
+        let theme = ThemeCatalog.palette(for: .default).syntaxTheme
+        let nsText = text as NSString
+
+        assertColor(theme.keyword, at: nsText.range(of: "Include").location, in: storage)
+        assertColor(theme.string, at: nsText.range(of: "~/.colima/ssh_config").location, in: storage)
+        assertColor(theme.keyword, at: nsText.range(of: "Host ").location, in: storage)
+        assertColor(theme.string, at: nsText.range(of: "github-personal").location, in: storage)
+        assertColor(theme.comment, at: nsText.range(of: "# comment").location, in: storage)
+    }
+
     func testEditorViewControllerAppliesAndClearsMarkdownHighlighting() throws {
         let viewController = EditorViewController()
         viewController.loadViewIfNeeded()
@@ -163,6 +182,19 @@ final class SyntaxHighlightingTests: XCTestCase {
         XCTAssertEqual(viewController.text, "#echo hi")
     }
 
+    func testEditorViewControllerUsesShellCommentPrefixForSSHConfig() throws {
+        let viewController = EditorViewController()
+        viewController.loadViewIfNeeded()
+        viewController.syntaxLanguage = .sshconfig
+        viewController.text = "Host github"
+
+        let textView = try XCTUnwrap(findTextView(in: viewController.view))
+        textView.setSelectedRange(NSRange(location: 0, length: 0))
+        viewController.toggleLineComment()
+
+        XCTAssertEqual(viewController.text, "#Host github")
+    }
+
     func testDocumentSyntaxLanguageUsesDotfileNameAndShebangContent() throws {
         let dotfileDocument = Document()
         dotfileDocument.fileURL = URL(fileURLWithPath: "/tmp/.zshenv")
@@ -172,7 +204,7 @@ final class SyntaxHighlightingTests: XCTestCase {
         let shebangDocument = Document()
         shebangDocument.fileURL = URL(fileURLWithPath: "/tmp/config")
         try shebangDocument.read(from: Data("#!/bin/sh\necho hi\n".utf8), ofType: UTType.plainText.identifier)
-        XCTAssertEqual(shebangDocument.syntaxLanguage, .bash)
+        XCTAssertEqual(shebangDocument.syntaxLanguage, .sshconfig)
     }
 
     private func makeHighlightedStorage(_ text: String, language: SyntaxLanguage) -> NSTextStorage {

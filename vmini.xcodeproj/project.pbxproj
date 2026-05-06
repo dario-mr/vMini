@@ -34,6 +34,7 @@
 		A00000000000000000000140 /* MarkdownSyntaxHighlighter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000141 /* MarkdownSyntaxHighlighter.swift */; };
 		A00000000000000000000143 /* PlainTextSyntaxHighlighter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000144 /* PlainTextSyntaxHighlighter.swift */; };
 		A00000000000000000000156 /* BashSyntaxHighlighter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000157 /* BashSyntaxHighlighter.swift */; };
+		A00000000000000000000158 /* SSHConfigSyntaxHighlighter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000159 /* SSHConfigSyntaxHighlighter.swift */; };
 		A0000000000000000000011A /* OpenFilesSidebar.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000010A /* OpenFilesSidebar.swift */; };
 		A0000000000000000000011B /* SidebarSelectionRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000010B /* SidebarSelectionRowView.swift */; };
 		A0000000000000000000011C /* EditorContentViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000010C /* EditorContentViewController.swift */; };
@@ -74,6 +75,7 @@
 		A00000000000000000000141 /* MarkdownSyntaxHighlighter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownSyntaxHighlighter.swift; sourceTree = "<group>"; };
 		A00000000000000000000144 /* PlainTextSyntaxHighlighter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlainTextSyntaxHighlighter.swift; sourceTree = "<group>"; };
 		A00000000000000000000157 /* BashSyntaxHighlighter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BashSyntaxHighlighter.swift; sourceTree = "<group>"; };
+		A00000000000000000000159 /* SSHConfigSyntaxHighlighter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SSHConfigSyntaxHighlighter.swift; sourceTree = "<group>"; };
 		A0000000000000000000010A /* OpenFilesSidebar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenFilesSidebar.swift; sourceTree = "<group>"; };
 		A0000000000000000000010B /* SidebarSelectionRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidebarSelectionRowView.swift; sourceTree = "<group>"; };
 		A0000000000000000000010C /* EditorContentViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorContentViewController.swift; sourceTree = "<group>"; };
@@ -183,6 +185,7 @@
 				A0000000000000000000013F /* SyntaxHighlighting.swift */,
 				A00000000000000000000144 /* PlainTextSyntaxHighlighter.swift */,
 				A00000000000000000000157 /* BashSyntaxHighlighter.swift */,
+				A00000000000000000000159 /* SSHConfigSyntaxHighlighter.swift */,
 				A00000000000000000000141 /* MarkdownSyntaxHighlighter.swift */,
 			);
 			path = SyntaxHighlighting;
@@ -321,6 +324,7 @@
 				A0000000000000000000013E /* SyntaxHighlighting.swift in Sources */,
 				A00000000000000000000143 /* PlainTextSyntaxHighlighter.swift in Sources */,
 				A00000000000000000000156 /* BashSyntaxHighlighter.swift in Sources */,
+				A00000000000000000000158 /* SSHConfigSyntaxHighlighter.swift in Sources */,
 				A00000000000000000000140 /* MarkdownSyntaxHighlighter.swift in Sources */,
 				A0000000000000000000011A /* OpenFilesSidebar.swift in Sources */,
 				A0000000000000000000011B /* SidebarSelectionRowView.swift in Sources */,
@@ -392,7 +396,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
-				MARKETING_VERSION = 1.0.4;
+				MARKETING_VERSION = 1.0.5;
 				PRODUCT_BUNDLE_IDENTIFIER = com.miniapp.vmini;
 				PRODUCT_NAME = vMini;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -414,7 +418,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
-				MARKETING_VERSION = 1.0.4;
+				MARKETING_VERSION = 1.0.5;
 				PRODUCT_BUNDLE_IDENTIFIER = com.miniapp.vmini;
 				PRODUCT_NAME = vMini;
 				SWIFT_EMIT_LOC_STRINGS = YES;
