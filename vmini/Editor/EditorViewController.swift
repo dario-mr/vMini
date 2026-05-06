@@ -448,7 +448,7 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
 
     private var lineCommentPrefix: String {
         switch syntaxLanguage {
-        case .bash:
+        case .bash, .sshconfig:
             "#"
         case .plaintext, .markdown:
             "//"

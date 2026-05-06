@@ -5,6 +5,7 @@ enum SyntaxLanguage: String {
     case plaintext
     case markdown
     case bash
+    case sshconfig
 }
 
 enum SyntaxLanguageResolver {
@@ -20,6 +21,7 @@ enum SyntaxLanguageResolver {
     ]
 
     private static let fileNameMap: [String: SyntaxLanguage] = [
+        "config": .sshconfig,
         ".zshenv": .bash,
         ".zprofile": .bash,
         ".zshrc": .bash,
@@ -209,6 +211,7 @@ final class HighlighterRegistry {
         let resolvedHighlighters = highlighters ?? [
             PlainTextSyntaxHighlighter(),
             BashSyntaxHighlighter(),
+            SSHConfigSyntaxHighlighter(),
             MarkdownSyntaxHighlighter(),
         ]
         self.highlighters = Dictionary(uniqueKeysWithValues: resolvedHighlighters.map { ($0.language, $0) })
