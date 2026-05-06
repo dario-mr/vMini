@@ -123,6 +123,12 @@ final class OpenFilesSidebarViewController: NSViewController, NSTableViewDataSou
             name: OpenFoldersStore.didChangeNotification,
             object: nil
         )
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleThemeDidChange),
+            name: ThemeManager.didChangeNotification,
+            object: nil
+        )
     }
 
     deinit {
@@ -132,6 +138,11 @@ final class OpenFilesSidebarViewController: NSViewController, NSTableViewDataSou
     override func viewDidAppear() {
         super.viewDidAppear()
         reloadDocuments()
+    }
+
+    private func applyTheme() {
+        headerLabel.textColor = AppColors.sidebarHeaderText
+        tableView.needsDisplay = true
     }
 
     func numberOfRows(in tableView: NSTableView) -> Int {
@@ -327,6 +338,12 @@ final class OpenFilesSidebarViewController: NSViewController, NSTableViewDataSou
             return
         }
 
+        reloadDocuments()
+    }
+
+    @objc
+    private func handleThemeDidChange() {
+        applyTheme()
         reloadDocuments()
     }
 }

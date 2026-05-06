@@ -41,6 +41,12 @@ final class WorkspaceWindowController: NSWindowController {
             name: NSWindow.didResizeNotification,
             object: window
         )
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleThemeDidChange),
+            name: ThemeManager.didChangeNotification,
+            object: nil
+        )
     }
 
     @available(*, unavailable)
@@ -76,6 +82,15 @@ final class WorkspaceWindowController: NSWindowController {
     func createUntitledDocument() {
         let document = Document()
         present(document: document)
+    }
+
+    func presentSettingsSheet() {
+        if window == nil {
+            showWindow(nil)
+        }
+
+        guard let window else { return }
+        SettingsCoordinator.shared.presentSettingsSheet(attachedTo: window)
     }
 
     func closeCurrentDocument() {
@@ -117,6 +132,11 @@ final class WorkspaceWindowController: NSWindowController {
     private func persistWindowFrame() {
         guard let window else { return }
         UserDefaults.standard.set(NSStringFromRect(window.frame), forKey: UserDefaultsKeys.workspaceWindowFrame)
+    }
+
+    @objc
+    private func handleThemeDidChange() {
+        window?.backgroundColor = AppColors.windowBackground
     }
 
     private static func defaultWindowFrame() -> NSRect {

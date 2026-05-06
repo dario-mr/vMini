@@ -70,21 +70,6 @@ struct SyntaxTheme {
     let emphasisMarker: NSColor
     let thematicBreak: NSColor
 
-    static let `default` = SyntaxTheme(
-        plainText: AppColors.primaryText,
-        headingMarker: NSColor(calibratedRed: 0.96, green: 0.37, blue: 0.41, alpha: 1.0),
-        headingText: NSColor(calibratedRed: 0.91, green: 0.93, blue: 0.96, alpha: 1.0),
-        listMarker: NSColor(calibratedRed: 0.98, green: 0.69, blue: 0.31, alpha: 1.0),
-        blockquoteMarker: NSColor(calibratedRed: 0.47, green: 0.78, blue: 0.88, alpha: 1.0),
-        inlineCode: NSColor(calibratedRed: 0.78, green: 0.56, blue: 0.86, alpha: 1.0),
-        codeFence: NSColor(calibratedRed: 0.42, green: 0.79, blue: 0.84, alpha: 1.0),
-        codeBlockBackground: NSColor(white: 1.0, alpha: 0.08),
-        linkText: NSColor(calibratedRed: 0.45, green: 0.71, blue: 0.96, alpha: 1.0),
-        linkURL: NSColor(calibratedRed: 0.53, green: 0.89, blue: 0.67, alpha: 1.0),
-        emphasisMarker: NSColor(calibratedRed: 0.97, green: 0.64, blue: 0.30, alpha: 1.0),
-        thematicBreak: NSColor(calibratedRed: 0.73, green: 0.77, blue: 0.80, alpha: 1.0)
-    )
-
     func color(for role: SyntaxColorRole) -> NSColor {
         switch role {
         case .plainText:

@@ -1,24 +1,26 @@
 import AppKit
 
 enum AppColors {
-    static let appBackground = NSColor(calibratedRed: 0.08, green: 0.11, blue: 0.13, alpha: 1.0)
-    static let windowBackground = NSColor(calibratedRed: 0.11, green: 0.14, blue: 0.17, alpha: 1.0)
+    static var appBackground: NSColor { ThemeManager.shared.palette.appBackground }
+    static var windowBackground: NSColor { ThemeManager.shared.palette.windowBackground }
 
-    static let editorBackground = NSColor(calibratedRed: 0.08, green: 0.16, blue: 0.20, alpha: 1.0)
-    static let tabBarBackground = NSColor(calibratedRed: 0.20, green: 0.24, blue: 0.28, alpha: 1.0)
-    static let hoveredTabBackground = editorBackground.withAlphaComponent(0.55)
+    static var editorBackground: NSColor { ThemeManager.shared.palette.editorBackground }
+    static var tabBarBackground: NSColor { ThemeManager.shared.palette.tabBarBackground }
+    static var hoveredTabBackground: NSColor { ThemeManager.shared.palette.hoveredTabBackground }
 
-    static let primaryText = NSColor(white: 0.98, alpha: 1.0)
-    static let sidebarText = NSColor(white: 0.88, alpha: 1.0)
-    static let folderSidebarText = NSColor(white: 0.86, alpha: 1.0)
-    static let sidebarHeaderText = NSColor(white: 0.84, alpha: 1.0)
-    static let inactiveTabText = NSColor(white: 0.77, alpha: 1.0)
-    static let lineNumberText = NSColor(white: 0.62, alpha: 1.0)
+    static var primaryText: NSColor { ThemeManager.shared.palette.primaryText }
+    static var sidebarText: NSColor { ThemeManager.shared.palette.sidebarText }
+    static var folderSidebarText: NSColor { ThemeManager.shared.palette.folderSidebarText }
+    static var sidebarHeaderText: NSColor { ThemeManager.shared.palette.sidebarHeaderText }
+    static var inactiveTabText: NSColor { ThemeManager.shared.palette.inactiveTabText }
+    static var lineNumberText: NSColor { ThemeManager.shared.palette.lineNumberText }
 
-    static let activeControlTint = NSColor(white: 0.80, alpha: 1.0)
-    static let defaultControlTint = NSColor(white: 0.70, alpha: 1.0)
-    static let hoveredControlTint = NSColor(white: 0.74, alpha: 1.0)
-    static let inactiveControlTint = NSColor(white: 0.62, alpha: 1.0)
+    static var activeControlTint: NSColor { ThemeManager.shared.palette.activeControlTint }
+    static var defaultControlTint: NSColor { ThemeManager.shared.palette.defaultControlTint }
+    static var hoveredControlTint: NSColor { ThemeManager.shared.palette.hoveredControlTint }
+    static var inactiveControlTint: NSColor { ThemeManager.shared.palette.inactiveControlTint }
+    static var primaryActionBackground: NSColor { ThemeManager.shared.palette.primaryActionBackground }
+    static var primaryActionText: NSColor { ThemeManager.shared.palette.primaryActionText }
 
-    static let subtleSelectionFill = NSColor(white: 1.0, alpha: 0.09)
+    static var subtleSelectionFill: NSColor { ThemeManager.shared.palette.subtleSelectionFill }
 }

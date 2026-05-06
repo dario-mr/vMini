@@ -21,12 +21,23 @@ final class LineNumberRulerView: NSView {
         super.init(frame: .zero)
         translatesAutoresizingMaskIntoConstraints = false
         wantsLayer = true
-        layer?.backgroundColor = AppColors.editorBackground.cgColor
+        applyTheme()
+
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleThemeDidChange),
+            name: ThemeManager.didChangeNotification,
+            object: nil
+        )
     }
 
     @available(*, unavailable)
     required init(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+
+    deinit {
+        NotificationCenter.default.removeObserver(self)
     }
 
     override var isOpaque: Bool {
@@ -334,5 +345,15 @@ final class LineNumberRulerView: NSView {
             result.append(start)
         }
         return result
+    }
+
+    @objc
+    private func handleThemeDidChange() {
+        applyTheme()
+        needsDisplay = true
+    }
+
+    private func applyTheme() {
+        layer?.backgroundColor = AppColors.editorBackground.cgColor
     }
 }

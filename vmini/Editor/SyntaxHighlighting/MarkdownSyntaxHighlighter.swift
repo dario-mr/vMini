@@ -265,14 +265,21 @@ final class MarkdownSyntaxHighlighter: SyntaxHighlighter {
             digitCount += 1
         }
 
-        guard digitCount > 0, digitCount + 1 < line.length else {
+        guard digitCount > 0, digitCount < line.length else {
             return nil
         }
 
         let separator = line.substring(with: NSRange(location: digitCount, length: 1))
-        let following = line.substring(with: NSRange(location: digitCount + 1, length: 1))
-        guard [".", ")"].contains(separator), following == " " else {
+        guard [".", ")"].contains(separator) else {
             return nil
+        }
+
+        let markerEnd = digitCount + 1
+        if markerEnd < line.length {
+            let following = line.substring(with: NSRange(location: markerEnd, length: 1))
+            guard following == " " || following == "\t" else {
+                return nil
+            }
         }
 
         return NSRange(location: baseLocation, length: digitCount + 1)

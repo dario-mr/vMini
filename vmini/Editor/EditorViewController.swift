@@ -21,7 +21,6 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
 
     private let scrollView = NSScrollView()
     private let textView = FileDropTextView()
-    private let syntaxTheme = SyntaxTheme.default
     private let highlighterRegistry = HighlighterRegistry.shared
     private lazy var lineNumberRulerView = LineNumberRulerView(textView: textView)
     private var lineNumberRulerWidthConstraint: NSLayoutConstraint?
@@ -104,6 +103,12 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
             selector: #selector(handleScrollBoundsChange),
             name: NSView.boundsDidChangeNotification,
             object: contentView
+        )
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleThemeDidChange),
+            name: ThemeManager.didChangeNotification,
+            object: nil
         )
     }
 
@@ -238,6 +243,7 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
         textView.textStorage?.delegate = self
         scrollView.documentView = textView
         applyEditorWordWrap(EditorSettings.isWordWrapEnabled())
+        applyTheme()
         refreshSyntaxHighlighting()
     }
 
@@ -288,16 +294,20 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
 
         isApplyingSyntaxHighlighting = true
         textStorage.beginEditing()
-        textStorage.applyForegroundColor(syntaxTheme.plainText, range: targetRange)
+        textStorage.applyForegroundColor(currentSyntaxTheme().plainText, range: targetRange)
         textStorage.applyBackgroundColor(nil, range: targetRange)
         highlighter.highlight(
             textStorage: textStorage,
             in: targetRange,
-            theme: syntaxTheme,
+            theme: currentSyntaxTheme(),
             registry: highlighterRegistry
         )
         textStorage.endEditing()
         isApplyingSyntaxHighlighting = false
+    }
+
+    private func currentSyntaxTheme() -> SyntaxTheme {
+        ThemeManager.shared.syntaxTheme
     }
 
     private func applyEditorWordWrap(_ isEnabled: Bool) {
@@ -365,6 +375,18 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
     @objc
     private func handleScrollBoundsChange() {
         lineNumberRulerView.needsDisplay = true
+    }
+
+    @objc
+    private func handleThemeDidChange() {
+        applyTheme()
+        refreshSyntaxHighlighting()
+        lineNumberRulerView.needsDisplay = true
+    }
+
+    private func applyTheme() {
+        textView.textColor = AppColors.primaryText
+        textView.backgroundColor = AppColors.editorBackground
     }
 
     private func applySharedFontSize() {
