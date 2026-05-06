@@ -23,7 +23,11 @@ final class Document: NSDocument {
     }
 
     var syntaxLanguage: SyntaxLanguage {
-        SyntaxLanguageResolver.resolve(fileURL: fileURL, typeIdentifier: typeIdentifier)
+        SyntaxLanguageResolver.resolve(
+            fileURL: fileURL,
+            typeIdentifier: typeIdentifier,
+            content: syntaxDetectionContentSample()
+        )
     }
 
     override init() {
@@ -149,6 +153,10 @@ final class Document: NSDocument {
         editorViewController.syntaxLanguage = syntaxLanguage
         editorViewController.onTextChanged = { [weak self] in
             guard let self else { return }
+            let resolvedSyntaxLanguage = syntaxLanguage
+            if editorViewController.syntaxLanguage != resolvedSyntaxLanguage {
+                editorViewController.syntaxLanguage = resolvedSyntaxLanguage
+            }
             let wasEdited = isDocumentEdited
             updateChangeCount(.changeDone)
 
@@ -159,5 +167,10 @@ final class Document: NSDocument {
         editorViewController.onFileSystemURLsDropped = onFileSystemURLsDropped
         self.editorViewController = editorViewController
         return editorViewController
+    }
+
+    private func syntaxDetectionContentSample() -> String {
+        let sourceText = editorViewController?.text ?? text
+        return String(sourceText.prefix(512))
     }
 }

@@ -16,6 +16,40 @@ final class SyntaxHighlightingTests: XCTestCase {
         )
     }
 
+    func testLanguageResolverRecognizesShellFilesAndShebangs() {
+        XCTAssertEqual(
+            SyntaxLanguageResolver.resolve(fileURL: URL(fileURLWithPath: "/tmp/script.sh"), typeIdentifier: UTType.plainText.identifier),
+            .bash
+        )
+        XCTAssertEqual(
+            SyntaxLanguageResolver.resolve(fileURL: URL(fileURLWithPath: "/tmp/.zshenv"), typeIdentifier: UTType.plainText.identifier),
+            .bash
+        )
+        XCTAssertEqual(
+            SyntaxLanguageResolver.resolve(
+                fileURL: URL(fileURLWithPath: "/tmp/config"),
+                typeIdentifier: UTType.text.identifier,
+                content: "#!/usr/bin/env bash\nexport PATH=/tmp"
+            ),
+            .bash
+        )
+        XCTAssertEqual(
+            SyntaxLanguageResolver.resolve(
+                fileURL: URL(fileURLWithPath: "/tmp/config"),
+                typeIdentifier: UTType.text.identifier,
+                content: "plain text"
+            ),
+            .plaintext
+        )
+    }
+
+    func testLanguageResolverRecognizesShellFenceInfoStrings() {
+        XCTAssertEqual(SyntaxLanguageResolver.resolveFenceInfoString("sh"), .bash)
+        XCTAssertEqual(SyntaxLanguageResolver.resolveFenceInfoString("bash"), .bash)
+        XCTAssertEqual(SyntaxLanguageResolver.resolveFenceInfoString("zsh"), .bash)
+        XCTAssertEqual(SyntaxLanguageResolver.resolveFenceInfoString("shell"), .bash)
+    }
+
     func testLanguageResolverDefaultsOtherTextFilesToPlaintext() {
         XCTAssertEqual(
             SyntaxLanguageResolver.resolve(fileURL: URL(fileURLWithPath: "/tmp/notes.txt"), typeIdentifier: UTType.plainText.identifier),
@@ -59,7 +93,7 @@ final class SyntaxHighlightingTests: XCTestCase {
         assertColor(theme.emphasisMarker, at: nsText.range(of: "**strong**").location, in: storage)
         assertColor(theme.thematicBreak, at: nsText.range(of: "---").location, in: storage)
         assertColor(theme.codeFence, at: nsText.range(of: "```sh").location, in: storage)
-        assertColor(theme.plainText, at: nsText.range(of: "echo hi").location, in: storage)
+        assertColor(theme.builtin, at: nsText.range(of: "echo hi").location, in: storage)
         assertBackgroundColor(theme.codeBlockBackground, at: nsText.range(of: "echo hi").location, in: storage)
     }
 
@@ -79,6 +113,29 @@ final class SyntaxHighlightingTests: XCTestCase {
         assertColor(theme.listMarker, at: nsText.range(of: "3.").location, in: storage)
     }
 
+    func testBashHighlighterStylesCoreShellTokens() {
+        let text = """
+        # comment
+        if [ \"$HOME\" = \"foo\" ]; then
+          export PATH=$(pwd)
+          echo '$USER'
+        fi
+        """
+
+        let storage = makeHighlightedStorage(text, language: .bash)
+        let theme = ThemeCatalog.palette(for: .default).syntaxTheme
+        let nsText = text as NSString
+
+        assertColor(theme.comment, at: nsText.range(of: "# comment").location, in: storage)
+        assertColor(theme.keyword, at: nsText.range(of: "if").location, in: storage)
+        assertColor(theme.operator, at: nsText.range(of: "[").location, in: storage)
+        assertColor(theme.variable, at: nsText.range(of: "$HOME").location, in: storage)
+        assertColor(theme.string, at: nsText.range(of: "\"foo\"").location, in: storage)
+        assertColor(theme.builtin, at: nsText.range(of: "export").location, in: storage)
+        assertColor(theme.variable, at: nsText.range(of: "$(pwd)").location, in: storage)
+        assertColor(theme.string, at: nsText.range(of: "'$USER'").location, in: storage)
+    }
+
     func testEditorViewControllerAppliesAndClearsMarkdownHighlighting() throws {
         let viewController = EditorViewController()
         viewController.loadViewIfNeeded()
@@ -91,6 +148,18 @@ final class SyntaxHighlightingTests: XCTestCase {
 
         viewController.syntaxLanguage = .plaintext
         assertColor(ThemeCatalog.palette(for: .default).syntaxTheme.plainText, at: nsText.range(of: "#").location, in: storage)
+    }
+
+    func testDocumentSyntaxLanguageUsesDotfileNameAndShebangContent() throws {
+        let dotfileDocument = Document()
+        dotfileDocument.fileURL = URL(fileURLWithPath: "/tmp/.zshenv")
+        try dotfileDocument.read(from: Data("export PATH=/tmp".utf8), ofType: UTType.plainText.identifier)
+        XCTAssertEqual(dotfileDocument.syntaxLanguage, .bash)
+
+        let shebangDocument = Document()
+        shebangDocument.fileURL = URL(fileURLWithPath: "/tmp/config")
+        try shebangDocument.read(from: Data("#!/bin/sh\necho hi\n".utf8), ofType: UTType.plainText.identifier)
+        XCTAssertEqual(shebangDocument.syntaxLanguage, .bash)
     }
 
     private func makeHighlightedStorage(_ text: String, language: SyntaxLanguage) -> NSTextStorage {

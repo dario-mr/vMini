@@ -4,17 +4,57 @@ import UniformTypeIdentifiers
 enum SyntaxLanguage: String {
     case plaintext
     case markdown
+    case bash
 }
 
 enum SyntaxLanguageResolver {
-    private static let fileExtensionMap: [String: SyntaxLanguage] = [
+    private static let shellFileExtensionMap: [String: SyntaxLanguage] = [
+        "sh": .bash,
+        "bash": .bash,
+        "zsh": .bash,
+    ]
+
+    private static let markdownFileExtensionMap: [String: SyntaxLanguage] = [
         "md": .markdown,
         "markdown": .markdown,
     ]
 
-    static func resolve(fileURL: URL?, typeIdentifier: String?) -> SyntaxLanguage {
+    private static let fileNameMap: [String: SyntaxLanguage] = [
+        ".zshenv": .bash,
+        ".zprofile": .bash,
+        ".zshrc": .bash,
+        ".bashrc": .bash,
+        ".bash_profile": .bash,
+        ".profile": .bash,
+        ".bash_logout": .bash,
+    ]
+
+    private static let fenceInfoStringMap: [String: SyntaxLanguage] = [
+        "sh": .bash,
+        "bash": .bash,
+        "zsh": .bash,
+        "shell": .bash,
+        "md": .markdown,
+        "markdown": .markdown,
+    ]
+
+    static func resolve(fileURL: URL?, typeIdentifier: String?, content: String? = nil) -> SyntaxLanguage {
         if let fileExtension = fileURL?.pathExtension.lowercased(),
-           let language = fileExtensionMap[fileExtension] {
+           let language = shellFileExtensionMap[fileExtension] {
+            return language
+        }
+
+        if let fileName = fileURL?.lastPathComponent.lowercased(),
+           let language = fileNameMap[fileName] {
+            return language
+        }
+
+        if hasShellShebang(in: content) {
+            return .bash
+        }
+
+        if let fileExtension = fileURL?.pathExtension.lowercased(),
+           let language = markdownFileExtensionMap[fileExtension] {
             return language
         }
 
@@ -37,7 +77,29 @@ enum SyntaxLanguageResolver {
             return nil
         }
 
-        return fileExtensionMap[normalized]
+        return fenceInfoStringMap[normalized]
+    }
+
+    private static func hasShellShebang(in content: String?) -> Bool {
+        guard let content else {
+            return false
+        }
+
+        let firstLine = content
+            .trimmingCharacters(in: CharacterSet(charactersIn: "\u{FEFF}"))
+            .split(whereSeparator: \.isNewline)
+            .first?
+            .lowercased()
+
+        guard let firstLine, firstLine.hasPrefix("#!") else {
+            return false
+        }
+
+        let tokens = firstLine
+            .split(whereSeparator: { $0.isWhitespace || $0 == "/" })
+            .map(String.init)
+
+        return tokens.contains("sh") || tokens.contains("bash") || tokens.contains("zsh")
     }
 }
 
@@ -54,6 +116,12 @@ enum SyntaxColorRole {
     case linkURL
     case emphasisMarker
     case thematicBreak
+    case comment
+    case string
+    case variable
+    case keyword
+    case `operator`
+    case builtin
 }
 
 struct SyntaxTheme {
@@ -69,6 +137,12 @@ struct SyntaxTheme {
     let linkURL: NSColor
     let emphasisMarker: NSColor
     let thematicBreak: NSColor
+    let comment: NSColor
+    let string: NSColor
+    let variable: NSColor
+    let keyword: NSColor
+    let `operator`: NSColor
+    let builtin: NSColor
 
     func color(for role: SyntaxColorRole) -> NSColor {
         switch role {
@@ -96,6 +170,18 @@ struct SyntaxTheme {
             emphasisMarker
         case .thematicBreak:
             thematicBreak
+        case .comment:
+            comment
+        case .string:
+            string
+        case .variable:
+            variable
+        case .keyword:
+            keyword
+        case .operator:
+            self.operator
+        case .builtin:
+            builtin
         }
     }
 }
@@ -122,6 +208,7 @@ final class HighlighterRegistry {
     init(highlighters: [SyntaxHighlighter]? = nil) {
         let resolvedHighlighters = highlighters ?? [
             PlainTextSyntaxHighlighter(),
+            BashSyntaxHighlighter(),
             MarkdownSyntaxHighlighter(),
         ]
         self.highlighters = Dictionary(uniqueKeysWithValues: resolvedHighlighters.map { ($0.language, $0) })
