@@ -33,6 +33,7 @@
 		A0000000000000000000013E /* SyntaxHighlighting.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000013F /* SyntaxHighlighting.swift */; };
 		A00000000000000000000140 /* MarkdownSyntaxHighlighter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000141 /* MarkdownSyntaxHighlighter.swift */; };
 		A00000000000000000000143 /* PlainTextSyntaxHighlighter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000144 /* PlainTextSyntaxHighlighter.swift */; };
+		A00000000000000000000156 /* BashSyntaxHighlighter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000157 /* BashSyntaxHighlighter.swift */; };
 		A0000000000000000000011A /* OpenFilesSidebar.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000010A /* OpenFilesSidebar.swift */; };
 		A0000000000000000000011B /* SidebarSelectionRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000010B /* SidebarSelectionRowView.swift */; };
 		A0000000000000000000011C /* EditorContentViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000010C /* EditorContentViewController.swift */; };
@@ -72,6 +73,7 @@
 		A0000000000000000000013F /* SyntaxHighlighting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyntaxHighlighting.swift; sourceTree = "<group>"; };
 		A00000000000000000000141 /* MarkdownSyntaxHighlighter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownSyntaxHighlighter.swift; sourceTree = "<group>"; };
 		A00000000000000000000144 /* PlainTextSyntaxHighlighter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlainTextSyntaxHighlighter.swift; sourceTree = "<group>"; };
+		A00000000000000000000157 /* BashSyntaxHighlighter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BashSyntaxHighlighter.swift; sourceTree = "<group>"; };
 		A0000000000000000000010A /* OpenFilesSidebar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenFilesSidebar.swift; sourceTree = "<group>"; };
 		A0000000000000000000010B /* SidebarSelectionRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidebarSelectionRowView.swift; sourceTree = "<group>"; };
 		A0000000000000000000010C /* EditorContentViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorContentViewController.swift; sourceTree = "<group>"; };
@@ -180,6 +182,7 @@
 			children = (
 				A0000000000000000000013F /* SyntaxHighlighting.swift */,
 				A00000000000000000000144 /* PlainTextSyntaxHighlighter.swift */,
+				A00000000000000000000157 /* BashSyntaxHighlighter.swift */,
 				A00000000000000000000141 /* MarkdownSyntaxHighlighter.swift */,
 			);
 			path = SyntaxHighlighting;
@@ -317,6 +320,7 @@
 				A00000000000000000000119 /* LineNumberRuler.swift in Sources */,
 				A0000000000000000000013E /* SyntaxHighlighting.swift in Sources */,
 				A00000000000000000000143 /* PlainTextSyntaxHighlighter.swift in Sources */,
+				A00000000000000000000156 /* BashSyntaxHighlighter.swift in Sources */,
 				A00000000000000000000140 /* MarkdownSyntaxHighlighter.swift in Sources */,
 				A0000000000000000000011A /* OpenFilesSidebar.swift in Sources */,
 				A0000000000000000000011B /* SidebarSelectionRowView.swift in Sources */,

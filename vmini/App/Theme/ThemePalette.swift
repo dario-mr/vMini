@@ -51,6 +51,12 @@ struct ThemePalette {
     let syntaxLinkURL: NSColor
     let syntaxEmphasisMarker: NSColor
     let syntaxThematicBreak: NSColor
+    let syntaxComment: NSColor
+    let syntaxString: NSColor
+    let syntaxVariable: NSColor
+    let syntaxKeyword: NSColor
+    let syntaxOperator: NSColor
+    let syntaxBuiltin: NSColor
 
     var syntaxTheme: SyntaxTheme {
         SyntaxTheme(
@@ -65,7 +71,13 @@ struct ThemePalette {
             linkText: syntaxLinkText,
             linkURL: syntaxLinkURL,
             emphasisMarker: syntaxEmphasisMarker,
-            thematicBreak: syntaxThematicBreak
+            thematicBreak: syntaxThematicBreak,
+            comment: syntaxComment,
+            string: syntaxString,
+            variable: syntaxVariable,
+            keyword: syntaxKeyword,
+            operator: syntaxOperator,
+            builtin: syntaxBuiltin
         )
     }
 }
@@ -94,7 +106,7 @@ enum ThemeCatalog {
                 primaryActionText: NSColor(white: 0.98, alpha: 1.0),
                 subtleSelectionFill: NSColor(white: 1.0, alpha: 0.09),
                 syntaxHeadingMarker: NSColor(calibratedRed: 0.96, green: 0.37, blue: 0.41, alpha: 1.0),
-                syntaxHeadingText: NSColor(calibratedRed: 0.91, green: 0.93, blue: 0.96, alpha: 1.0),
+                syntaxHeadingText: NSColor(calibratedRed: 0.98, green: 0.69, blue: 0.72, alpha: 1.0),
                 syntaxListMarker: NSColor(calibratedRed: 0.98, green: 0.69, blue: 0.31, alpha: 1.0),
                 syntaxBlockquoteMarker: NSColor(calibratedRed: 0.47, green: 0.78, blue: 0.88, alpha: 1.0),
                 syntaxInlineCode: NSColor(calibratedRed: 0.78, green: 0.56, blue: 0.86, alpha: 1.0),
@@ -103,7 +115,13 @@ enum ThemeCatalog {
                 syntaxLinkText: NSColor(calibratedRed: 0.45, green: 0.71, blue: 0.96, alpha: 1.0),
                 syntaxLinkURL: NSColor(calibratedRed: 0.53, green: 0.89, blue: 0.67, alpha: 1.0),
                 syntaxEmphasisMarker: NSColor(calibratedRed: 0.97, green: 0.64, blue: 0.30, alpha: 1.0),
-                syntaxThematicBreak: NSColor(calibratedRed: 0.73, green: 0.77, blue: 0.80, alpha: 1.0)
+                syntaxThematicBreak: NSColor(calibratedRed: 0.73, green: 0.77, blue: 0.80, alpha: 1.0),
+                syntaxComment: NSColor(calibratedRed: 0.46, green: 0.58, blue: 0.62, alpha: 1.0),
+                syntaxString: NSColor(calibratedRed: 0.56, green: 0.84, blue: 0.67, alpha: 1.0),
+                syntaxVariable: NSColor(calibratedRed: 0.77, green: 0.69, blue: 0.95, alpha: 1.0),
+                syntaxKeyword: NSColor(calibratedRed: 0.96, green: 0.37, blue: 0.41, alpha: 1.0),
+                syntaxOperator: NSColor(calibratedRed: 0.57, green: 0.83, blue: 0.92, alpha: 1.0),
+                syntaxBuiltin: NSColor(calibratedRed: 0.98, green: 0.69, blue: 0.31, alpha: 1.0)
             )
         case .absolutely:
             ThemePalette(
@@ -126,7 +144,7 @@ enum ThemeCatalog {
                 primaryActionText: NSColor(hex: 0xF9F9F7),
                 subtleSelectionFill: NSColor(hex: 0xF9F9F7, alpha: 0.08),
                 syntaxHeadingMarker: NSColor(hex: 0xCC7D5E),
-                syntaxHeadingText: NSColor(hex: 0xF9F9F7),
+                syntaxHeadingText: NSColor(hex: 0xE8A58B),
                 syntaxListMarker: NSColor(hex: 0xCC7D5E),
                 syntaxBlockquoteMarker: NSColor(hex: 0xCC7D5E, alpha: 0.85),
                 syntaxInlineCode: NSColor(hex: 0xF2C6B5),
@@ -135,7 +153,13 @@ enum ThemeCatalog {
                 syntaxLinkText: NSColor(hex: 0xCC7D5E),
                 syntaxLinkURL: NSColor(hex: 0x00C853),
                 syntaxEmphasisMarker: NSColor(hex: 0xCC7D5E),
-                syntaxThematicBreak: NSColor(hex: 0x5C5C58)
+                syntaxThematicBreak: NSColor(hex: 0x5C5C58),
+                syntaxComment: NSColor(hex: 0x8F8F87),
+                syntaxString: NSColor(hex: 0xCFE7D6),
+                syntaxVariable: NSColor(hex: 0xF2C6B5),
+                syntaxKeyword: NSColor(hex: 0xCC7D5E),
+                syntaxOperator: NSColor(hex: 0xE9E2D6),
+                syntaxBuiltin: NSColor(hex: 0xCC7D5E)
             )
         case .dracula:
             ThemePalette(
@@ -158,7 +182,7 @@ enum ThemeCatalog {
                 primaryActionText: NSColor(hex: 0x282A36),
                 subtleSelectionFill: NSColor(hex: 0x44475A, alpha: 0.85),
                 syntaxHeadingMarker: NSColor(hex: 0xFF79C6),
-                syntaxHeadingText: NSColor(hex: 0xF8F8F2),
+                syntaxHeadingText: NSColor(hex: 0xFFB3DA),
                 syntaxListMarker: NSColor(hex: 0xFFB86C),
                 syntaxBlockquoteMarker: NSColor(hex: 0x8BE9FD),
                 syntaxInlineCode: NSColor(hex: 0xF1FA8C),
@@ -167,7 +191,13 @@ enum ThemeCatalog {
                 syntaxLinkText: NSColor(hex: 0x8BE9FD),
                 syntaxLinkURL: NSColor(hex: 0x50FA7B),
                 syntaxEmphasisMarker: NSColor(hex: 0xFF79C6),
-                syntaxThematicBreak: NSColor(hex: 0x6272A4)
+                syntaxThematicBreak: NSColor(hex: 0x6272A4),
+                syntaxComment: NSColor(hex: 0x8B92B2),
+                syntaxString: NSColor(hex: 0xF1FA8C),
+                syntaxVariable: NSColor(hex: 0xBD93F9),
+                syntaxKeyword: NSColor(hex: 0xFF79C6),
+                syntaxOperator: NSColor(hex: 0xFF79C6),
+                syntaxBuiltin: NSColor(hex: 0xFFB86C)
             )
         }
     }

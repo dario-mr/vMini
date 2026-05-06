@@ -34,6 +34,7 @@ final class ThemeSystemTests: XCTestCase {
         XCTAssertTrue(palette.tabBarBackground.isEqual(NSColor(calibratedRed: 0.20, green: 0.24, blue: 0.28, alpha: 1.0)))
         XCTAssertTrue(palette.primaryText.isEqual(NSColor(white: 0.98, alpha: 1.0)))
         XCTAssertTrue(palette.primaryActionBackground.isEqual(NSColor(calibratedRed: 0.23, green: 0.46, blue: 0.72, alpha: 1.0)))
+        XCTAssertTrue(palette.syntaxHeadingText.isEqual(NSColor(calibratedRed: 0.98, green: 0.69, blue: 0.72, alpha: 1.0)))
         XCTAssertTrue(palette.syntaxCodeBlockBackground.isEqual(NSColor(white: 1.0, alpha: 0.08)))
     }
 
@@ -45,6 +46,8 @@ final class ThemeSystemTests: XCTestCase {
         XCTAssertTrue(syntaxTheme.codeFence.isEqual(palette.syntaxCodeFence))
         XCTAssertTrue(syntaxTheme.codeBlockBackground.isEqual(palette.syntaxCodeBlockBackground))
         XCTAssertTrue(syntaxTheme.linkURL.isEqual(palette.syntaxLinkURL))
+        XCTAssertTrue(syntaxTheme.keyword.isEqual(palette.syntaxKeyword))
+        XCTAssertTrue(syntaxTheme.comment.isEqual(palette.syntaxComment))
     }
 
     func testAbsolutelyThemeMatchesCodexAnchors() {
@@ -55,6 +58,7 @@ final class ThemeSystemTests: XCTestCase {
         XCTAssertTrue(palette.primaryText.isEqual(NSColor(calibratedRed: 249.0 / 255.0, green: 249.0 / 255.0, blue: 247.0 / 255.0, alpha: 1.0)))
         XCTAssertTrue(palette.primaryActionBackground.isEqual(NSColor(calibratedRed: 204.0 / 255.0, green: 125.0 / 255.0, blue: 94.0 / 255.0, alpha: 1.0)))
         XCTAssertTrue(palette.syntaxHeadingMarker.isEqual(NSColor(calibratedRed: 204.0 / 255.0, green: 125.0 / 255.0, blue: 94.0 / 255.0, alpha: 1.0)))
+        XCTAssertTrue(palette.syntaxHeadingText.isEqual(NSColor(calibratedRed: 232.0 / 255.0, green: 165.0 / 255.0, blue: 139.0 / 255.0, alpha: 1.0)))
         XCTAssertTrue(palette.syntaxLinkURL.isEqual(NSColor(calibratedRed: 0.0, green: 200.0 / 255.0, blue: 83.0 / 255.0, alpha: 1.0)))
     }
 
@@ -66,7 +70,10 @@ final class ThemeSystemTests: XCTestCase {
         XCTAssertTrue(palette.primaryText.isEqual(NSColor(calibratedRed: 248.0 / 255.0, green: 248.0 / 255.0, blue: 242.0 / 255.0, alpha: 1.0)))
         XCTAssertTrue(palette.primaryActionBackground.isEqual(NSColor(calibratedRed: 189.0 / 255.0, green: 147.0 / 255.0, blue: 249.0 / 255.0, alpha: 1.0)))
         XCTAssertTrue(palette.syntaxListMarker.isEqual(NSColor(calibratedRed: 255.0 / 255.0, green: 184.0 / 255.0, blue: 108.0 / 255.0, alpha: 1.0)))
+        XCTAssertTrue(palette.syntaxHeadingText.isEqual(NSColor(calibratedRed: 255.0 / 255.0, green: 179.0 / 255.0, blue: 218.0 / 255.0, alpha: 1.0)))
         XCTAssertTrue(palette.syntaxLinkURL.isEqual(NSColor(calibratedRed: 80.0 / 255.0, green: 250.0 / 255.0, blue: 123.0 / 255.0, alpha: 1.0)))
+        XCTAssertTrue(palette.syntaxComment.isEqual(NSColor(calibratedRed: 139.0 / 255.0, green: 146.0 / 255.0, blue: 178.0 / 255.0, alpha: 1.0)))
+        XCTAssertTrue(palette.syntaxBuiltin.isEqual(NSColor(calibratedRed: 255.0 / 255.0, green: 184.0 / 255.0, blue: 108.0 / 255.0, alpha: 1.0)))
     }
 
     private func makeUserDefaults() -> UserDefaults {
