@@ -40,7 +40,39 @@ final class FileDropContentView: NSView {
 }
 
 final class FileDropTextView: NSTextView {
+    private enum Navigation {
+        static let homeKeyCode: UInt16 = 115
+        static let endKeyCode: UInt16 = 119
+        static let pageUpKeyCode: UInt16 = 116
+        static let pageDownKeyCode: UInt16 = 121
+    }
+
     var onFileSystemURLsDropped: (([URL]) -> Void)?
+
+    override func keyDown(with event: NSEvent) {
+        let modifiers = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
+
+        if modifiers.isEmpty {
+            switch event.keyCode {
+            case Navigation.homeKeyCode:
+                moveToBeginningOfLine(nil)
+                return
+            case Navigation.endKeyCode:
+                moveToEndOfLine(nil)
+                return
+            case Navigation.pageUpKeyCode:
+                pageUp(nil)
+                return
+            case Navigation.pageDownKeyCode:
+                pageDown(nil)
+                return
+            default:
+                break
+            }
+        }
+
+        super.keyDown(with: event)
+    }
 
     override func draggingEntered(_ sender: NSDraggingInfo) -> NSDragOperation {
         sender.draggingPasteboard.fileSystemURLs().isEmpty ? super.draggingEntered(sender) : .copy
@@ -58,6 +90,107 @@ final class FileDropTextView: NSTextView {
 
         onFileSystemURLsDropped?(urls)
         return true
+    }
+
+    @objc
+    override func cancelOperation(_ sender: Any?) {
+        let currentSelection = selectedRange()
+        guard currentSelection.length > 0 else {
+            return
+        }
+
+        setSelectedRange(NSRange(location: NSMaxRange(currentSelection), length: 0))
+        scrollRangeToVisible(selectedRange())
+    }
+
+    @objc
+    override func moveToBeginningOfDocument(_ sender: Any?) {
+        completePendingTypingCommand()
+        super.moveToBeginningOfDocument(sender)
+    }
+
+    @objc
+    override func moveToEndOfDocument(_ sender: Any?) {
+        completePendingTypingCommand()
+        super.moveToEndOfDocument(sender)
+    }
+
+    @objc
+    override func pageUp(_ sender: Any?) {
+        completePendingTypingCommand()
+        moveCaretByPage(direction: -1)
+    }
+
+    @objc
+    override func pageDown(_ sender: Any?) {
+        completePendingTypingCommand()
+        moveCaretByPage(direction: 1)
+    }
+
+    @objc
+    override func scrollPageUp(_ sender: Any?) {
+        completePendingTypingCommand()
+        moveCaretByPage(direction: -1)
+    }
+
+    @objc
+    override func scrollPageDown(_ sender: Any?) {
+        completePendingTypingCommand()
+        moveCaretByPage(direction: 1)
+    }
+
+    @objc
+    override func scrollToBeginningOfDocument(_ sender: Any?) {
+        completePendingTypingCommand()
+        moveToBeginningOfLine(sender)
+    }
+
+    @objc
+    override func scrollToEndOfDocument(_ sender: Any?) {
+        completePendingTypingCommand()
+        moveToEndOfLine(sender)
+    }
+
+    private func completePendingTypingCommand() {
+        inputContext?.discardMarkedText()
+    }
+
+    private func moveCaretByPage(direction: CGFloat) {
+        guard let layoutManager, let textContainer else { return }
+
+        let textLength = string.utf16.count
+        let currentSelection = selectedRange()
+        let insertionLocation = min(currentSelection.location, textLength)
+        let referenceLocation = max(0, min(insertionLocation, max(textLength - 1, 0)))
+
+        layoutManager.ensureLayout(for: textContainer)
+
+        let glyphIndex: Int
+        if layoutManager.numberOfGlyphs == 0 {
+            glyphIndex = 0
+        } else {
+            let characterIndex = min(referenceLocation, layoutManager.numberOfGlyphs - 1)
+            glyphIndex = layoutManager.glyphIndexForCharacter(at: characterIndex)
+        }
+
+        var lineRange = NSRange(location: 0, length: 0)
+        let lineRect = layoutManager.lineFragmentUsedRect(
+            forGlyphAt: glyphIndex,
+            effectiveRange: &lineRange,
+            withoutAdditionalLayout: true
+        )
+
+        let targetPoint = NSPoint(
+            x: leadingCaretX(for: textContainer),
+            y: lineRect.midY + (visibleRect.height * direction)
+        )
+        let targetIndex = characterIndexForInsertion(at: targetPoint)
+        setSelectedRange(NSRange(location: min(targetIndex, textLength), length: 0))
+        scrollRangeToVisible(selectedRange())
+    }
+
+    private func leadingCaretX(for textContainer: NSTextContainer) -> CGFloat {
+        textContainerInset.width + textContainer.lineFragmentPadding
     }
 }
 

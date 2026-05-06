@@ -17,7 +17,7 @@ final class BashSyntaxHighlighter: SyntaxHighlighter {
         "export", "local", "readonly", "unset",
         "source", "alias", "unalias", "return",
         "exit", "cd", ".", "set", "shift",
-        "echo",
+        "echo", "nohup", "pgrep"
     ]
 
     private static let twoCharacterOperators: Set<String> = [
