@@ -73,6 +73,8 @@ enum MenuBuilder {
         menu.addItem(withTitle: "Copy", action: #selector(NSText.copy(_:)), keyEquivalent: "c")
         menu.addItem(withTitle: "Paste", action: #selector(NSText.paste(_:)), keyEquivalent: "v")
         menu.addItem(withTitle: "Select All", action: #selector(NSText.selectAll(_:)), keyEquivalent: "a")
+        let formatJSONItem = menu.addItem(withTitle: "Format JSON", action: #selector(AppDelegate.formatJSON(_:)), keyEquivalent: "j")
+        formatJSONItem.target = NSApp.delegate as AnyObject?
         menu.addItem(.separator())
 
         let findMenuItem = NSMenuItem(title: "Find", action: nil, keyEquivalent: "")

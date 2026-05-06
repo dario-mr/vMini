@@ -49,6 +49,11 @@ final class EditorWindow: NSWindow {
             return true
         }
 
+        if modifiers == [.command], characters == "j" {
+            (contentViewController as? EditorContentViewController)?.formatJSON()
+            return true
+        }
+
         return super.performKeyEquivalent(with: event)
     }
 }
