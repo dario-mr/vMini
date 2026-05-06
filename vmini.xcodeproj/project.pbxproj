@@ -12,7 +12,14 @@
 		A00000000000000000000111 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000101 /* AppDelegate.swift */; };
 		A0000000000000000000013C /* AppColors.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000013D /* AppColors.swift */; };
 		A00000000000000000000124 /* DocumentController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000125 /* DocumentController.swift */; };
+		A00000000000000000000146 /* SettingsCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000147 /* SettingsCoordinator.swift */; };
+		A00000000000000000000148 /* SettingsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000149 /* SettingsViewController.swift */; };
+		A0000000000000000000014A /* SettingsWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000014B /* SettingsWindowController.swift */; };
 		A00000000000000000000112 /* MenuBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000102 /* MenuBuilder.swift */; };
+		A0000000000000000000014C /* ThemeSelectionRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000014D /* ThemeSelectionRowView.swift */; };
+		A0000000000000000000014E /* ThemeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000014F /* ThemeManager.swift */; };
+		A00000000000000000000150 /* ThemePalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000151 /* ThemePalette.swift */; };
+		A00000000000000000000152 /* ThemeStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000153 /* ThemeStore.swift */; };
 		A00000000000000000000113 /* VminiApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000103 /* VminiApp.swift */; };
 		A00000000000000000000120 /* UserDefaultsKeys.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000110 /* UserDefaultsKeys.swift */; };
 			A0000000000000000000013A /* WorkspaceWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000013B /* WorkspaceWindowController.swift */; };
@@ -44,7 +51,14 @@
 		A00000000000000000000101 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		A0000000000000000000013D /* AppColors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppColors.swift; sourceTree = "<group>"; };
 		A00000000000000000000125 /* DocumentController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentController.swift; sourceTree = "<group>"; };
+		A00000000000000000000147 /* SettingsCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsCoordinator.swift; sourceTree = "<group>"; };
+		A00000000000000000000149 /* SettingsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsViewController.swift; sourceTree = "<group>"; };
+		A0000000000000000000014B /* SettingsWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsWindowController.swift; sourceTree = "<group>"; };
 		A00000000000000000000102 /* MenuBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBuilder.swift; sourceTree = "<group>"; };
+		A0000000000000000000014D /* ThemeSelectionRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeSelectionRowView.swift; sourceTree = "<group>"; };
+		A0000000000000000000014F /* ThemeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeManager.swift; sourceTree = "<group>"; };
+		A00000000000000000000151 /* ThemePalette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemePalette.swift; sourceTree = "<group>"; };
+		A00000000000000000000153 /* ThemeStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeStore.swift; sourceTree = "<group>"; };
 		A00000000000000000000103 /* VminiApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VminiApp.swift; sourceTree = "<group>"; };
 		A00000000000000000000110 /* UserDefaultsKeys.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserDefaultsKeys.swift; sourceTree = "<group>"; };
 			A0000000000000000000013B /* WorkspaceWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceWindowController.swift; sourceTree = "<group>"; };
@@ -108,12 +122,35 @@
 			children = (
 				A0000000000000000000013D /* AppColors.swift */,
 				A00000000000000000000101 /* AppDelegate.swift */,
-					A00000000000000000000125 /* DocumentController.swift */,
-					A00000000000000000000102 /* MenuBuilder.swift */,
-					A00000000000000000000110 /* UserDefaultsKeys.swift */,
-					A00000000000000000000103 /* VminiApp.swift */,
+				A00000000000000000000125 /* DocumentController.swift */,
+				A00000000000000000000154 /* Settings */,
+				A00000000000000000000102 /* MenuBuilder.swift */,
+				A00000000000000000000155 /* Theme */,
+				A00000000000000000000110 /* UserDefaultsKeys.swift */,
+				A00000000000000000000103 /* VminiApp.swift */,
 			);
 			path = App;
+			sourceTree = "<group>";
+		};
+		A00000000000000000000154 /* Settings */ = {
+			isa = PBXGroup;
+			children = (
+				A00000000000000000000147 /* SettingsCoordinator.swift */,
+				A00000000000000000000149 /* SettingsViewController.swift */,
+				A0000000000000000000014B /* SettingsWindowController.swift */,
+				A0000000000000000000014D /* ThemeSelectionRowView.swift */,
+			);
+			path = Settings;
+			sourceTree = "<group>";
+		};
+		A00000000000000000000155 /* Theme */ = {
+			isa = PBXGroup;
+			children = (
+				A0000000000000000000014F /* ThemeManager.swift */,
+				A00000000000000000000151 /* ThemePalette.swift */,
+				A00000000000000000000153 /* ThemeStore.swift */,
+			);
+			path = Theme;
 			sourceTree = "<group>";
 		};
 		A00000000000000000000132 /* Documents */ = {
@@ -260,9 +297,16 @@
 				A0000000000000000000013C /* AppColors.swift in Sources */,
 				A00000000000000000000111 /* AppDelegate.swift in Sources */,
 				A00000000000000000000124 /* DocumentController.swift in Sources */,
+				A00000000000000000000146 /* SettingsCoordinator.swift in Sources */,
+				A00000000000000000000148 /* SettingsViewController.swift in Sources */,
+				A0000000000000000000014A /* SettingsWindowController.swift in Sources */,
 				A00000000000000000000112 /* MenuBuilder.swift in Sources */,
-					A00000000000000000000120 /* UserDefaultsKeys.swift in Sources */,
-					A00000000000000000000113 /* VminiApp.swift in Sources */,
+				A0000000000000000000014C /* ThemeSelectionRowView.swift in Sources */,
+				A0000000000000000000014E /* ThemeManager.swift in Sources */,
+				A00000000000000000000150 /* ThemePalette.swift in Sources */,
+				A00000000000000000000152 /* ThemeStore.swift in Sources */,
+				A00000000000000000000120 /* UserDefaultsKeys.swift in Sources */,
+				A00000000000000000000113 /* VminiApp.swift in Sources */,
 				A0000000000000000000013A /* WorkspaceWindowController.swift in Sources */,
 				A00000000000000000000114 /* Document.swift in Sources */,
 				A0000000000000000000012C /* DocumentFileWatcher.swift in Sources */,

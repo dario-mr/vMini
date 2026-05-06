@@ -44,7 +44,7 @@ final class SyntaxHighlightingTests: XCTestCase {
         """
 
         let storage = makeHighlightedStorage(text, language: .markdown)
-        let theme = SyntaxTheme.default
+        let theme = ThemeCatalog.palette(for: .default).syntaxTheme
         let nsText = text as NSString
 
         assertColor(theme.headingMarker, at: nsText.range(of: "#").location, in: storage)
@@ -63,6 +63,22 @@ final class SyntaxHighlightingTests: XCTestCase {
         assertBackgroundColor(theme.codeBlockBackground, at: nsText.range(of: "echo hi").location, in: storage)
     }
 
+    func testMarkdownHighlighterStylesStandaloneOrderedListMarkers() {
+        let text = """
+        1.
+        2.
+        3.
+        """
+
+        let storage = makeHighlightedStorage(text, language: .markdown)
+        let theme = ThemeCatalog.palette(for: .default).syntaxTheme
+        let nsText = text as NSString
+
+        assertColor(theme.listMarker, at: nsText.range(of: "1.").location, in: storage)
+        assertColor(theme.listMarker, at: nsText.range(of: "2.").location, in: storage)
+        assertColor(theme.listMarker, at: nsText.range(of: "3.").location, in: storage)
+    }
+
     func testEditorViewControllerAppliesAndClearsMarkdownHighlighting() throws {
         let viewController = EditorViewController()
         viewController.loadViewIfNeeded()
@@ -71,15 +87,15 @@ final class SyntaxHighlightingTests: XCTestCase {
 
         let storage = try XCTUnwrap(viewController.textStorage)
         let nsText = viewController.text as NSString
-        assertColor(SyntaxTheme.default.headingMarker, at: nsText.range(of: "#").location, in: storage)
+        assertColor(ThemeCatalog.palette(for: .default).syntaxTheme.headingMarker, at: nsText.range(of: "#").location, in: storage)
 
         viewController.syntaxLanguage = .plaintext
-        assertColor(SyntaxTheme.default.plainText, at: nsText.range(of: "#").location, in: storage)
+        assertColor(ThemeCatalog.palette(for: .default).syntaxTheme.plainText, at: nsText.range(of: "#").location, in: storage)
     }
 
     private func makeHighlightedStorage(_ text: String, language: SyntaxLanguage) -> NSTextStorage {
         let storage = NSTextStorage(string: text)
-        let theme = SyntaxTheme.default
+        let theme = ThemeCatalog.palette(for: .default).syntaxTheme
         let fullRange = NSRange(location: 0, length: storage.length)
         storage.addAttribute(.foregroundColor, value: theme.plainText, range: fullRange)
         HighlighterRegistry.shared.highlighter(for: language).highlight(

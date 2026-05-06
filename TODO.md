@@ -6,8 +6,7 @@
 
 ## Low prio
 
-- themes
 - fonts
-- syntax highlight
+- syntax highlight: bash, json
 - make `home`, `end`, `page up`, `page down`, `esc` buttons work
 - format json

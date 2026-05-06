@@ -4,6 +4,7 @@ import AppKit
 final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationWillFinishLaunching(_ notification: Notification) {
         NSWindow.allowsAutomaticWindowTabbing = true
+        _ = ThemeManager.shared
         MenuBuilder.installMainMenu()
     }
 
@@ -37,6 +38,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @objc
     func newDocument(_ sender: Any?) {
         WorkspaceWindowController.shared.createUntitledDocument()
+    }
+
+    @objc
+    func showSettings(_ sender: Any?) {
+        WorkspaceWindowController.shared.presentSettingsSheet()
     }
 
     @objc
@@ -75,6 +81,10 @@ extension AppDelegate: NSMenuItemValidation {
     func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
         if menuItem.action == #selector(toggleWordWrap(_:)) {
             menuItem.state = EditorSettings.isWordWrapEnabled() ? .on : .off
+            return true
+        }
+
+        if menuItem.action == #selector(showSettings(_:)) {
             return true
         }
 

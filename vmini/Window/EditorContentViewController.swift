@@ -161,6 +161,10 @@ private final class DocumentTabView: NSView {
         applyAppearance()
     }
 
+    func refreshAppearance() {
+        applyAppearance()
+    }
+
     func configure(document: Document, isActive: Bool) {
         self.document = document
         self.isActive = isActive
@@ -385,6 +389,12 @@ final class EditorContentViewController: NSViewController {
             name: OpenDocumentsStore.didChangeNotification,
             object: nil
         )
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleThemeDidChange),
+            name: ThemeManager.didChangeNotification,
+            object: nil
+        )
     }
 
     func increaseEditorFontSize() {
@@ -463,6 +473,21 @@ final class EditorContentViewController: NSViewController {
     @objc
     private func handleDocumentsDidChange() {
         syncWorkspace()
+    }
+
+    @objc
+    private func handleThemeDidChange() {
+        applyTheme()
+        for tabView in tabViewsByDocumentIdentifier.values {
+            tabView.refreshAppearance()
+        }
+    }
+
+    private func applyTheme() {
+        view.layer?.backgroundColor = AppColors.appBackground.cgColor
+        editorContainerView.layer?.backgroundColor = AppColors.editorBackground.cgColor
+        tabBarContainer.layer?.backgroundColor = AppColors.tabBarBackground.cgColor
+        tabContentView.layer?.backgroundColor = AppColors.tabBarBackground.cgColor
     }
 
     private func syncWorkspace() {

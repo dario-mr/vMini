@@ -114,6 +114,12 @@ final class OpenFoldersSidebarViewController: NSViewController, NSOutlineViewDat
             name: OpenFoldersStore.selectionDidChangeNotification,
             object: nil
         )
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleThemeDidChange),
+            name: ThemeManager.didChangeNotification,
+            object: nil
+        )
 
         reloadFolders()
     }
@@ -254,6 +260,13 @@ final class OpenFoldersSidebarViewController: NSViewController, NSOutlineViewDat
         scrollView.drawsBackground = false
         scrollView.backgroundColor = .clear
         scrollView.documentView = outlineView
+    }
+
+    @objc
+    private func handleThemeDidChange() {
+        headerLabel.textColor = AppColors.sidebarHeaderText
+        outlineView.reloadData()
+        outlineView.needsDisplay = true
     }
 
     private func makeCellView(identifier: NSUserInterfaceItemIdentifier) -> NSTableCellView {
