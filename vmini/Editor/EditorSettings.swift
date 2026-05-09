@@ -1,5 +1,6 @@
 import AppKit
 
+@MainActor
 enum EditorSettings {
     private enum Constants {
         static let defaultFontSize: CGFloat = 13
@@ -7,11 +8,25 @@ enum EditorSettings {
         static let maxFontSize: CGFloat = 32
     }
 
-    static let didChangeNotification = Notification.Name("EditorFontSizeDidChange")
+    static var userDefaults: UserDefaults = .standard
+
+    static let appearanceDidChangeNotification = Notification.Name("EditorAppearanceDidChange")
     static let wordWrapDidChangeNotification = Notification.Name("EditorWordWrapDidChange")
 
+    static func currentFontID() -> EditorFontID {
+        guard
+            let storedValue = userDefaults.string(forKey: UserDefaultsKeys.editorFontID),
+            let fontID = EditorFontID(rawValue: storedValue),
+            EditorFontResolver.isAvailable(fontID)
+        else {
+            return .fallback
+        }
+
+        return fontID
+    }
+
     static func currentFontSize() -> CGFloat {
-        let storedFontSize = UserDefaults.standard.double(forKey: UserDefaultsKeys.editorFontSize)
+        let storedFontSize = userDefaults.double(forKey: UserDefaultsKeys.editorFontSize)
         guard storedFontSize > 0 else {
             return Constants.defaultFontSize
         }
@@ -28,11 +43,20 @@ enum EditorSettings {
     }
 
     static func isWordWrapEnabled() -> Bool {
-        UserDefaults.standard.bool(forKey: UserDefaultsKeys.editorWordWrapEnabled)
+        userDefaults.bool(forKey: UserDefaultsKeys.editorWordWrapEnabled)
     }
 
     static func toggleWordWrap() {
         setWordWrapEnabled(!isWordWrapEnabled())
+    }
+
+    static func setFontID(_ fontID: EditorFontID) {
+        guard fontID != currentFontID() else {
+            return
+        }
+
+        userDefaults.set(fontID.rawValue, forKey: UserDefaultsKeys.editorFontID)
+        NotificationCenter.default.post(name: appearanceDidChangeNotification, object: nil)
     }
 
     static func setFontSize(_ fontSize: CGFloat) {
@@ -41,8 +65,8 @@ enum EditorSettings {
             return
         }
 
-        UserDefaults.standard.set(Double(clampedFontSize), forKey: UserDefaultsKeys.editorFontSize)
-        NotificationCenter.default.post(name: didChangeNotification, object: nil)
+        userDefaults.set(Double(clampedFontSize), forKey: UserDefaultsKeys.editorFontSize)
+        NotificationCenter.default.post(name: appearanceDidChangeNotification, object: nil)
     }
 
     static func setWordWrapEnabled(_ isEnabled: Bool) {
@@ -50,7 +74,7 @@ enum EditorSettings {
             return
         }
 
-        UserDefaults.standard.set(isEnabled, forKey: UserDefaultsKeys.editorWordWrapEnabled)
+        userDefaults.set(isEnabled, forKey: UserDefaultsKeys.editorWordWrapEnabled)
         NotificationCenter.default.post(name: wordWrapDidChangeNotification, object: nil)
     }
 

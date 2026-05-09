@@ -8,6 +8,7 @@ final class SettingsViewController: NSViewController {
         static let topInset: CGFloat = 20
         static let bottomInset: CGFloat = 20
         static let titleToRowSpacing: CGFloat = 20
+        static let rowSpacing: CGFloat = 14
         static let rowToButtonSpacing: CGFloat = 24
         static let rowHeight: CGFloat = 28
         static let buttonMinimumWidth: CGFloat = 68
@@ -19,6 +20,7 @@ final class SettingsViewController: NSViewController {
 
     private let titleLabel = NSTextField(labelWithString: "Settings")
     private let themeSelectionRowView = ThemeSelectionRowView()
+    private let fontSelectionRowView = FontSelectionRowView()
     private let doneButton = NSButton(title: "Done", target: nil, action: nil)
 
     init() {
@@ -42,9 +44,13 @@ final class SettingsViewController: NSViewController {
         themeSelectionRowView.onThemeSelected = { themeID in
             ThemeManager.shared.setThemeID(themeID)
         }
+        fontSelectionRowView.onFontSelected = { fontID in
+            EditorSettings.setFontID(fontID)
+        }
 
         view.addSubview(titleLabel)
         view.addSubview(themeSelectionRowView)
+        view.addSubview(fontSelectionRowView)
         view.addSubview(doneButton)
 
         NSLayoutConstraint.activate([
@@ -58,7 +64,12 @@ final class SettingsViewController: NSViewController {
             themeSelectionRowView.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: Layout.titleToRowSpacing),
             themeSelectionRowView.heightAnchor.constraint(equalToConstant: Layout.rowHeight),
 
-            doneButton.topAnchor.constraint(equalTo: themeSelectionRowView.bottomAnchor, constant: Layout.rowToButtonSpacing),
+            fontSelectionRowView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Layout.horizontalInset),
+            fontSelectionRowView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Layout.horizontalInset),
+            fontSelectionRowView.topAnchor.constraint(equalTo: themeSelectionRowView.bottomAnchor, constant: Layout.rowSpacing),
+            fontSelectionRowView.heightAnchor.constraint(equalToConstant: Layout.rowHeight),
+
+            doneButton.topAnchor.constraint(equalTo: fontSelectionRowView.bottomAnchor, constant: Layout.rowToButtonSpacing),
             doneButton.widthAnchor.constraint(greaterThanOrEqualToConstant: Layout.buttonMinimumWidth),
             doneButton.heightAnchor.constraint(equalToConstant: Layout.buttonHeight),
             doneButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Layout.horizontalInset),

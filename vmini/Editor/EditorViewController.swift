@@ -97,8 +97,8 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
 
         NotificationCenter.default.addObserver(
             self,
-            selector: #selector(handleSharedFontSizeChange),
-            name: EditorSettings.didChangeNotification,
+            selector: #selector(handleSharedEditorAppearanceChange),
+            name: EditorSettings.appearanceDidChangeNotification,
             object: nil
         )
         NotificationCenter.default.addObserver(
@@ -282,7 +282,7 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
         textView.onFileSystemURLsDropped = { [weak self] urls in
             self?.onFileSystemURLsDropped?(urls)
         }
-        applyEditorFontSize(EditorSettings.currentFontSize())
+        applyEditorFont()
         applyParagraphStyle()
         textView.backgroundColor = AppColors.editorBackground
         textView.minSize = NSSize(width: 0, height: 0)
@@ -353,8 +353,11 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
         lineNumberRulerView.invalidateLineNumbers()
     }
 
-    private func applyEditorFontSize(_ fontSize: CGFloat) {
-        textView.font = NSFont.monospacedSystemFont(ofSize: fontSize, weight: .light)
+    private func applyEditorFont() {
+        textView.font = EditorFontResolver.font(
+            for: EditorSettings.currentFontID(),
+            size: EditorSettings.currentFontSize()
+        )
     }
 
     private func applyParagraphStyle() {
@@ -461,8 +464,8 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
     }
 
     @objc
-    private func handleSharedFontSizeChange() {
-        applySharedFontSize()
+    private func handleSharedEditorAppearanceChange() {
+        applySharedEditorAppearance()
     }
 
     @objc
@@ -489,8 +492,8 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
         applyFormattingErrorBannerAppearance()
     }
 
-    private func applySharedFontSize() {
-        applyEditorFontSize(EditorSettings.currentFontSize())
+    private func applySharedEditorAppearance() {
+        applyEditorFont()
         applyParagraphStyle()
         synchronizeWordWrapLayout()
 
