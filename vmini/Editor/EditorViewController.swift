@@ -5,6 +5,7 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
     private enum Constants {
         static let lineSpacing: CGFloat = 2
         static let formattingErrorBannerHeight: CGFloat = 30
+        static let formattingErrorBannerMinimumWidth: CGFloat = 180
         static let formattingErrorBannerHorizontalInset: CGFloat = 12
         static let formattingErrorBannerVerticalGap: CGFloat = 6
         static let formattingErrorBannerMaximumWidth: CGFloat = 560
@@ -305,6 +306,12 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
     private func configureFormattingErrorBanner() {
         formattingErrorBannerView.wantsLayer = true
         formattingErrorBannerView.isHidden = true
+        formattingErrorBannerView.frame = NSRect(
+            x: 0,
+            y: 0,
+            width: Constants.formattingErrorBannerMinimumWidth,
+            height: Constants.formattingErrorBannerHeight
+        )
         formattingErrorBannerView.layer?.cornerRadius = 7
         formattingErrorBannerView.layer?.masksToBounds = true
 
@@ -685,7 +692,7 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
         let viewportWidth = clipView.bounds.width
         let bannerWidth = max(
             min(viewportWidth - (Constants.formattingErrorBannerHorizontalInset * 2), Constants.formattingErrorBannerMaximumWidth),
-            180
+            Constants.formattingErrorBannerMinimumWidth
         )
         let linePoint = pointForFormattingErrorBanner(in: clipView, window: window)
         let x = min(
