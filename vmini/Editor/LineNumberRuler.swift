@@ -155,8 +155,7 @@ final class LineNumberRulerView: NSView {
     }
 
     private func lineNumberFont() -> NSFont {
-        let fontSize = textView?.font?.pointSize ?? 13
-        return NSFont.monospacedDigitSystemFont(ofSize: fontSize, weight: .regular)
+        textView?.font ?? NSFont.monospacedSystemFont(ofSize: 13, weight: .light)
     }
 
     private func drawTrailingLineNumberIfNeeded(

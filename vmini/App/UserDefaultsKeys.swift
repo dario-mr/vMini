@@ -1,5 +1,6 @@
 enum UserDefaultsKeys {
     static let themeID = "ThemeID"
+    static let editorFontID = "EditorFontID"
     static let editorFontSize = "EditorFontSize"
     static let editorWordWrapEnabled = "EditorWordWrapEnabled"
     static let workspaceWindowFrame = "WorkspaceWindowFrame"
