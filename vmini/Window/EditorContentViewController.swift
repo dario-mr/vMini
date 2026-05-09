@@ -312,6 +312,7 @@ final class EditorContentViewController: NSViewController {
     private let tabContentView = NSView()
     private let sidebarViewController = OpenFilesSidebarViewController()
     private let editorContainerView = NSView()
+    private let statusBarView = EditorStatusBarView()
     private let resizeHandle = ResizeHandleView()
     private var sidebarWidthConstraint: NSLayoutConstraint?
     private var dragStartWidth: CGFloat = 0
@@ -343,12 +344,14 @@ final class EditorContentViewController: NSViewController {
         editorContainerView.wantsLayer = true
         editorContainerView.layer?.backgroundColor = AppColors.editorBackground.cgColor
         editorContainerView.layer?.masksToBounds = true
+        configureStatusBar()
         resizeHandle.translatesAutoresizingMaskIntoConstraints = false
         configureTabBar()
 
         view.addSubview(sidebarView)
         view.addSubview(editorContainerView)
         view.addSubview(tabBarContainer)
+        view.addSubview(statusBarView)
         view.addSubview(resizeHandle)
 
         let widthConstraint = sidebarView.widthAnchor.constraint(equalToConstant: storedSidebarWidth())
@@ -368,7 +371,12 @@ final class EditorContentViewController: NSViewController {
             editorContainerView.leadingAnchor.constraint(equalTo: sidebarView.trailingAnchor),
             editorContainerView.topAnchor.constraint(equalTo: tabBarContainer.bottomAnchor),
             editorContainerView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            editorContainerView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            editorContainerView.bottomAnchor.constraint(equalTo: statusBarView.topAnchor),
+
+            statusBarView.leadingAnchor.constraint(equalTo: sidebarView.trailingAnchor),
+            statusBarView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            statusBarView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            statusBarView.heightAnchor.constraint(equalToConstant: EditorStatusBarView.Layout.preferredHeight),
 
             resizeHandle.centerXAnchor.constraint(equalTo: sidebarView.trailingAnchor),
             resizeHandle.topAnchor.constraint(equalTo: view.topAnchor),
@@ -393,6 +401,12 @@ final class EditorContentViewController: NSViewController {
             self,
             selector: #selector(handleThemeDidChange),
             name: ThemeManager.didChangeNotification,
+            object: nil
+        )
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleDocumentSyntaxHighlightingDidChange(_:)),
+            name: .documentSyntaxHighlightingDidChange,
             object: nil
         )
     }
@@ -474,6 +488,16 @@ final class EditorContentViewController: NSViewController {
         ])
     }
 
+    private func configureStatusBar() {
+        statusBarView.onSelectAutomaticSyntaxHighlighting = { [weak self] in
+            self?.selectAutomaticSyntaxHighlighting()
+        }
+        statusBarView.onSelectSyntaxHighlightingOverride = { [weak self] language in
+            self?.selectSyntaxHighlightingOverride(language)
+        }
+        updateStatusBar()
+    }
+
     @objc
     private func handleDocumentsDidChange() {
         syncWorkspace()
@@ -485,6 +509,14 @@ final class EditorContentViewController: NSViewController {
         for tabView in tabViewsByDocumentIdentifier.values {
             tabView.refreshAppearance()
         }
+        updateStatusBar()
+    }
+
+    @objc
+    private func handleDocumentSyntaxHighlightingDidChange(_ notification: Notification) {
+        guard let document = notification.object as? Document else { return }
+        guard document === OpenDocumentsStore.shared.activeDocument else { return }
+        updateStatusBar()
     }
 
     private func applyTheme() {
@@ -492,6 +524,7 @@ final class EditorContentViewController: NSViewController {
         editorContainerView.layer?.backgroundColor = AppColors.editorBackground.cgColor
         tabBarContainer.layer?.backgroundColor = AppColors.tabBarBackground.cgColor
         tabContentView.layer?.backgroundColor = AppColors.tabBarBackground.cgColor
+        statusBarView.applyTheme()
     }
 
     private func syncWorkspace() {
@@ -716,6 +749,7 @@ final class EditorContentViewController: NSViewController {
             currentEditorViewController?.view.removeFromSuperview()
             currentEditorViewController?.removeFromParent()
             currentEditorViewController = nil
+            updateStatusBar()
             return
         }
 
@@ -723,6 +757,7 @@ final class EditorContentViewController: NSViewController {
             self?.openFileSystemURLs(urls)
         }
         guard currentEditorViewController !== editorViewController else {
+            updateStatusBar()
             editorViewController.focusTextView()
             return
         }
@@ -741,7 +776,30 @@ final class EditorContentViewController: NSViewController {
             editorView.topAnchor.constraint(equalTo: editorContainerView.topAnchor),
             editorView.bottomAnchor.constraint(equalTo: editorContainerView.bottomAnchor),
         ])
+        updateStatusBar()
         editorViewController.focusTextView()
+    }
+
+    private func updateStatusBar() {
+        guard let document = OpenDocumentsStore.shared.activeDocument else {
+            statusBarView.update(state: nil)
+            return
+        }
+
+        statusBarView.update(state: EditorStatusBarState(
+            title: document.syntaxOverrideMenuTitle,
+            autoDetectedSyntaxLanguage: document.autoDetectedSyntaxLanguage,
+            selectedSyntaxLanguage: document.syntaxLanguage,
+            hasOverride: document.hasSyntaxLanguageOverride
+        ))
+    }
+
+    private func selectAutomaticSyntaxHighlighting() {
+        OpenDocumentsStore.shared.activeDocument?.setSyntaxLanguageOverride(nil)
+    }
+
+    private func selectSyntaxHighlightingOverride(_ language: SyntaxLanguage) {
+        OpenDocumentsStore.shared.activeDocument?.setSyntaxLanguageOverride(language)
     }
 }
 

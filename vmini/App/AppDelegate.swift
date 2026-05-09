@@ -26,12 +26,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
-        // Persist the current tab session before AppKit starts closing documents as part of quit,
-        // then lock it so later teardown callbacks can't overwrite it with an empty state.
-        SessionRestorer.prepareForTermination()
-
         let documentController = NSDocumentController.shared
         guard documentController.hasEditedDocuments else {
+            SessionRestorer.prepareForTermination()
             return .terminateNow
         }
 
@@ -137,7 +134,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         didReviewAll: Bool,
         contextInfo: UnsafeMutableRawPointer?
     ) {
-        if !didReviewAll {
+        if didReviewAll {
+            SessionRestorer.prepareForTermination()
+        } else {
             SessionRestorer.cancelTermination()
         }
         NSApp.reply(toApplicationShouldTerminate: didReviewAll)

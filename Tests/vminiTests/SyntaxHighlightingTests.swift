@@ -242,6 +242,58 @@ final class SyntaxHighlightingTests: XCTestCase {
         XCTAssertEqual(shebangDocument.syntaxLanguage, .sshconfig)
     }
 
+    func testSavedFileSyntaxOverridePersistsAcrossDocuments() async {
+        let userDefaults = UserDefaults(suiteName: #function)!
+        userDefaults.removePersistentDomain(forName: #function)
+        let store = SyntaxOverrideStore(userDefaults: userDefaults)
+        let fileURL = URL(fileURLWithPath: "/tmp/example.md")
+
+        let document = Document(syntaxOverrideStore: store)
+        document.fileURL = fileURL
+        await Task.yield()
+        document.setSyntaxLanguageOverride(.json)
+
+        let reopenedDocument = Document(syntaxOverrideStore: store)
+        reopenedDocument.fileURL = fileURL
+        await Task.yield()
+
+        XCTAssertTrue(reopenedDocument.hasSyntaxLanguageOverride)
+        XCTAssertEqual(reopenedDocument.syntaxLanguage, .json)
+    }
+
+    func testUnsavedFileSyntaxOverrideDoesNotPersistAcrossDocuments() {
+        let userDefaults = UserDefaults(suiteName: #function)!
+        userDefaults.removePersistentDomain(forName: #function)
+        let store = SyntaxOverrideStore(userDefaults: userDefaults)
+
+        let document = Document(syntaxOverrideStore: store)
+        document.setSyntaxLanguageOverride(.bash)
+
+        let reopenedDocument = Document(syntaxOverrideStore: store)
+
+        XCTAssertFalse(reopenedDocument.hasSyntaxLanguageOverride)
+        XCTAssertEqual(reopenedDocument.syntaxLanguage, .plaintext)
+    }
+
+    func testUnsavedSyntaxOverridePersistsAfterSavingFile() async {
+        let userDefaults = UserDefaults(suiteName: #function)!
+        userDefaults.removePersistentDomain(forName: #function)
+        let store = SyntaxOverrideStore(userDefaults: userDefaults)
+        let fileURL = URL(fileURLWithPath: "/tmp/example.json")
+
+        let document = Document(syntaxOverrideStore: store)
+        document.setSyntaxLanguageOverride(.markdown)
+        document.fileURL = fileURL
+        await Task.yield()
+
+        let reopenedDocument = Document(syntaxOverrideStore: store)
+        reopenedDocument.fileURL = fileURL
+        await Task.yield()
+
+        XCTAssertTrue(reopenedDocument.hasSyntaxLanguageOverride)
+        XCTAssertEqual(reopenedDocument.syntaxLanguage, .markdown)
+    }
+
     private func makeHighlightedStorage(_ text: String, language: SyntaxLanguage) -> NSTextStorage {
         let storage = NSTextStorage(string: text)
         let theme = ThemeCatalog.palette(for: .default).syntaxTheme
