@@ -4,8 +4,8 @@ enum UserDefaultsKeys {
     static let editorWordWrapEnabled = "EditorWordWrapEnabled"
     static let workspaceWindowFrame = "WorkspaceWindowFrame"
     static let openFilesSidebarWidth = "OpenFilesSidebarWidth"
-    static let sessionRestorerOpenFiles = "SessionRestorer.openFiles"
-    static let sessionRestorerActiveFile = "SessionRestorer.activeFile"
+    static let sessionRestorerOpenFilePaths = "SessionRestorer.openFilePaths"
+    static let sessionRestorerActiveFilePath = "SessionRestorer.activeFilePath"
     static let openFolders = "OpenFolders"
     static let openFoldersExpandedPaths = "OpenFolders.expandedPaths"
 }

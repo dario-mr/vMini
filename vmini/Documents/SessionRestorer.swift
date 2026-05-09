@@ -2,55 +2,46 @@ import AppKit
 
 @MainActor
 enum SessionRestorer {
+    private static var isTerminationSnapshotLocked = false
+
     static func saveOpenFiles() {
-        let openFileBookmarks = OpenDocumentsStore.shared.documents.compactMap { document -> Data? in
-            guard let url = document.fileURL else {
-                return nil
-            }
+        guard !isTerminationSnapshotLocked else { return }
 
-            return bookmarkData(for: url)
+        let openFilePaths = OpenDocumentsStore.shared.documents.compactMap { document -> String? in
+            document.fileURL?.standardizedFileURL.path
         }
+        let activeFilePath = OpenDocumentsStore.shared.activeDocument?.fileURL?.standardizedFileURL.path
 
-        UserDefaults.standard.set(openFileBookmarks, forKey: UserDefaultsKeys.sessionRestorerOpenFiles)
-        UserDefaults.standard.set(
-            OpenDocumentsStore.shared.activeDocument?.fileURL.flatMap(bookmarkData(for:)),
-            forKey: UserDefaultsKeys.sessionRestorerActiveFile
-        )
+        UserDefaults.standard.set(openFilePaths, forKey: UserDefaultsKeys.sessionRestorerOpenFilePaths)
+        UserDefaults.standard.set(activeFilePath, forKey: UserDefaultsKeys.sessionRestorerActiveFilePath)
+    }
+
+    static func prepareForTermination() {
+        saveOpenFiles()
+        isTerminationSnapshotLocked = true
+    }
+
+    static func cancelTermination() {
+        isTerminationSnapshotLocked = false
+        saveOpenFiles()
     }
 
     @discardableResult
     static func reopenLastFiles() -> Bool {
-        guard let bookmarkData = UserDefaults.standard.array(forKey: UserDefaultsKeys.sessionRestorerOpenFiles) as? [Data] else {
+        guard let storedPaths = UserDefaults.standard.stringArray(forKey: UserDefaultsKeys.sessionRestorerOpenFilePaths) else {
             return false
         }
 
-        let urls = bookmarkData.compactMap(resolveURL(from:))
+        let urls = storedPaths
+            .map(URL.init(fileURLWithPath:))
+            .map(\.standardizedFileURL)
+            .filter { FileManager.default.fileExists(atPath: $0.path) }
         guard !urls.isEmpty else { return false }
 
-        let activeURL = (UserDefaults.standard.data(forKey: UserDefaultsKeys.sessionRestorerActiveFile))
-            .flatMap(resolveURL(from:))
+        let activeURL = UserDefaults.standard
+            .string(forKey: UserDefaultsKeys.sessionRestorerActiveFilePath)
+            .map { URL(fileURLWithPath: $0).standardizedFileURL }
         WorkspaceWindowController.shared.open(urls: urls, activate: activeURL)
         return true
-    }
-
-    private static func bookmarkData(for url: URL) -> Data? {
-        try? url.bookmarkData(options: .minimalBookmark, includingResourceValuesForKeys: nil, relativeTo: nil)
-    }
-
-    private static func resolveURL(from data: Data) -> URL? {
-        var isStale = false
-
-        guard let url = try? URL(
-            resolvingBookmarkData: data,
-            options: [.withoutUI],
-            relativeTo: nil,
-            bookmarkDataIsStale: &isStale
-        ),
-        !isStale,
-        FileManager.default.fileExists(atPath: url.path) else {
-            return nil
-        }
-
-        return url
     }
 }
