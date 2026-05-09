@@ -1,14 +1,22 @@
 import AppKit
 import UniformTypeIdentifiers
 
+extension Notification.Name {
+    static let documentSyntaxHighlightingDidChange = Notification.Name("DocumentSyntaxHighlightingDidChange")
+}
+
 @MainActor
 final class Document: NSDocument {
     static let supportedTypes: [UTType] = [.plainText, .text]
+
+    let sessionIdentifier: UUID
 
     private var text = ""
     private var typeIdentifier: String?
     private var editorViewController: EditorViewController?
     private let externalChangeWatcher = DocumentFileWatcher()
+    private let syntaxOverrideStore: SyntaxOverrideStore
+    private var syntaxLanguageOverride: SyntaxLanguage?
 
     var sidebarTitle: String {
         fileURL?.lastPathComponent ?? displayName
@@ -22,7 +30,7 @@ final class Document: NSDocument {
         return (fileURL.path as NSString).abbreviatingWithTildeInPath
     }
 
-    var syntaxLanguage: SyntaxLanguage {
+    var autoDetectedSyntaxLanguage: SyntaxLanguage {
         SyntaxLanguageResolver.resolve(
             fileURL: fileURL,
             typeIdentifier: typeIdentifier,
@@ -30,7 +38,29 @@ final class Document: NSDocument {
         )
     }
 
-    override init() {
+    var syntaxLanguage: SyntaxLanguage {
+        syntaxLanguageOverride ?? autoDetectedSyntaxLanguage
+    }
+
+    var hasSyntaxLanguageOverride: Bool {
+        syntaxLanguageOverride != nil
+    }
+
+    var syntaxOverrideMenuTitle: String {
+        if hasSyntaxLanguageOverride {
+            return syntaxLanguage.displayName
+        }
+
+        return "\(syntaxLanguage.displayName) (Auto)"
+    }
+
+    init(
+        sessionIdentifier: UUID = UUID(),
+        syntaxOverrideStore: SyntaxOverrideStore? = nil
+    ) {
+        self.sessionIdentifier = sessionIdentifier
+        self.syntaxOverrideStore = syntaxOverrideStore ?? .shared
+        self.syntaxLanguageOverride = nil
         super.init()
         hasUndoManager = true
     }
@@ -39,9 +69,24 @@ final class Document: NSDocument {
         didSet {
             Task { @MainActor in
                 guard fileURL != oldValue else { return }
+                if let fileURL {
+                    let newIdentifier = Self.persistenceIdentifier(for: fileURL)
+                    if let previousFileURL = oldValue {
+                        syntaxOverrideStore.migrateOverride(
+                            from: Self.persistenceIdentifier(for: previousFileURL),
+                            to: newIdentifier,
+                            currentOverride: syntaxLanguageOverride
+                        )
+                    } else if let syntaxLanguageOverride {
+                        syntaxOverrideStore.setOverride(syntaxLanguageOverride, for: newIdentifier)
+                    } else {
+                        syntaxLanguageOverride = syntaxOverrideStore.override(for: newIdentifier)
+                    }
+                }
                 restartExternalChangeWatcher()
                 editorViewController?.syntaxLanguage = syntaxLanguage
                 updateWindowTitles()
+                notifySyntaxHighlightingDidChange()
                 OpenDocumentsStore.postDidChange()
             }
         }
@@ -135,6 +180,7 @@ final class Document: NSDocument {
                 text = decoded
                 editorViewController?.text = decoded
                 editorViewController?.syntaxLanguage = syntaxLanguage
+                notifySyntaxHighlightingDidChange()
             }
             return
         }
@@ -156,6 +202,7 @@ final class Document: NSDocument {
             let resolvedSyntaxLanguage = syntaxLanguage
             if editorViewController.syntaxLanguage != resolvedSyntaxLanguage {
                 editorViewController.syntaxLanguage = resolvedSyntaxLanguage
+                notifySyntaxHighlightingDidChange()
             }
             let wasEdited = isDocumentEdited
             updateChangeCount(.changeDone)
@@ -169,8 +216,34 @@ final class Document: NSDocument {
         return editorViewController
     }
 
+    func setSyntaxLanguageOverride(_ language: SyntaxLanguage?) {
+        guard syntaxLanguageOverride != language else { return }
+        syntaxLanguageOverride = language
+        if let persistenceIdentifier {
+            syntaxOverrideStore.setOverride(language, for: persistenceIdentifier)
+        }
+        editorViewController?.syntaxLanguage = syntaxLanguage
+        notifySyntaxHighlightingDidChange()
+    }
+
     private func syntaxDetectionContentSample() -> String {
         let sourceText = editorViewController?.text ?? text
         return String(sourceText.prefix(512))
+    }
+
+    private var persistenceIdentifier: String? {
+        guard let fileURL else {
+            return nil
+        }
+
+        return Self.persistenceIdentifier(for: fileURL)
+    }
+
+    private static func persistenceIdentifier(for fileURL: URL) -> String {
+        fileURL.standardizedFileURL.path
+    }
+
+    private func notifySyntaxHighlightingDidChange() {
+        NotificationCenter.default.post(name: .documentSyntaxHighlightingDidChange, object: self)
     }
 }

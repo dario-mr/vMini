@@ -84,6 +84,47 @@ final class WorkspaceWindowController: NSWindowController {
         present(document: document)
     }
 
+    func createUntitledDocument(sessionIdentifier: UUID) {
+        let document = Document(sessionIdentifier: sessionIdentifier)
+        present(document: document)
+    }
+
+    func restoreSession(_ references: [RestorableDocumentReference], activate activeIdentifier: String?) -> Bool {
+        var restoredDocuments: [(identifier: String, document: Document)] = []
+
+        for reference in references {
+            switch reference {
+            case .file(let path):
+                let fileURL = URL(fileURLWithPath: path).standardizedFileURL
+                guard FileManager.default.fileExists(atPath: fileURL.path) else { continue }
+
+                do {
+                    let document = try openDocument(at: fileURL)
+                    restoredDocuments.append((reference.persistenceIdentifier, document))
+                } catch {
+                    NSLog("Could not reopen file %@: %@", fileURL.path as NSString, error.localizedDescription)
+                }
+            case .untitled(let sessionIdentifier):
+                let document = Document(sessionIdentifier: sessionIdentifier)
+                NSDocumentController.shared.addDocument(document)
+                restoredDocuments.append((reference.persistenceIdentifier, document))
+            }
+        }
+
+        guard !restoredDocuments.isEmpty else {
+            return false
+        }
+
+        let activeDocument = restoredDocuments.first(where: { $0.identifier == activeIdentifier })?.document
+            ?? restoredDocuments.last?.document
+        if let activeDocument {
+            present(document: activeDocument)
+        } else {
+            synchronizeWindowState()
+        }
+        return true
+    }
+
     func presentSettingsSheet() {
         if window == nil {
             showWindow(nil)

@@ -26,6 +26,8 @@
 		A00000000000000000000114 /* Document.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000104 /* Document.swift */; };
 		A0000000000000000000012C /* DocumentFileWatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000012D /* DocumentFileWatcher.swift */; };
 		A00000000000000000000115 /* OpenDocumentsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000105 /* OpenDocumentsStore.swift */; };
+		A00000000000000000000160 /* SyntaxOverrideStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000161 /* SyntaxOverrideStore.swift */; };
+		A00000000000000000000162 /* RestorableDocumentReference.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000163 /* RestorableDocumentReference.swift */; };
 		A00000000000000000000116 /* SessionRestorer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000106 /* SessionRestorer.swift */; };
 		A00000000000000000000117 /* EditorSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000107 /* EditorSettings.swift */; };
 		A00000000000000000000118 /* EditorViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000108 /* EditorViewController.swift */; };
@@ -41,6 +43,7 @@
 		A0000000000000000000011B /* SidebarSelectionRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000010B /* SidebarSelectionRowView.swift */; };
 		A0000000000000000000011C /* EditorContentViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000010C /* EditorContentViewController.swift */; };
 		A0000000000000000000011D /* EditorWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000010D /* EditorWindow.swift */; };
+		A00000000000000000000164 /* EditorStatusBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000165 /* EditorStatusBarView.swift */; };
 		A0000000000000000000011F /* ResizeHandleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000010F /* ResizeHandleView.swift */; };
 		A00000000000000000000126 /* FileDropHandling.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000127 /* FileDropHandling.swift */; };
 		A00000000000000000000128 /* OpenFoldersStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000012A /* OpenFoldersStore.swift */; };
@@ -69,6 +72,8 @@
 		A00000000000000000000104 /* Document.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Document.swift; sourceTree = "<group>"; };
 		A0000000000000000000012D /* DocumentFileWatcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentFileWatcher.swift; sourceTree = "<group>"; };
 		A00000000000000000000105 /* OpenDocumentsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenDocumentsStore.swift; sourceTree = "<group>"; };
+		A00000000000000000000161 /* SyntaxOverrideStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyntaxOverrideStore.swift; sourceTree = "<group>"; };
+		A00000000000000000000163 /* RestorableDocumentReference.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestorableDocumentReference.swift; sourceTree = "<group>"; };
 		A00000000000000000000106 /* SessionRestorer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionRestorer.swift; sourceTree = "<group>"; };
 		A00000000000000000000107 /* EditorSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorSettings.swift; sourceTree = "<group>"; };
 		A00000000000000000000108 /* EditorViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorViewController.swift; sourceTree = "<group>"; };
@@ -84,6 +89,7 @@
 		A0000000000000000000010B /* SidebarSelectionRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidebarSelectionRowView.swift; sourceTree = "<group>"; };
 		A0000000000000000000010C /* EditorContentViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorContentViewController.swift; sourceTree = "<group>"; };
 		A0000000000000000000010D /* EditorWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorWindow.swift; sourceTree = "<group>"; };
+		A00000000000000000000165 /* EditorStatusBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorStatusBarView.swift; sourceTree = "<group>"; };
 		A0000000000000000000010F /* ResizeHandleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResizeHandleView.swift; sourceTree = "<group>"; };
 		A00000000000000000000127 /* FileDropHandling.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileDropHandling.swift; sourceTree = "<group>"; };
 		A0000000000000000000012A /* OpenFoldersStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenFoldersStore.swift; sourceTree = "<group>"; };
@@ -167,6 +173,8 @@
 				A00000000000000000000104 /* Document.swift */,
 				A0000000000000000000012D /* DocumentFileWatcher.swift */,
 				A00000000000000000000105 /* OpenDocumentsStore.swift */,
+				A00000000000000000000161 /* SyntaxOverrideStore.swift */,
+				A00000000000000000000163 /* RestorableDocumentReference.swift */,
 				A00000000000000000000106 /* SessionRestorer.swift */,
 			);
 			path = Documents;
@@ -213,6 +221,7 @@
 			children = (
 				A0000000000000000000010C /* EditorContentViewController.swift */,
 				A0000000000000000000010D /* EditorWindow.swift */,
+				A00000000000000000000165 /* EditorStatusBarView.swift */,
 				A00000000000000000000127 /* FileDropHandling.swift */,
 				A0000000000000000000010F /* ResizeHandleView.swift */,
 				A0000000000000000000013B /* WorkspaceWindowController.swift */,
@@ -323,6 +332,8 @@
 				A00000000000000000000114 /* Document.swift in Sources */,
 				A0000000000000000000012C /* DocumentFileWatcher.swift in Sources */,
 				A00000000000000000000115 /* OpenDocumentsStore.swift in Sources */,
+				A00000000000000000000160 /* SyntaxOverrideStore.swift in Sources */,
+				A00000000000000000000162 /* RestorableDocumentReference.swift in Sources */,
 				A00000000000000000000116 /* SessionRestorer.swift in Sources */,
 				A00000000000000000000117 /* EditorSettings.swift in Sources */,
 				A00000000000000000000118 /* EditorViewController.swift in Sources */,
@@ -338,6 +349,7 @@
 				A0000000000000000000011B /* SidebarSelectionRowView.swift in Sources */,
 				A0000000000000000000011C /* EditorContentViewController.swift in Sources */,
 				A0000000000000000000011D /* EditorWindow.swift in Sources */,
+				A00000000000000000000164 /* EditorStatusBarView.swift in Sources */,
 				A00000000000000000000126 /* FileDropHandling.swift in Sources */,
 				A0000000000000000000011F /* ResizeHandleView.swift in Sources */,
 				A00000000000000000000129 /* OpenFoldersSidebar.swift in Sources */,
@@ -404,7 +416,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
-				MARKETING_VERSION = 1.0.5;
+				MARKETING_VERSION = 1.0.6;
 				PRODUCT_BUNDLE_IDENTIFIER = com.miniapp.vmini;
 				PRODUCT_NAME = vMini;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -426,7 +438,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
-				MARKETING_VERSION = 1.0.5;
+				MARKETING_VERSION = 1.0.6;
 				PRODUCT_BUNDLE_IDENTIFIER = com.miniapp.vmini;
 				PRODUCT_NAME = vMini;
 				SWIFT_EMIT_LOC_STRINGS = YES;
