@@ -39,7 +39,8 @@ enum MenuBuilder {
         menu.addItem(withTitle: "Hide Others", action: #selector(NSApplication.hideOtherApplications(_:)), keyEquivalent: "h").keyEquivalentModifierMask = [.command, .option]
         menu.addItem(withTitle: "Show All", action: #selector(NSApplication.unhideAllApplications(_:)), keyEquivalent: "")
         menu.addItem(.separator())
-        menu.addItem(withTitle: "Quit \(appName)", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
+        let quitItem = menu.addItem(withTitle: "Quit \(appName)", action: #selector(AppDelegate.performQuit(_:)), keyEquivalent: "q")
+        quitItem.target = NSApp.delegate as AnyObject?
 
         return menu
     }

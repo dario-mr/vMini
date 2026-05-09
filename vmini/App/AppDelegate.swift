@@ -9,6 +9,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleOpenDocumentsDidChange),
+            name: OpenDocumentsStore.didChangeNotification,
+            object: nil
+        )
+
         if !SessionRestorer.reopenLastFiles() {
             WorkspaceWindowController.shared.createUntitledDocument()
         }
@@ -18,8 +25,24 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         MenuBuilder.installMainMenu()
     }
 
-    func applicationWillTerminate(_ notification: Notification) {
-        SessionRestorer.saveOpenFiles()
+    func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        // Persist the current tab session before AppKit starts closing documents as part of quit,
+        // then lock it so later teardown callbacks can't overwrite it with an empty state.
+        SessionRestorer.prepareForTermination()
+
+        let documentController = NSDocumentController.shared
+        guard documentController.hasEditedDocuments else {
+            return .terminateNow
+        }
+
+        documentController.reviewUnsavedDocuments(
+            withAlertTitle: nil,
+            cancellable: true,
+            delegate: self,
+            didReviewAllSelector: #selector(documentController(_:didReviewAll:contextInfo:)),
+            contextInfo: nil
+        )
+        return .terminateLater
     }
 
     func applicationSupportsSecureRestorableState(_ app: NSApplication) -> Bool {
@@ -28,6 +51,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationShouldOpenUntitledFile(_ sender: NSApplication) -> Bool {
         false
+    }
+
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        guard !flag else { return true }
+
+        if let activeDocument = OpenDocumentsStore.shared.activeDocument {
+            WorkspaceWindowController.shared.present(document: activeDocument)
+        } else if let firstDocument = OpenDocumentsStore.shared.documents.first {
+            WorkspaceWindowController.shared.present(document: firstDocument)
+        } else {
+            WorkspaceWindowController.shared.createUntitledDocument()
+        }
+
+        return true
     }
 
     @objc
@@ -81,6 +118,29 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let editorController = (NSApp.keyWindow?.contentViewController as? EditorContentViewController)
             ?? (NSApp.mainWindow?.contentViewController as? EditorContentViewController)
         editorController?.formatJSON()
+    }
+
+    @objc
+    func performQuit(_ sender: Any?) {
+        SessionRestorer.prepareForTermination()
+        NSApp.terminate(sender)
+    }
+
+    @objc
+    private func handleOpenDocumentsDidChange() {
+        SessionRestorer.saveOpenFiles()
+    }
+
+    @objc(documentController:didReviewAll:contextInfo:)
+    private func documentController(
+        _ documentController: NSDocumentController,
+        didReviewAll: Bool,
+        contextInfo: UnsafeMutableRawPointer?
+    ) {
+        if !didReviewAll {
+            SessionRestorer.cancelTermination()
+        }
+        NSApp.reply(toApplicationShouldTerminate: didReviewAll)
     }
 }
 
