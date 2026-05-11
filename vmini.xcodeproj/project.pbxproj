@@ -8,6 +8,8 @@
 
 /* Begin PBXBuildFile section */
 		A00000000000000000000016 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A00000000000000000000006 /* Cocoa.framework */; };
+		A00000000000000000000174 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A00000000000000000000006 /* Cocoa.framework */; };
+		A00000000000000000000175 /* XCTest.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A00000000000000000000176 /* XCTest.framework */; };
 		A00000000000000000000123 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000122 /* Assets.xcassets */; };
 		A00000000000000000000111 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000101 /* AppDelegate.swift */; };
 		A0000000000000000000013C /* AppColors.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000013D /* AppColors.swift */; };
@@ -35,8 +37,12 @@
 		A00000000000000000000116 /* SessionRestorer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000106 /* SessionRestorer.swift */; };
 		A00000000000000000000117 /* EditorSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000107 /* EditorSettings.swift */; };
 		A00000000000000000000168 /* EditorFont.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000169 /* EditorFont.swift */; };
+		A00000000000000000000172 /* EditorTextEditing.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000173 /* EditorTextEditing.swift */; };
+		A0000000000000000000018C /* EditorTextEditing.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000173 /* EditorTextEditing.swift */; };
 		A00000000000000000000118 /* EditorViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000108 /* EditorViewController.swift */; };
 		A00000000000000000000119 /* LineNumberRuler.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000109 /* LineNumberRuler.swift */; };
+		A0000000000000000000018D /* SyntaxLanguage.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000018F /* SyntaxLanguage.swift */; };
+		A0000000000000000000018E /* SyntaxLanguage.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000018F /* SyntaxLanguage.swift */; };
 		A0000000000000000000015C /* JSONPrettifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000015D /* JSONPrettifier.swift */; };
 		A0000000000000000000013E /* SyntaxHighlighting.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000013F /* SyntaxHighlighting.swift */; };
 		A00000000000000000000140 /* MarkdownSyntaxHighlighter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000141 /* MarkdownSyntaxHighlighter.swift */; };
@@ -53,11 +59,34 @@
 		A00000000000000000000126 /* FileDropHandling.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000127 /* FileDropHandling.swift */; };
 		A00000000000000000000128 /* OpenFoldersStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000012A /* OpenFoldersStore.swift */; };
 		A00000000000000000000129 /* OpenFoldersSidebar.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000012B /* OpenFoldersSidebar.swift */; };
+		A00000000000000000000177 /* EditorTextEditingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000178 /* EditorTextEditingTests.swift */; };
+		A00000000000000000000179 /* EditorCommandTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000017A /* EditorCommandTests.swift */; };
+		A0000000000000000000017B /* EditorFontTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000017C /* EditorFontTests.swift */; };
+		A0000000000000000000017D /* SyntaxHighlightingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000017E /* SyntaxHighlightingTests.swift */; };
+		A0000000000000000000017F /* ThemeSystemTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000180 /* ThemeSystemTests.swift */; };
 /* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		A00000000000000000000181 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A00000000000000000000042 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A00000000000000000000041;
+			remoteInfo = vMini;
+		};
+/* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
 		A00000000000000000000006 /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = System/Library/Frameworks/Cocoa.framework; sourceTree = SDKROOT; };
 		A00000000000000000000007 /* vMini.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = vMini.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A00000000000000000000176 /* XCTest.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = XCTest.framework; path = System/Library/Frameworks/XCTest.framework; sourceTree = SDKROOT; };
+		A00000000000000000000178 /* EditorTextEditingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorTextEditingTests.swift; sourceTree = "<group>"; };
+		A0000000000000000000017A /* EditorCommandTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorCommandTests.swift; sourceTree = "<group>"; };
+		A0000000000000000000017C /* EditorFontTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorFontTests.swift; sourceTree = "<group>"; };
+		A0000000000000000000017E /* SyntaxHighlightingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyntaxHighlightingTests.swift; sourceTree = "<group>"; };
+		A00000000000000000000180 /* ThemeSystemTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeSystemTests.swift; sourceTree = "<group>"; };
+		A00000000000000000000182 /* vminiTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = vminiTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		A0000000000000000000018F /* SyntaxLanguage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyntaxLanguage.swift; sourceTree = "<group>"; };
 		A00000000000000000000008 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A00000000000000000000122 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A00000000000000000000101 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
@@ -86,6 +115,7 @@
 		A00000000000000000000106 /* SessionRestorer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionRestorer.swift; sourceTree = "<group>"; };
 		A00000000000000000000107 /* EditorSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorSettings.swift; sourceTree = "<group>"; };
 		A00000000000000000000169 /* EditorFont.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorFont.swift; sourceTree = "<group>"; };
+		A00000000000000000000173 /* EditorTextEditing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorTextEditing.swift; sourceTree = "<group>"; };
 		A00000000000000000000108 /* EditorViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorViewController.swift; sourceTree = "<group>"; };
 		A00000000000000000000109 /* LineNumberRuler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LineNumberRuler.swift; sourceTree = "<group>"; };
 		A0000000000000000000015D /* JSONPrettifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JSONPrettifier.swift; sourceTree = "<group>"; };
@@ -115,6 +145,15 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		A00000000000000000000183 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A00000000000000000000174 /* Cocoa.framework in Frameworks */,
+				A00000000000000000000175 /* XCTest.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -122,6 +161,7 @@
 			isa = PBXGroup;
 			children = (
 				A00000000000000000000032 /* vmini */,
+				A00000000000000000000184 /* Tests */,
 				A00000000000000000000033 /* Frameworks */,
 				A00000000000000000000034 /* Products */,
 			);
@@ -215,6 +255,7 @@
 			children = (
 				A00000000000000000000107 /* EditorSettings.swift */,
 				A00000000000000000000169 /* EditorFont.swift */,
+				A00000000000000000000173 /* EditorTextEditing.swift */,
 				A00000000000000000000108 /* EditorViewController.swift */,
 				A0000000000000000000015D /* JSONPrettifier.swift */,
 				A00000000000000000000109 /* LineNumberRuler.swift */,
@@ -226,6 +267,7 @@
 		A00000000000000000000142 /* SyntaxHighlighting */ = {
 			isa = PBXGroup;
 			children = (
+				A0000000000000000000018F /* SyntaxLanguage.swift */,
 				A0000000000000000000013F /* SyntaxHighlighting.swift */,
 				A00000000000000000000144 /* PlainTextSyntaxHighlighter.swift */,
 				A00000000000000000000157 /* BashSyntaxHighlighter.swift */,
@@ -264,6 +306,7 @@
 			isa = PBXGroup;
 			children = (
 				A00000000000000000000006 /* Cocoa.framework */,
+				A00000000000000000000176 /* XCTest.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -272,8 +315,29 @@
 			isa = PBXGroup;
 			children = (
 				A00000000000000000000007 /* vMini.app */,
+				A00000000000000000000182 /* vminiTests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		A00000000000000000000184 /* Tests */ = {
+			isa = PBXGroup;
+			children = (
+				A00000000000000000000185 /* vminiTests */,
+			);
+			path = Tests;
+			sourceTree = "<group>";
+		};
+		A00000000000000000000185 /* vminiTests */ = {
+			isa = PBXGroup;
+			children = (
+				A00000000000000000000178 /* EditorTextEditingTests.swift */,
+				A0000000000000000000017A /* EditorCommandTests.swift */,
+				A0000000000000000000017C /* EditorFontTests.swift */,
+				A0000000000000000000017E /* SyntaxHighlightingTests.swift */,
+				A00000000000000000000180 /* ThemeSystemTests.swift */,
+			);
+			path = vminiTests;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -296,6 +360,23 @@
 			productReference = A00000000000000000000007 /* vMini.app */;
 			productType = "com.apple.product-type.application";
 		};
+		A00000000000000000000186 /* vminiTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A00000000000000000000187 /* Build configuration list for PBXNativeTarget "vminiTests" */;
+			buildPhases = (
+				A00000000000000000000188 /* Sources */,
+				A00000000000000000000183 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				A00000000000000000000189 /* PBXTargetDependency */,
+			);
+			name = vminiTests;
+			productName = vminiTests;
+			productReference = A00000000000000000000182 /* vminiTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -308,6 +389,10 @@
 				TargetAttributes = {
 					A00000000000000000000041 = {
 						CreatedOnToolsVersion = 26.4.1;
+					};
+					A00000000000000000000186 = {
+						CreatedOnToolsVersion = 26.4.1;
+						TestTargetID = A00000000000000000000041;
 					};
 				};
 			};
@@ -326,6 +411,7 @@
 			projectRoot = "";
 			targets = (
 				A00000000000000000000041 /* vMini */,
+				A00000000000000000000186 /* vminiTests */,
 			);
 		};
 /* End PBXProject section */
@@ -372,9 +458,11 @@
 				A00000000000000000000116 /* SessionRestorer.swift in Sources */,
 				A00000000000000000000117 /* EditorSettings.swift in Sources */,
 				A00000000000000000000168 /* EditorFont.swift in Sources */,
+				A00000000000000000000172 /* EditorTextEditing.swift in Sources */,
 				A00000000000000000000118 /* EditorViewController.swift in Sources */,
 				A0000000000000000000015C /* JSONPrettifier.swift in Sources */,
 				A00000000000000000000119 /* LineNumberRuler.swift in Sources */,
+				A0000000000000000000018D /* SyntaxLanguage.swift in Sources */,
 				A0000000000000000000013E /* SyntaxHighlighting.swift in Sources */,
 				A00000000000000000000143 /* PlainTextSyntaxHighlighter.swift in Sources */,
 				A00000000000000000000156 /* BashSyntaxHighlighter.swift in Sources */,
@@ -393,7 +481,27 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		A00000000000000000000188 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A00000000000000000000177 /* EditorTextEditingTests.swift in Sources */,
+				A00000000000000000000179 /* EditorCommandTests.swift in Sources */,
+				A0000000000000000000017B /* EditorFontTests.swift in Sources */,
+				A0000000000000000000017D /* SyntaxHighlightingTests.swift in Sources */,
+				A0000000000000000000017F /* ThemeSystemTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		A00000000000000000000189 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A00000000000000000000041 /* vMini */;
+			targetProxy = A00000000000000000000181 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		A00000000000000000000061 /* Debug */ = {
@@ -445,6 +553,8 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "";
+				DEFINES_MODULE = YES;
+				ENABLE_TESTABILITY = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = vmini/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -453,6 +563,7 @@
 				);
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				MARKETING_VERSION = 1.0.8;
+				PRODUCT_MODULE_NAME = vmini;
 				PRODUCT_BUNDLE_IDENTIFIER = com.miniapp.vmini;
 				PRODUCT_NAME = vMini;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -467,6 +578,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "";
+				DEFINES_MODULE = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = vmini/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -475,10 +587,45 @@
 				);
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				MARKETING_VERSION = 1.0.8;
+				PRODUCT_MODULE_NAME = vmini;
 				PRODUCT_BUNDLE_IDENTIFIER = com.miniapp.vmini;
 				PRODUCT_NAME = vMini;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
+		A0000000000000000000018A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.miniapp.vminiTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 6.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/vMini.app/Contents/MacOS/vMini";
+				TEST_TARGET_NAME = vMini;
+			};
+			name = Debug;
+		};
+		A0000000000000000000018B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.miniapp.vminiTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 6.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/vMini.app/Contents/MacOS/vMini";
+				TEST_TARGET_NAME = vMini;
 			};
 			name = Release;
 		};
@@ -499,6 +646,15 @@
 			buildConfigurations = (
 				A00000000000000000000061 /* Debug */,
 				A00000000000000000000062 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A00000000000000000000187 /* Build configuration list for PBXNativeTarget "vminiTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A0000000000000000000018A /* Debug */,
+				A0000000000000000000018B /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

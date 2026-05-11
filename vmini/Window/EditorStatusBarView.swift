@@ -8,18 +8,9 @@ struct EditorStatusBarState {
     let cursorPosition: EditorCursorPosition
 }
 
-struct EditorCursorPosition {
-    let line: Int
-    let column: Int
-
-    var displayText: String {
-        "Ln \(line), Col \(column)"
-    }
-}
-
 final class EditorStatusBarView: NSView {
     enum Layout {
-        static let preferredHeight: CGFloat = 20
+        static let preferredHeight: CGFloat = 21
         static let textSize: CGFloat = 12
     }
 

@@ -2,6 +2,7 @@ import AppKit
 import XCTest
 @testable import vmini
 
+@available(macOS 14.0, *)
 @MainActor
 final class EditorCommandTests: XCTestCase {
     func testFormatJSONFormatsWholeDocumentWhenNothingIsSelected() throws {
