@@ -16,6 +16,14 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
     private let textView = FileDropTextView()
     private let highlighterRegistry = HighlighterRegistry.shared
     private lazy var lineNumberRulerView = LineNumberRulerView(textView: textView)
+    private lazy var textViewStyler = EditorTextViewStyler(
+        textView: textView,
+        scrollView: scrollView,
+        lineSpacing: Constants.lineSpacing,
+        invalidateLineNumbers: { [weak self] in
+            self?.lineNumberRulerView.invalidateLineNumbers()
+        }
+    )
     private var lineNumberRulerWidthConstraint: NSLayoutConstraint?
     private var hasCompletedInitialViewportReset = false
     private var isApplyingSyntaxHighlighting = false
@@ -39,7 +47,7 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
             textView.setSelectedRange(NSRange(location: 0, length: 0))
             hasCompletedInitialViewportReset = false
             if isViewLoaded {
-                applyParagraphStyle()
+                textViewStyler.applyParagraphStyle()
                 refreshSyntaxHighlighting()
                 lineNumberRulerView.invalidateLineNumbers()
                 resetInitialViewportIfNeeded()
@@ -125,7 +133,7 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
 
     override func viewDidLayout() {
         super.viewDidLayout()
-        synchronizeWordWrapLayout()
+        textViewStyler.synchronizeWordWrapLayout()
         updateFormattingErrorBannerLayout()
     }
 
@@ -135,7 +143,7 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
 
     func textDidChange(_ notification: Notification) {
         clearFormattingErrorBanner()
-        synchronizeWordWrapLayout()
+        textViewStyler.synchronizeWordWrapLayout()
         onTextChanged?()
         notifyCursorPositionChanged()
     }
@@ -287,16 +295,7 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
     }
 
     private func configureTextView() {
-        textView.autoresizingMask = [.width]
         textView.delegate = self
-        textView.isRichText = false
-        textView.allowsUndo = true
-        textView.usesFindPanel = true
-        textView.isAutomaticQuoteSubstitutionEnabled = false
-        textView.isAutomaticDashSubstitutionEnabled = false
-        textView.isAutomaticTextReplacementEnabled = false
-        textView.isContinuousSpellCheckingEnabled = false
-        textView.textColor = AppColors.primaryText
         textView.onFileSystemURLsDropped = { [weak self] urls in
             self?.onFileSystemURLsDropped?(urls)
         }
@@ -306,25 +305,11 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
         textView.onMoveSelectedLinesDown = { [weak self] in
             self?.moveSelectedLinesDown() ?? false
         }
-        applyEditorFont()
-        applyParagraphStyle()
-        textView.backgroundColor = AppColors.editorBackground
-        textView.minSize = NSSize(width: 0, height: 0)
-        textView.maxSize = NSSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude)
-        textView.isHorizontallyResizable = true
-        textView.isVerticallyResizable = true
-        textView.textContainerInset = NSSize(width: 12, height: 12)
-
-        if let textContainer = textView.textContainer {
-            textContainer.widthTracksTextView = false
-            textContainer.containerSize = NSSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude)
-        }
 
         textView.textStorage?.delegate = self
         scrollView.documentView = textView
-        applyEditorWordWrap(EditorSettings.isWordWrapEnabled())
-        applyInvisibleCharactersVisibility(EditorSettings.showsInvisibleCharacters())
-        applyTheme()
+        textViewStyler.configureTextView()
+        formattingErrorBannerView.applyTheme()
         refreshSyntaxHighlighting()
     }
 
@@ -339,29 +324,9 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
     private func configureLineNumberRuler() {
         lineNumberRulerView.onRuleThicknessChanged = { [weak self] ruleThickness in
             self?.lineNumberRulerWidthConstraint?.constant = ruleThickness
-            self?.synchronizeWordWrapLayout()
+            self?.textViewStyler.synchronizeWordWrapLayout()
         }
         lineNumberRulerView.invalidateLineNumbers()
-    }
-
-    private func applyEditorFont() {
-        textView.font = EditorFontResolver.font(
-            for: EditorSettings.currentFontID(),
-            size: EditorSettings.currentFontSize()
-        )
-    }
-
-    private func applyParagraphStyle() {
-        let paragraphStyle = NSMutableParagraphStyle()
-        paragraphStyle.lineSpacing = Constants.lineSpacing
-
-        textView.defaultParagraphStyle = paragraphStyle
-        textView.typingAttributes[.paragraphStyle] = paragraphStyle
-
-        if let textStorage = textView.textStorage {
-            let fullRange = NSRange(location: 0, length: textStorage.length)
-            textStorage.addAttribute(.paragraphStyle, value: paragraphStyle, range: fullRange)
-        }
     }
 
     private func refreshSyntaxHighlighting() {
@@ -406,10 +371,6 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
         onCursorPositionChanged?()
     }
 
-    private func applyInvisibleCharactersVisibility(_ isVisible: Bool) {
-        textView.layoutManager?.showsInvisibleCharacters = isVisible
-    }
-
     @discardableResult
     private func applyBufferEdit(
         _ edit: EditorTextEdit,
@@ -445,71 +406,19 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
         return applyBufferEdit(edit, using: textStorage, scrollSelectionIntoView: true)
     }
 
-    private func applyEditorWordWrap(_ isEnabled: Bool) {
-        scrollView.hasHorizontalScroller = !isEnabled
-        textView.isHorizontallyResizable = !isEnabled
-        textView.autoresizingMask = [.width]
-
-        if let textContainer = textView.textContainer {
-            textContainer.widthTracksTextView = isEnabled
-            textContainer.containerSize = NSSize(
-                width: isEnabled ? wrappedContainerWidth() : CGFloat.greatestFiniteMagnitude,
-                height: CGFloat.greatestFiniteMagnitude
-            )
-        }
-
-        synchronizeWordWrapLayout()
-        textView.layoutManager?.invalidateLayout(forCharacterRange: NSRange(location: 0, length: textView.string.utf16.count), actualCharacterRange: nil)
-        lineNumberRulerView.invalidateLineNumbers()
-    }
-
-    private func synchronizeWordWrapLayout() {
-        guard EditorSettings.isWordWrapEnabled() else {
-            return
-        }
-
-        let viewportWidth = wrappedViewportWidth()
-        let containerWidth = wrappedContainerWidth()
-        let currentContainerWidth = textView.textContainer?.containerSize.width ?? 0
-        guard abs(textView.frame.size.width - viewportWidth) > 0.5 || abs(currentContainerWidth - containerWidth) > 0.5 else {
-            return
-        }
-
-        textView.frame.size.width = viewportWidth
-        textView.textContainer?.containerSize = NSSize(width: containerWidth, height: CGFloat.greatestFiniteMagnitude)
-        lineNumberRulerView.invalidateLineNumbers()
-    }
-
-    private func wrappedViewportWidth() -> CGFloat {
-        max(scrollView.contentSize.width, 1)
-    }
-
-    private func wrappedContainerWidth() -> CGFloat {
-        let horizontalInsets = (textView.textContainerInset.width * 2) + horizontalLineFragmentPadding()
-        return max(wrappedViewportWidth() - horizontalInsets, 1)
-    }
-
-    private func horizontalLineFragmentPadding() -> CGFloat {
-        guard let textContainer = textView.textContainer else {
-            return 0
-        }
-
-        return textContainer.lineFragmentPadding * 2
-    }
-
     @objc
     private func handleSharedEditorAppearanceChange() {
-        applySharedEditorAppearance()
+        textViewStyler.applyAppearance()
     }
 
     @objc
     private func handleSharedWordWrapChange() {
-        applyEditorWordWrap(EditorSettings.isWordWrapEnabled())
+        textViewStyler.applyWordWrap(EditorSettings.isWordWrapEnabled())
     }
 
     @objc
     private func handleSharedInvisibleCharactersChange() {
-        applyInvisibleCharactersVisibility(EditorSettings.showsInvisibleCharacters())
+        textViewStyler.applyInvisibleCharactersVisibility(EditorSettings.showsInvisibleCharacters())
     }
 
     @objc
@@ -520,25 +429,9 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
 
     @objc
     private func handleThemeDidChange() {
-        applyTheme()
+        textViewStyler.applyAppearance()
         refreshSyntaxHighlighting()
         lineNumberRulerView.needsDisplay = true
-    }
-
-    private func applyTheme() {
-        textView.textColor = AppColors.primaryText
-        textView.backgroundColor = AppColors.editorBackground
-        formattingErrorBannerView.applyTheme()
-    }
-
-    private func applySharedEditorAppearance() {
-        applyEditorFont()
-        applyParagraphStyle()
-        synchronizeWordWrapLayout()
-
-        if isViewLoaded {
-            lineNumberRulerView.invalidateLineNumbers()
-        }
     }
 
     private func resetInitialViewportIfNeeded() {
