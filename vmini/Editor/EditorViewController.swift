@@ -259,6 +259,25 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
         textView.scrollRangeToVisible(newSelection)
     }
 
+    func currentLineNumber() -> Int {
+        let selectedLocation = min(textView.selectedRange().location, (textView.string as NSString).length)
+        return lineNumber(for: selectedLocation, in: textView.string as NSString)
+    }
+
+    @discardableResult
+    func goToLine(_ lineNumber: Int) -> Bool {
+        guard lineNumber > 0 else { return false }
+
+        let text = textView.string as NSString
+        let targetLocation = characterLocation(forLineNumber: lineNumber, in: text)
+        let selection = NSRange(location: targetLocation, length: 0)
+        textView.setSelectedRange(selection)
+        textView.scrollRangeToVisible(selection)
+        focusTextView()
+        lineNumberRulerView.needsDisplay = true
+        return true
+    }
+
     private func configureScrollView() {
         scrollView.translatesAutoresizingMaskIntoConstraints = false
         scrollView.borderType = .noBorder
@@ -547,6 +566,48 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
 
     private func leftmostViewportOriginX() -> CGFloat {
         0
+    }
+
+    private func lineNumber(for characterLocation: Int, in text: NSString) -> Int {
+        let clampedLocation = min(max(characterLocation, 0), text.length)
+        var lineNumber = 1
+        var scanLocation = 0
+
+        while scanLocation < clampedLocation {
+            let lineRange = text.lineRange(for: NSRange(location: scanLocation, length: 0))
+            guard NSMaxRange(lineRange) <= clampedLocation else {
+                break
+            }
+
+            lineNumber += 1
+            let nextLocation = NSMaxRange(lineRange)
+            guard nextLocation > scanLocation else {
+                break
+            }
+            scanLocation = nextLocation
+        }
+
+        return lineNumber
+    }
+
+    private func characterLocation(forLineNumber lineNumber: Int, in text: NSString) -> Int {
+        guard lineNumber > 1 else { return 0 }
+
+        var currentLine = 1
+        var scanLocation = 0
+
+        while scanLocation < text.length, currentLine < lineNumber {
+            let lineRange = text.lineRange(for: NSRange(location: scanLocation, length: 0))
+            let nextLocation = NSMaxRange(lineRange)
+            guard nextLocation > scanLocation else {
+                break
+            }
+
+            scanLocation = nextLocation
+            currentLine += 1
+        }
+
+        return min(scanLocation, text.length)
     }
 
     private var lineCommentPrefix: String {

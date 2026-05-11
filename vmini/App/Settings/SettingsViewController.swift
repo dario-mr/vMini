@@ -11,9 +11,6 @@ final class SettingsViewController: NSViewController {
         static let rowSpacing: CGFloat = 14
         static let rowToButtonSpacing: CGFloat = 24
         static let rowHeight: CGFloat = 28
-        static let buttonMinimumWidth: CGFloat = 68
-        static let buttonHeight: CGFloat = 28
-        static let buttonCornerRadius: CGFloat = 7
     }
 
     var onDone: (() -> Void)?
@@ -21,7 +18,7 @@ final class SettingsViewController: NSViewController {
     private let titleLabel = NSTextField(labelWithString: "Settings")
     private let themeSelectionRowView = ThemeSelectionRowView()
     private let fontSelectionRowView = FontSelectionRowView()
-    private let doneButton = NSButton(title: "Done", target: nil, action: nil)
+    private let doneButton = AppButton(title: "Done", style: .primary)
 
     init() {
         super.init(nibName: nil, bundle: nil)
@@ -70,8 +67,6 @@ final class SettingsViewController: NSViewController {
             fontSelectionRowView.heightAnchor.constraint(equalToConstant: Layout.rowHeight),
 
             doneButton.topAnchor.constraint(equalTo: fontSelectionRowView.bottomAnchor, constant: Layout.rowToButtonSpacing),
-            doneButton.widthAnchor.constraint(greaterThanOrEqualToConstant: Layout.buttonMinimumWidth),
-            doneButton.heightAnchor.constraint(equalToConstant: Layout.buttonHeight),
             doneButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Layout.horizontalInset),
             doneButton.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -Layout.bottomInset),
         ])
@@ -104,30 +99,14 @@ final class SettingsViewController: NSViewController {
     }
 
     private func configureDoneButton() {
-        doneButton.translatesAutoresizingMaskIntoConstraints = false
         doneButton.target = self
         doneButton.action = #selector(handleDoneButton)
-        doneButton.isBordered = false
-        doneButton.wantsLayer = true
-        doneButton.font = NSFont.systemFont(ofSize: 12, weight: .medium)
-        doneButton.contentTintColor = nil
-        doneButton.setContentHuggingPriority(.required, for: .horizontal)
         doneButton.keyEquivalent = "\r"
     }
 
     private func applyTheme() {
         view.layer?.backgroundColor = AppColors.windowBackground.cgColor
         titleLabel.textColor = AppColors.primaryText
-        doneButton.layer?.backgroundColor = AppColors.primaryActionBackground.cgColor
-        doneButton.layer?.cornerRadius = Layout.buttonCornerRadius
-        doneButton.attributedTitle = NSAttributedString(
-            string: doneButton.title,
-            attributes: [.foregroundColor: AppColors.primaryActionText]
-        )
-        doneButton.attributedAlternateTitle = NSAttributedString(
-            string: doneButton.title,
-            attributes: [.foregroundColor: AppColors.primaryActionText]
-        )
     }
 
     private func updatePreferredContentSize() {

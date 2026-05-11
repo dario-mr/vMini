@@ -2,6 +2,8 @@ import AppKit
 
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
+    private lazy var goToLineWindowController = GoToLineWindowController()
+
     func applicationWillFinishLaunching(_ notification: Notification) {
         NSWindow.allowsAutomaticWindowTabbing = true
         _ = ThemeManager.shared
@@ -132,6 +134,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     @objc
+    func showGoToLine(_ sender: Any?) {
+        guard let editorController = activeEditorContentViewController() else { return }
+        guard let window = NSApp.keyWindow ?? NSApp.mainWindow else { return }
+
+        goToLineWindowController.present(
+            currentLineNumber: editorController.currentLineNumber(),
+            asSheetFor: window
+        ) { [weak editorController] requestedLine in
+            guard let editorController else { return }
+            _ = editorController.goToLine(requestedLine)
+        }
+    }
+
+    @objc
     func performQuit(_ sender: Any?) {
         SessionRestorer.prepareForTermination()
         NSApp.terminate(sender)
@@ -141,6 +157,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func handleOpenDocumentsDidChange() {
         SessionRestorer.saveOpenFiles()
         MenuBuilder.installMainMenu()
+    }
+
+    private func activeEditorContentViewController() -> EditorContentViewController? {
+        (NSApp.keyWindow?.contentViewController as? EditorContentViewController)
+            ?? (NSApp.mainWindow?.contentViewController as? EditorContentViewController)
     }
 
     @objc(documentController:didReviewAll:contextInfo:)
@@ -172,6 +193,10 @@ extension AppDelegate: NSMenuItemValidation {
         if menuItem.action == #selector(openRecentDocument(_:)) {
             guard let fileURL = menuItem.representedObject as? URL else { return false }
             return FileManager.default.fileExists(atPath: fileURL.path)
+        }
+
+        if menuItem.action == #selector(showGoToLine(_:)) {
+            return OpenDocumentsStore.shared.activeDocument != nil
         }
 
         if menuItem.action == #selector(saveCurrentDocument(_:))

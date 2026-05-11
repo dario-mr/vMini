@@ -13,7 +13,10 @@
 		A0000000000000000000013C /* AppColors.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000013D /* AppColors.swift */; };
 		A00000000000000000000124 /* DocumentController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000125 /* DocumentController.swift */; };
 		A00000000000000000000146 /* SettingsCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000147 /* SettingsCoordinator.swift */; };
+		A0000000000000000000016A /* AppButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000016B /* AppButton.swift */; };
 		A00000000000000000000166 /* FontSelectionRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000167 /* FontSelectionRowView.swift */; };
+		A0000000000000000000016C /* GoToLineViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000016D /* GoToLineViewController.swift */; };
+		A0000000000000000000016E /* GoToLineWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000016F /* GoToLineWindowController.swift */; };
 		A00000000000000000000148 /* SettingsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000149 /* SettingsViewController.swift */; };
 		A0000000000000000000014A /* SettingsWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000014B /* SettingsWindowController.swift */; };
 		A00000000000000000000112 /* MenuBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000102 /* MenuBuilder.swift */; };
@@ -61,7 +64,10 @@
 		A0000000000000000000013D /* AppColors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppColors.swift; sourceTree = "<group>"; };
 		A00000000000000000000125 /* DocumentController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentController.swift; sourceTree = "<group>"; };
 		A00000000000000000000147 /* SettingsCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsCoordinator.swift; sourceTree = "<group>"; };
+		A0000000000000000000016B /* AppButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppButton.swift; sourceTree = "<group>"; };
 		A00000000000000000000167 /* FontSelectionRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FontSelectionRowView.swift; sourceTree = "<group>"; };
+		A0000000000000000000016D /* GoToLineViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoToLineViewController.swift; sourceTree = "<group>"; };
+		A0000000000000000000016F /* GoToLineWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoToLineWindowController.swift; sourceTree = "<group>"; };
 		A00000000000000000000149 /* SettingsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsViewController.swift; sourceTree = "<group>"; };
 		A0000000000000000000014B /* SettingsWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsWindowController.swift; sourceTree = "<group>"; };
 		A00000000000000000000102 /* MenuBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBuilder.swift; sourceTree = "<group>"; };
@@ -140,7 +146,9 @@
 			children = (
 				A0000000000000000000013D /* AppColors.swift */,
 				A00000000000000000000101 /* AppDelegate.swift */,
+				A00000000000000000000170 /* Controls */,
 				A00000000000000000000125 /* DocumentController.swift */,
+				A00000000000000000000171 /* GoToLine */,
 				A00000000000000000000154 /* Settings */,
 				A00000000000000000000102 /* MenuBuilder.swift */,
 				A00000000000000000000155 /* Theme */,
@@ -148,6 +156,23 @@
 				A00000000000000000000103 /* VminiApp.swift */,
 			);
 			path = App;
+			sourceTree = "<group>";
+		};
+		A00000000000000000000170 /* Controls */ = {
+			isa = PBXGroup;
+			children = (
+				A0000000000000000000016B /* AppButton.swift */,
+			);
+			path = Controls;
+			sourceTree = "<group>";
+		};
+		A00000000000000000000171 /* GoToLine */ = {
+			isa = PBXGroup;
+			children = (
+				A0000000000000000000016D /* GoToLineViewController.swift */,
+				A0000000000000000000016F /* GoToLineWindowController.swift */,
+			);
+			path = GoToLine;
 			sourceTree = "<group>";
 		};
 		A00000000000000000000154 /* Settings */ = {
@@ -324,6 +349,9 @@
 				A0000000000000000000013C /* AppColors.swift in Sources */,
 				A00000000000000000000111 /* AppDelegate.swift in Sources */,
 				A00000000000000000000124 /* DocumentController.swift in Sources */,
+				A0000000000000000000016A /* AppButton.swift in Sources */,
+				A0000000000000000000016C /* GoToLineViewController.swift in Sources */,
+				A0000000000000000000016E /* GoToLineWindowController.swift in Sources */,
 				A00000000000000000000146 /* SettingsCoordinator.swift in Sources */,
 				A00000000000000000000166 /* FontSelectionRowView.swift in Sources */,
 				A00000000000000000000148 /* SettingsViewController.swift in Sources */,
