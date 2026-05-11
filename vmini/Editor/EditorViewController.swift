@@ -24,6 +24,7 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
     var onTextChanged: (() -> Void)?
     var onFileSystemURLsDropped: (([URL]) -> Void)?
     var onJSONFormattingError: ((String, String) -> Void)?
+    var onCursorPositionChanged: (() -> Void)?
 
     private let scrollView = NSScrollView()
     private let formattingErrorBannerView = NSView()
@@ -58,6 +59,7 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
                 lineNumberRulerView.invalidateLineNumbers()
                 resetInitialViewportIfNeeded()
             }
+            notifyCursorPositionChanged()
         }
     }
 
@@ -144,6 +146,7 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
         clearFormattingErrorBanner()
         synchronizeWordWrapLayout()
         onTextChanged?()
+        notifyCursorPositionChanged()
     }
 
     func textStorage(
@@ -169,6 +172,7 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
 
     func textViewDidChangeSelection(_ notification: Notification) {
         lineNumberRulerView.needsDisplay = true
+        notifyCursorPositionChanged()
     }
 
     func increaseFontSize() {
@@ -215,6 +219,7 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
         textStorage.replaceCharacters(in: affectedRange, with: replacementString)
         textView.didChangeText()
         textView.setSelectedRange(newSelectedRange)
+        notifyCursorPositionChanged()
     }
 
     func formatJSONSelectionOrDocument() {
@@ -257,11 +262,23 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
         textView.didChangeText()
         textView.setSelectedRange(newSelection)
         textView.scrollRangeToVisible(newSelection)
+        notifyCursorPositionChanged()
     }
 
     func currentLineNumber() -> Int {
-        let selectedLocation = min(textView.selectedRange().location, (textView.string as NSString).length)
-        return lineNumber(for: selectedLocation, in: textView.string as NSString)
+        currentCursorPosition().line
+    }
+
+    func currentCursorPosition() -> EditorCursorPosition {
+        let text = textView.string as NSString
+        let selectedLocation = min(textView.selectedRange().location, text.length)
+        let line = lineNumber(for: selectedLocation, in: text)
+        let lineRange = text.lineRange(for: NSRange(location: selectedLocation, length: 0))
+        let lineStart = min(lineRange.location, selectedLocation)
+        let prefixRange = NSRange(location: lineStart, length: selectedLocation - lineStart)
+        let column = text.substring(with: prefixRange).count + 1
+
+        return EditorCursorPosition(line: line, column: column)
     }
 
     @discardableResult
@@ -275,6 +292,7 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
         textView.scrollRangeToVisible(selection)
         focusTextView()
         lineNumberRulerView.needsDisplay = true
+        notifyCursorPositionChanged()
         return true
     }
 
@@ -428,6 +446,10 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
 
     private func currentSyntaxTheme() -> SyntaxTheme {
         ThemeManager.shared.syntaxTheme
+    }
+
+    private func notifyCursorPositionChanged() {
+        onCursorPositionChanged?()
     }
 
     private func applyEditorWordWrap(_ isEnabled: Bool) {
