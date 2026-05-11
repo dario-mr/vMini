@@ -2,18 +2,26 @@ import AppKit
 import XCTest
 @testable import vmini
 
+@available(macOS 14.0, *)
 @MainActor
 final class EditorFontTests: XCTestCase {
-    private var originalUserDefaults: UserDefaults!
+    private nonisolated(unsafe) static var originalUserDefaults: UserDefaults?
 
     override func setUp() {
         super.setUp()
-        originalUserDefaults = EditorSettings.userDefaults
-        EditorSettings.userDefaults = makeUserDefaults()
+        let testUserDefaults = Self.makeUserDefaults()
+        MainActor.assumeIsolated {
+            Self.originalUserDefaults = EditorSettings.userDefaults
+            EditorSettings.userDefaults = testUserDefaults
+        }
     }
 
     override func tearDown() {
-        EditorSettings.userDefaults = originalUserDefaults
+        if let originalUserDefaults = Self.originalUserDefaults {
+            MainActor.assumeIsolated {
+                EditorSettings.userDefaults = originalUserDefaults
+            }
+        }
         super.tearDown()
     }
 
@@ -111,7 +119,7 @@ final class EditorFontTests: XCTestCase {
         return nil
     }
 
-    private func makeUserDefaults() -> UserDefaults {
+    private nonisolated static func makeUserDefaults() -> UserDefaults {
         let suiteName = "EditorFontTests.\(UUID().uuidString)"
         let userDefaults = UserDefaults(suiteName: suiteName)!
         userDefaults.removePersistentDomain(forName: suiteName)

@@ -11,16 +11,6 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
         static let formattingErrorBannerMaximumWidth: CGFloat = 560
     }
 
-    private struct CommentEdit {
-        let location: Int
-        let removedLength: Int
-        let insertedText: String
-
-        var insertedLength: Int {
-            (insertedText as NSString).length
-        }
-    }
-
     var onTextChanged: (() -> Void)?
     var onFileSystemURLsDropped: (([URL]) -> Void)?
     var onJSONFormattingError: ((String, String) -> Void)?
@@ -195,63 +185,24 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
 
     func toggleLineComment() {
         guard let textStorage = textView.textStorage else { return }
-
-        let selectedRange = textView.selectedRange()
         let text = textView.string as NSString
-        let affectedRange = affectedLineRange(in: text, selectedRange: selectedRange)
-        let edits = commentEdits(in: text, affectedRange: affectedRange)
-        guard !edits.isEmpty else { return }
-
-        let replacement = NSMutableString(string: text.substring(with: affectedRange))
-        for edit in edits.reversed() {
-            replacement.replaceCharacters(
-                in: NSRange(location: edit.location - affectedRange.location, length: edit.removedLength),
-                with: edit.insertedText
-            )
-        }
-
-        let replacementString = replacement as String
-        guard textView.shouldChangeText(in: affectedRange, replacementString: replacementString) else {
+        guard let edit = EditorTextEditing.toggleLineComment(
+            in: text,
+            selectedRange: textView.selectedRange(),
+            syntaxLanguage: syntaxLanguage
+        ) else {
             return
         }
 
-        let newSelectionStart = transformedPosition(selectedRange.location, byApplying: edits)
-        let newSelectionEnd = transformedPosition(NSMaxRange(selectedRange), byApplying: edits)
-        let newSelectedRange = NSRange(
-            location: min(newSelectionStart, newSelectionEnd),
-            length: abs(newSelectionEnd - newSelectionStart)
-        )
-
-        textStorage.replaceCharacters(in: affectedRange, with: replacementString)
-        textView.didChangeText()
-        textView.setSelectedRange(newSelectedRange)
-        notifyCursorPositionChanged()
+        applyBufferEdit(edit, using: textStorage)
     }
 
     func duplicateSelectedLines() {
         guard let textStorage = textView.textStorage else { return }
 
         let text = textView.string as NSString
-        let selectedRange = textView.selectedRange().clamped(toLength: text.length)
-        let affectedRange = affectedLineRange(in: text, selectedRange: selectedRange)
-        let duplicatedText = duplicatedLineBlockText(for: affectedRange, in: text)
-        let insertionLocation = NSMaxRange(affectedRange)
-
-        guard textView.shouldChangeText(in: NSRange(location: insertionLocation, length: 0), replacementString: duplicatedText) else {
-            return
-        }
-
-        let selectionOffset = (duplicatedText as NSString).length
-        let newSelectedRange = NSRange(
-            location: selectedRange.location + selectionOffset,
-            length: selectedRange.length
-        )
-
-        textStorage.replaceCharacters(in: NSRange(location: insertionLocation, length: 0), with: duplicatedText)
-        textView.didChangeText()
-        textView.setSelectedRange(newSelectedRange)
-        textView.scrollRangeToVisible(newSelectedRange)
-        notifyCursorPositionChanged()
+        let edit = EditorTextEditing.duplicateSelectedLines(in: text, selectedRange: textView.selectedRange())
+        applyBufferEdit(edit, using: textStorage, scrollSelectionIntoView: true)
     }
 
     @discardableResult
@@ -313,14 +264,7 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
 
     func currentCursorPosition() -> EditorCursorPosition {
         let text = textView.string as NSString
-        let selectedLocation = min(textView.selectedRange().location, text.length)
-        let line = lineNumber(for: selectedLocation, in: text)
-        let lineRange = text.lineRange(for: NSRange(location: selectedLocation, length: 0))
-        let lineStart = min(lineRange.location, selectedLocation)
-        let prefixRange = NSRange(location: lineStart, length: selectedLocation - lineStart)
-        let column = text.substring(with: prefixRange).count + 1
-
-        return EditorCursorPosition(line: line, column: column)
+        return EditorTextEditing.currentCursorPosition(in: text, selectedRange: textView.selectedRange())
     }
 
     @discardableResult
@@ -328,7 +272,7 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
         guard lineNumber > 0 else { return false }
 
         let text = textView.string as NSString
-        let targetLocation = characterLocation(forLineNumber: lineNumber, in: text)
+        let targetLocation = EditorTextEditing.characterLocation(forLineNumber: lineNumber, in: text)
         let selection = NSRange(location: targetLocation, length: 0)
         textView.setSelectedRange(selection)
         textView.scrollRangeToVisible(selection)
@@ -505,42 +449,39 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
         textView.layoutManager?.showsInvisibleCharacters = isVisible
     }
 
-    private func moveSelectedLines(direction: LineMoveDirection) -> Bool {
-        guard let textStorage = textView.textStorage else { return false }
-
-        let text = textView.string as NSString
-        let selectedRange = textView.selectedRange().clamped(toLength: text.length)
-        let affectedRange = affectedLineRange(in: text, selectedRange: selectedRange)
-
-        let swap: LineSwapOperation
-        switch direction {
-        case .up:
-            guard let previousRange = previousAdjacentLineRange(before: affectedRange, in: text) else {
-                return false
-            }
-            swap = swappedAdjacentLineBlocks(upperRange: previousRange, lowerRange: affectedRange, in: text)
-        case .down:
-            guard let nextRange = nextAdjacentLineRange(after: affectedRange, in: text) else {
-                return false
-            }
-            swap = swappedAdjacentLineBlocks(upperRange: affectedRange, lowerRange: nextRange, in: text)
-        }
-
-        guard textView.shouldChangeText(in: swap.replacedRange, replacementString: swap.replacementText) else {
+    @discardableResult
+    private func applyBufferEdit(
+        _ edit: EditorTextEdit,
+        using textStorage: NSTextStorage,
+        scrollSelectionIntoView: Bool = false
+    ) -> Bool {
+        guard textView.shouldChangeText(in: edit.replacementRange, replacementString: edit.replacementText) else {
             return false
         }
 
-        let selectionLocationDelta = direction == .up
-            ? swap.lowerSelectionLocationDelta
-            : swap.upperSelectionLocationDelta
-        let newSelectedRange = NSRange(location: selectedRange.location + selectionLocationDelta, length: selectedRange.length)
-
-        textStorage.replaceCharacters(in: swap.replacedRange, with: swap.replacementText)
+        textStorage.replaceCharacters(in: edit.replacementRange, with: edit.replacementText)
         textView.didChangeText()
-        textView.setSelectedRange(newSelectedRange)
-        textView.scrollRangeToVisible(newSelectedRange)
+        textView.setSelectedRange(edit.selectedRange)
+        if scrollSelectionIntoView {
+            textView.scrollRangeToVisible(edit.selectedRange)
+        }
         notifyCursorPositionChanged()
         return true
+    }
+
+    private func moveSelectedLines(direction: EditorLineMoveDirection) -> Bool {
+        guard let textStorage = textView.textStorage else { return false }
+
+        let text = textView.string as NSString
+        guard let edit = EditorTextEditing.moveSelectedLines(
+            in: text,
+            selectedRange: textView.selectedRange(),
+            direction: direction
+        ) else {
+            return false
+        }
+
+        return applyBufferEdit(edit, using: textStorage, scrollSelectionIntoView: true)
     }
 
     private func applyEditorWordWrap(_ isEnabled: Bool) {
@@ -684,179 +625,6 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
 
     private func leftmostViewportOriginX() -> CGFloat {
         0
-    }
-
-    private enum LineMoveDirection {
-        case up
-        case down
-    }
-
-    private struct LineSwapOperation {
-        let replacedRange: NSRange
-        let replacementText: String
-        let upperSelectionLocationDelta: Int
-        let lowerSelectionLocationDelta: Int
-    }
-
-    private func lineNumber(for characterLocation: Int, in text: NSString) -> Int {
-        let clampedLocation = min(max(characterLocation, 0), text.length)
-        var lineNumber = 1
-        var scanLocation = 0
-
-        while scanLocation < clampedLocation {
-            let lineRange = text.lineRange(for: NSRange(location: scanLocation, length: 0))
-            guard NSMaxRange(lineRange) <= clampedLocation else {
-                break
-            }
-
-            lineNumber += 1
-            let nextLocation = NSMaxRange(lineRange)
-            guard nextLocation > scanLocation else {
-                break
-            }
-            scanLocation = nextLocation
-        }
-
-        return lineNumber
-    }
-
-    private func characterLocation(forLineNumber lineNumber: Int, in text: NSString) -> Int {
-        guard lineNumber > 1 else { return 0 }
-
-        var currentLine = 1
-        var scanLocation = 0
-
-        while scanLocation < text.length, currentLine < lineNumber {
-            let lineRange = text.lineRange(for: NSRange(location: scanLocation, length: 0))
-            let nextLocation = NSMaxRange(lineRange)
-            guard nextLocation > scanLocation else {
-                break
-            }
-
-            scanLocation = nextLocation
-            currentLine += 1
-        }
-
-        return min(scanLocation, text.length)
-    }
-
-    private var lineCommentPrefix: String {
-        switch syntaxLanguage {
-        case .bash, .sshconfig:
-            "#"
-        case .plaintext, .markdown, .json:
-            "//"
-        }
-    }
-
-    private func affectedLineRange(in text: NSString, selectedRange: NSRange) -> NSRange {
-        let textLength = text.length
-        let selectedLocation = min(selectedRange.location, textLength)
-
-        guard selectedRange.length > 0 else {
-            return text.lineRange(for: NSRange(location: selectedLocation, length: 0))
-        }
-
-        let selectionEnd = min(NSMaxRange(selectedRange), textLength)
-        let lastSelectedCharacter = max(selectedLocation, selectionEnd - 1)
-        let firstLineRange = text.lineRange(for: NSRange(location: selectedLocation, length: 0))
-        let lastLineRange = text.lineRange(for: NSRange(location: lastSelectedCharacter, length: 0))
-        return NSRange(
-            location: firstLineRange.location,
-            length: NSMaxRange(lastLineRange) - firstLineRange.location
-        )
-    }
-
-    private func duplicatedLineBlockText(for affectedRange: NSRange, in text: NSString) -> String {
-        let lineText = text.substring(with: affectedRange)
-        if NSMaxRange(affectedRange) < text.length || lineText.hasSuffix("\n") {
-            return lineText
-        }
-
-        return "\n" + lineText
-    }
-
-    private func previousAdjacentLineRange(before affectedRange: NSRange, in text: NSString) -> NSRange? {
-        guard affectedRange.location > 0 else { return nil }
-        return text.lineRange(for: NSRange(location: affectedRange.location - 1, length: 0))
-    }
-
-    private func nextAdjacentLineRange(after affectedRange: NSRange, in text: NSString) -> NSRange? {
-        let nextLocation = NSMaxRange(affectedRange)
-        guard nextLocation < text.length else { return nil }
-        return text.lineRange(for: NSRange(location: nextLocation, length: 0))
-    }
-
-    private func swappedAdjacentLineBlocks(upperRange: NSRange, lowerRange: NSRange, in text: NSString) -> LineSwapOperation {
-        let upperText = text.substring(with: upperRange)
-        let lowerText = text.substring(with: lowerRange)
-        let lowerEndsAtEOF = NSMaxRange(lowerRange) == text.length
-        let lowerHasTrailingNewline = lowerText.hasSuffix("\n")
-
-        let replacementText: String
-        let movedBlockDelta: Int
-        if lowerEndsAtEOF && !lowerHasTrailingNewline {
-            let normalizedUpperText = upperText.hasSuffix("\n") ? String(upperText.dropLast()) : upperText
-            replacementText = lowerText + "\n" + normalizedUpperText
-            movedBlockDelta = lowerText.count + 1
-        } else {
-            replacementText = lowerText + upperText
-            movedBlockDelta = lowerRange.length
-        }
-
-        return LineSwapOperation(
-            replacedRange: NSRange(location: upperRange.location, length: NSMaxRange(lowerRange) - upperRange.location),
-            replacementText: replacementText,
-            upperSelectionLocationDelta: movedBlockDelta,
-            lowerSelectionLocationDelta: -upperRange.length
-        )
-    }
-
-    private func commentEdits(in text: NSString, affectedRange: NSRange) -> [CommentEdit] {
-        let affectedEnd = NSMaxRange(affectedRange)
-        var edits: [CommentEdit] = []
-        var lineLocation = affectedRange.location
-        let commentPrefix = lineCommentPrefix
-        let prefixLength = (commentPrefix as NSString).length
-
-        repeat {
-            let lineRange = text.lineRange(for: NSRange(location: min(lineLocation, text.length), length: 0))
-            let hasCommentPrefix = lineRange.location + prefixLength <= text.length
-                && text.substring(with: NSRange(location: lineRange.location, length: prefixLength)) == commentPrefix
-
-            edits.append(CommentEdit(
-                location: lineRange.location,
-                removedLength: hasCommentPrefix ? prefixLength : 0,
-                insertedText: hasCommentPrefix ? "" : commentPrefix
-            ))
-
-            let nextLineLocation = NSMaxRange(lineRange)
-            guard nextLineLocation > lineLocation else {
-                break
-            }
-
-            lineLocation = nextLineLocation
-        } while lineLocation < affectedEnd
-
-        return edits
-    }
-
-    private func transformedPosition(_ position: Int, byApplying edits: [CommentEdit]) -> Int {
-        var delta = 0
-
-        for edit in edits {
-            if position < edit.location {
-                break
-            }
-
-            if edit.removedLength > 0, position <= edit.location + edit.removedLength {
-                return edit.location + delta + min(position - edit.location, edit.insertedLength)
-            }
-
-            delta += edit.insertedLength - edit.removedLength
-        }
-
-        return position + delta
     }
 
     private func presentJSONFormattingError(forSelection: Bool, error: Error, characterOffset: Int) {

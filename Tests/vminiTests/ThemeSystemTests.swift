@@ -69,7 +69,7 @@ final class ThemeSystemTests: XCTestCase {
         XCTAssertTrue(palette.windowBackground.isEqual(NSColor(calibratedRed: 40.0 / 255.0, green: 42.0 / 255.0, blue: 54.0 / 255.0, alpha: 1.0)))
         XCTAssertTrue(palette.editorBackground.isEqual(NSColor(calibratedRed: 40.0 / 255.0, green: 42.0 / 255.0, blue: 54.0 / 255.0, alpha: 1.0)))
         XCTAssertTrue(palette.primaryText.isEqual(NSColor(calibratedRed: 248.0 / 255.0, green: 248.0 / 255.0, blue: 242.0 / 255.0, alpha: 1.0)))
-        XCTAssertTrue(palette.primaryActionBackground.isEqual(NSColor(calibratedRed: 189.0 / 255.0, green: 147.0 / 255.0, blue: 249.0 / 255.0, alpha: 1.0)))
+        XCTAssertTrue(palette.primaryActionBackground.isEqual(NSColor(calibratedRed: 162.0 / 255.0, green: 119.0 / 255.0, blue: 222.0 / 255.0, alpha: 1.0)))
         XCTAssertTrue(palette.syntaxListMarker.isEqual(NSColor(calibratedRed: 255.0 / 255.0, green: 184.0 / 255.0, blue: 108.0 / 255.0, alpha: 1.0)))
         XCTAssertTrue(palette.syntaxHeadingText.isEqual(NSColor(calibratedRed: 255.0 / 255.0, green: 179.0 / 255.0, blue: 218.0 / 255.0, alpha: 1.0)))
         XCTAssertTrue(palette.syntaxLinkURL.isEqual(NSColor(calibratedRed: 80.0 / 255.0, green: 250.0 / 255.0, blue: 123.0 / 255.0, alpha: 1.0)))
