@@ -109,6 +109,12 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
             name: EditorSettings.wordWrapDidChangeNotification,
             object: nil
         )
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleSharedInvisibleCharactersChange),
+            name: EditorSettings.invisibleCharactersDidChangeNotification,
+            object: nil
+        )
 
         let contentView = scrollView.contentView
         contentView.postsBoundsChangedNotifications = true
@@ -336,6 +342,7 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
         textView.textStorage?.delegate = self
         scrollView.documentView = textView
         applyEditorWordWrap(EditorSettings.isWordWrapEnabled())
+        applyInvisibleCharactersVisibility(EditorSettings.showsInvisibleCharacters())
         applyTheme()
         refreshSyntaxHighlighting()
     }
@@ -452,6 +459,10 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
         onCursorPositionChanged?()
     }
 
+    private func applyInvisibleCharactersVisibility(_ isVisible: Bool) {
+        textView.layoutManager?.showsInvisibleCharacters = isVisible
+    }
+
     private func applyEditorWordWrap(_ isEnabled: Bool) {
         scrollView.hasHorizontalScroller = !isEnabled
         textView.isHorizontallyResizable = !isEnabled
@@ -512,6 +523,11 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
     @objc
     private func handleSharedWordWrapChange() {
         applyEditorWordWrap(EditorSettings.isWordWrapEnabled())
+    }
+
+    @objc
+    private func handleSharedInvisibleCharactersChange() {
+        applyInvisibleCharactersVisibility(EditorSettings.showsInvisibleCharacters())
     }
 
     @objc

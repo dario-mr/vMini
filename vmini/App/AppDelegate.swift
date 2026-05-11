@@ -72,6 +72,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     @objc
+    func toggleInvisibleCharacters(_ sender: Any?) {
+        EditorSettings.toggleInvisibleCharacters()
+    }
+
+    @objc
     func newDocument(_ sender: Any?) {
         WorkspaceWindowController.shared.createUntitledDocument()
     }
@@ -183,6 +188,11 @@ extension AppDelegate: NSMenuItemValidation {
     func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
         if menuItem.action == #selector(toggleWordWrap(_:)) {
             menuItem.state = EditorSettings.isWordWrapEnabled() ? .on : .off
+            return true
+        }
+
+        if menuItem.action == #selector(toggleInvisibleCharacters(_:)) {
+            menuItem.state = EditorSettings.showsInvisibleCharacters() ? .on : .off
             return true
         }
 
