@@ -52,6 +52,9 @@ enum MenuBuilder {
         newItem.target = NSApp.delegate as AnyObject?
         let openItem = menu.addItem(withTitle: "Open…", action: #selector(AppDelegate.openDocumentOrFolder(_:)), keyEquivalent: "o")
         openItem.target = NSApp.delegate as AnyObject?
+        let openRecentItem = NSMenuItem(title: "Open Recent", action: nil, keyEquivalent: "")
+        openRecentItem.submenu = makeOpenRecentMenu()
+        menu.addItem(openRecentItem)
 
         menu.addItem(.separator())
         let closeItem = menu.addItem(withTitle: "Close", action: #selector(AppDelegate.closeCurrentDocument(_:)), keyEquivalent: "w")
@@ -60,6 +63,45 @@ enum MenuBuilder {
         saveItem.target = NSApp.delegate as AnyObject?
         let saveAsItem = menu.addItem(withTitle: "Save As…", action: #selector(AppDelegate.saveCurrentDocumentAs(_:)), keyEquivalent: "S")
         saveAsItem.target = NSApp.delegate as AnyObject?
+
+        return menu
+    }
+
+    private static func makeOpenRecentMenu() -> NSMenu {
+        let menu = NSMenu(title: "Open Recent")
+        let delegate = NSApp.delegate as AnyObject?
+        let recentURLs = NSDocumentController.shared.recentDocumentURLs.filter { url in
+            var isDirectory: ObjCBool = false
+            return FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirectory) && !isDirectory.boolValue
+        }
+
+        if recentURLs.isEmpty {
+            let emptyItem = NSMenuItem(title: "No Recent Files", action: nil, keyEquivalent: "")
+            emptyItem.isEnabled = false
+            menu.addItem(emptyItem)
+            return menu
+        }
+
+        for url in recentURLs {
+            let item = NSMenuItem(
+                title: url.lastPathComponent,
+                action: #selector(AppDelegate.openRecentDocument(_:)),
+                keyEquivalent: ""
+            )
+            item.target = delegate
+            item.representedObject = url
+            item.toolTip = (url.path as NSString).abbreviatingWithTildeInPath
+            menu.addItem(item)
+        }
+
+        menu.addItem(.separator())
+        let clearItem = NSMenuItem(
+            title: "Clear Menu",
+            action: #selector(AppDelegate.clearRecentDocuments(_:)),
+            keyEquivalent: ""
+        )
+        clearItem.target = delegate
+        menu.addItem(clearItem)
 
         return menu
     }
