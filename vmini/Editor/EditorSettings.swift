@@ -4,6 +4,7 @@ import AppKit
 enum EditorSettings {
     private enum Constants {
         static let defaultFontSize: CGFloat = 13
+        static let fontSizeStep: CGFloat = 0.5
         static let minFontSize: CGFloat = 8
         static let maxFontSize: CGFloat = 32
     }
@@ -36,11 +37,11 @@ enum EditorSettings {
     }
 
     static func increaseFontSize() {
-        setFontSize(currentFontSize() + 1)
+        setFontSize(currentFontSize() + Constants.fontSizeStep)
     }
 
     static func decreaseFontSize() {
-        setFontSize(currentFontSize() - 1)
+        setFontSize(currentFontSize() - Constants.fontSizeStep)
     }
 
     static func isWordWrapEnabled() -> Bool {

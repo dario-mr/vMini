@@ -385,6 +385,7 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
     @objc
     private func handleSharedEditorAppearanceChange() {
         textViewStyler.applyAppearance()
+        refreshSyntaxHighlighting()
     }
 
     @objc

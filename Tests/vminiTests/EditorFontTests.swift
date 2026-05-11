@@ -73,6 +73,23 @@ final class EditorFontTests: XCTestCase {
         XCTAssertEqual(textView.textContainer?.widthTracksTextView, EditorSettings.isWordWrapEnabled())
     }
 
+    func testFontSizeChangePreservesSyntaxHighlighting() throws {
+        let viewController = EditorViewController()
+        viewController.loadViewIfNeeded()
+        viewController.syntaxLanguage = .markdown
+        viewController.text = "# Title"
+
+        let storage = try XCTUnwrap(viewController.textStorage)
+        let location = (viewController.text as NSString).range(of: "#").location
+        let highlightedColor = storage.attribute(.foregroundColor, at: location, effectiveRange: nil) as? NSColor
+        XCTAssertTrue(highlightedColor?.isEqual(ThemeManager.shared.syntaxTheme.headingMarker) == true)
+
+        EditorSettings.increaseFontSize()
+
+        let updatedColor = storage.attribute(.foregroundColor, at: location, effectiveRange: nil) as? NSColor
+        XCTAssertTrue(updatedColor?.isEqual(ThemeManager.shared.syntaxTheme.headingMarker) == true)
+    }
+
     func testSettingsViewWritesFontSelectionBackToEditorSettings() throws {
         let availableFonts = EditorFontResolver.availableFontIDs()
         let selectedFont = try XCTUnwrap(availableFonts.last)
