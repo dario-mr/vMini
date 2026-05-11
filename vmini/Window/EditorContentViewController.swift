@@ -431,6 +431,15 @@ final class EditorContentViewController: NSViewController {
         currentEditorViewController?.formatJSONSelectionOrDocument()
     }
 
+    func currentLineNumber() -> Int {
+        currentEditorViewController?.currentLineNumber() ?? 1
+    }
+
+    @discardableResult
+    func goToLine(_ lineNumber: Int) -> Bool {
+        currentEditorViewController?.goToLine(lineNumber) ?? false
+    }
+
     private func storedSidebarWidth() -> CGFloat {
         let width = UserDefaults.standard.double(forKey: UserDefaultsKeys.openFilesSidebarWidth)
         guard width > 0 else { return Constants.sidebarDefaultWidth }
