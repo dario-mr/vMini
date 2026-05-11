@@ -199,10 +199,11 @@ final class SyntaxHighlightingTests: XCTestCase {
 
         let storage = try XCTUnwrap(viewController.textStorage)
         let nsText = viewController.text as NSString
-        assertColor(ThemeCatalog.palette(for: .default).syntaxTheme.headingMarker, at: nsText.range(of: "#").location, in: storage)
+        let syntaxTheme = ThemeManager.shared.syntaxTheme
+        assertColor(syntaxTheme.headingMarker, at: nsText.range(of: "#").location, in: storage)
 
         viewController.syntaxLanguage = .plaintext
-        assertColor(ThemeCatalog.palette(for: .default).syntaxTheme.plainText, at: nsText.range(of: "#").location, in: storage)
+        assertColor(syntaxTheme.plainText, at: nsText.range(of: "#").location, in: storage)
     }
 
     func testEditorViewControllerUsesShellCommentPrefixForBash() throws {
