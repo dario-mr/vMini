@@ -12,6 +12,7 @@ enum EditorSettings {
 
     static let appearanceDidChangeNotification = Notification.Name("EditorAppearanceDidChange")
     static let wordWrapDidChangeNotification = Notification.Name("EditorWordWrapDidChange")
+    static let invisibleCharactersDidChangeNotification = Notification.Name("EditorInvisibleCharactersDidChange")
 
     static func currentFontID() -> EditorFontID {
         guard
@@ -50,6 +51,14 @@ enum EditorSettings {
         setWordWrapEnabled(!isWordWrapEnabled())
     }
 
+    static func showsInvisibleCharacters() -> Bool {
+        userDefaults.bool(forKey: UserDefaultsKeys.editorShowsInvisibleCharacters)
+    }
+
+    static func toggleInvisibleCharacters() {
+        setShowsInvisibleCharacters(!showsInvisibleCharacters())
+    }
+
     static func setFontID(_ fontID: EditorFontID) {
         guard fontID != currentFontID() else {
             return
@@ -76,6 +85,15 @@ enum EditorSettings {
 
         userDefaults.set(isEnabled, forKey: UserDefaultsKeys.editorWordWrapEnabled)
         NotificationCenter.default.post(name: wordWrapDidChangeNotification, object: nil)
+    }
+
+    static func setShowsInvisibleCharacters(_ isEnabled: Bool) {
+        guard isEnabled != showsInvisibleCharacters() else {
+            return
+        }
+
+        userDefaults.set(isEnabled, forKey: UserDefaultsKeys.editorShowsInvisibleCharacters)
+        NotificationCenter.default.post(name: invisibleCharactersDidChangeNotification, object: nil)
     }
 
     private static func clampedFontSize(_ fontSize: CGFloat) -> CGFloat {

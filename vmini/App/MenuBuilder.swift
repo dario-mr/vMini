@@ -154,6 +154,14 @@ enum MenuBuilder {
         wordWrapItem.target = NSApp.delegate as AnyObject?
         wordWrapItem.state = EditorSettings.isWordWrapEnabled() ? .on : .off
 
+        let invisibleCharactersItem = menu.addItem(
+            withTitle: "Show Invisible Characters",
+            action: #selector(AppDelegate.toggleInvisibleCharacters(_:)),
+            keyEquivalent: ""
+        )
+        invisibleCharactersItem.target = NSApp.delegate as AnyObject?
+        invisibleCharactersItem.state = EditorSettings.showsInvisibleCharacters() ? .on : .off
+
         return menu
     }
 

@@ -3,6 +3,7 @@ enum UserDefaultsKeys {
     static let editorFontID = "EditorFontID"
     static let editorFontSize = "EditorFontSize"
     static let editorWordWrapEnabled = "EditorWordWrapEnabled"
+    static let editorShowsInvisibleCharacters = "EditorShowsInvisibleCharacters"
     static let workspaceWindowFrame = "WorkspaceWindowFrame"
     static let openFilesSidebarWidth = "OpenFilesSidebarWidth"
     static let syntaxLanguageOverrides = "SyntaxLanguageOverrides"
