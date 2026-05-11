@@ -4,11 +4,6 @@ import AppKit
 final class EditorViewController: NSViewController, NSTextViewDelegate, @preconcurrency NSTextStorageDelegate {
     private enum Constants {
         static let lineSpacing: CGFloat = 2
-        static let formattingErrorBannerHeight: CGFloat = 30
-        static let formattingErrorBannerMinimumWidth: CGFloat = 180
-        static let formattingErrorBannerHorizontalInset: CGFloat = 12
-        static let formattingErrorBannerVerticalGap: CGFloat = 6
-        static let formattingErrorBannerMaximumWidth: CGFloat = 560
     }
 
     var onTextChanged: (() -> Void)?
@@ -17,9 +12,7 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
     var onCursorPositionChanged: (() -> Void)?
 
     private let scrollView = NSScrollView()
-    private let formattingErrorBannerView = NSView()
-    private let formattingErrorBannerLabel = NSTextField(labelWithString: "")
-    private let formattingErrorBannerDismissButton = NSButton(title: "", target: nil, action: nil)
+    private let formattingErrorBannerView = ErrorBannerView()
     private let textView = FileDropTextView()
     private let highlighterRegistry = HighlighterRegistry.shared
     private lazy var lineNumberRulerView = LineNumberRulerView(textView: textView)
@@ -27,7 +20,9 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
     private var hasCompletedInitialViewportReset = false
     private var isApplyingSyntaxHighlighting = false
     private var formattingErrorCharacterLocation: Int?
-    private(set) var formattingErrorMessage: String?
+    var formattingErrorMessage: String? {
+        formattingErrorBannerView.message
+    }
 
     var syntaxLanguage: SyntaxLanguage = .plaintext {
         didSet {
@@ -334,45 +329,11 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
     }
 
     private func configureFormattingErrorBanner() {
-        formattingErrorBannerView.wantsLayer = true
-        formattingErrorBannerView.isHidden = true
-        formattingErrorBannerView.frame = NSRect(
-            x: 0,
-            y: 0,
-            width: Constants.formattingErrorBannerMinimumWidth,
-            height: Constants.formattingErrorBannerHeight
-        )
-        formattingErrorBannerView.layer?.cornerRadius = 7
-        formattingErrorBannerView.layer?.masksToBounds = true
-
-        formattingErrorBannerLabel.translatesAutoresizingMaskIntoConstraints = false
-        formattingErrorBannerLabel.lineBreakMode = .byTruncatingTail
-        formattingErrorBannerLabel.font = NSFont.systemFont(ofSize: 12, weight: .medium)
-
-        formattingErrorBannerDismissButton.translatesAutoresizingMaskIntoConstraints = false
-        formattingErrorBannerDismissButton.isBordered = false
-        formattingErrorBannerDismissButton.bezelStyle = .regularSquare
-        formattingErrorBannerDismissButton.imagePosition = .imageOnly
-        formattingErrorBannerDismissButton.image = NSImage(systemSymbolName: "xmark", accessibilityDescription: "Dismiss formatting error")
-        formattingErrorBannerDismissButton.symbolConfiguration = NSImage.SymbolConfiguration(pointSize: 10, weight: .bold)
-        formattingErrorBannerDismissButton.target = self
-        formattingErrorBannerDismissButton.action = #selector(dismissFormattingErrorBanner(_:))
-
-        formattingErrorBannerView.addSubview(formattingErrorBannerLabel)
-        formattingErrorBannerView.addSubview(formattingErrorBannerDismissButton)
-        NSLayoutConstraint.activate([
-            formattingErrorBannerLabel.leadingAnchor.constraint(equalTo: formattingErrorBannerView.leadingAnchor, constant: 12),
-            formattingErrorBannerLabel.trailingAnchor.constraint(equalTo: formattingErrorBannerDismissButton.leadingAnchor, constant: -8),
-            formattingErrorBannerLabel.centerYAnchor.constraint(equalTo: formattingErrorBannerView.centerYAnchor),
-
-            formattingErrorBannerDismissButton.trailingAnchor.constraint(equalTo: formattingErrorBannerView.trailingAnchor, constant: -8),
-            formattingErrorBannerDismissButton.centerYAnchor.constraint(equalTo: formattingErrorBannerView.centerYAnchor),
-            formattingErrorBannerDismissButton.widthAnchor.constraint(equalToConstant: 18),
-            formattingErrorBannerDismissButton.heightAnchor.constraint(equalToConstant: 18),
-        ])
-
+        formattingErrorBannerView.onDismiss = { [weak self] in
+            self?.dismissFormattingErrorBanner()
+        }
         scrollView.contentView.addSubview(formattingErrorBannerView)
-        applyFormattingErrorBannerAppearance()
+        formattingErrorBannerView.applyTheme()
     }
 
     private func configureLineNumberRuler() {
@@ -567,7 +528,7 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
     private func applyTheme() {
         textView.textColor = AppColors.primaryText
         textView.backgroundColor = AppColors.editorBackground
-        applyFormattingErrorBannerAppearance()
+        formattingErrorBannerView.applyTheme()
     }
 
     private func applySharedEditorAppearance() {
@@ -652,10 +613,8 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
     }
 
     private func showFormattingErrorBanner(_ message: String, characterLocation: Int) {
-        formattingErrorMessage = message
         formattingErrorCharacterLocation = characterLocation
-        formattingErrorBannerLabel.stringValue = message
-        formattingErrorBannerView.isHidden = false
+        formattingErrorBannerView.message = message
         updateFormattingErrorBannerLayout()
     }
 
@@ -663,84 +622,29 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
         clearFormattingErrorBanner()
     }
 
-    @objc
-    private func dismissFormattingErrorBanner(_ sender: Any?) {
-        dismissFormattingErrorBanner()
-    }
-
     private func clearFormattingErrorBanner() {
-        guard formattingErrorMessage != nil else {
+        guard formattingErrorBannerView.message != nil else {
             return
         }
 
-        formattingErrorMessage = nil
         formattingErrorCharacterLocation = nil
-        formattingErrorBannerLabel.stringValue = ""
-        formattingErrorBannerView.isHidden = true
-    }
-
-    private func applyFormattingErrorBannerAppearance() {
-        formattingErrorBannerView.layer?.backgroundColor = NSColor.systemRed.withAlphaComponent(0.9).cgColor
-        formattingErrorBannerLabel.textColor = NSColor.systemRed.blended(withFraction: 0.8, of: AppColors.primaryText) ?? AppColors.primaryText
-        formattingErrorBannerDismissButton.contentTintColor = formattingErrorBannerLabel.textColor
+        formattingErrorBannerView.message = nil
     }
 
     private func updateFormattingErrorBannerLayout() {
         guard
-            let message = formattingErrorMessage,
+            let characterLocation = formattingErrorCharacterLocation,
             let clipView = scrollView.contentView as NSClipView?,
             let window = view.window
         else {
             return
         }
 
-        formattingErrorBannerLabel.stringValue = message
-
-        let viewportWidth = clipView.bounds.width
-        let bannerWidth = max(
-            min(viewportWidth - (Constants.formattingErrorBannerHorizontalInset * 2), Constants.formattingErrorBannerMaximumWidth),
-            Constants.formattingErrorBannerMinimumWidth
-        )
-        let linePoint = pointForFormattingErrorBanner(in: clipView, window: window)
-        let x = min(
-            max(linePoint.x, Constants.formattingErrorBannerHorizontalInset),
-            max(Constants.formattingErrorBannerHorizontalInset, viewportWidth - bannerWidth - Constants.formattingErrorBannerHorizontalInset)
-        )
-        let y = bannerYPosition(for: linePoint, in: clipView)
-
-        formattingErrorBannerView.frame = NSRect(
-            x: x,
-            y: y,
-            width: bannerWidth,
-            height: Constants.formattingErrorBannerHeight
-        )
-    }
-
-    private func pointForFormattingErrorBanner(in clipView: NSClipView, window: NSWindow) -> NSPoint {
-        let textLength = textView.string.utf16.count
-        let targetLocation = min(max(formattingErrorCharacterLocation ?? 0, 0), textLength)
-        let characterRange = NSRange(location: targetLocation, length: 0)
-
-        let rectInScreen = textView.firstRect(forCharacterRange: characterRange, actualRange: nil)
-        let rectInWindow = window.convertFromScreen(rectInScreen)
-        return clipView.convert(rectInWindow.origin, from: nil)
-    }
-
-    private func bannerYPosition(for linePoint: NSPoint, in clipView: NSClipView) -> CGFloat {
-        let topInset = Constants.formattingErrorBannerVerticalGap
-        let bottomInset = Constants.formattingErrorBannerVerticalGap
-        let maxY = clipView.bounds.height - Constants.formattingErrorBannerHeight - bottomInset
-
-        if clipView.isFlipped {
-            return min(
-                max(topInset, linePoint.y - Constants.formattingErrorBannerHeight - Constants.formattingErrorBannerVerticalGap),
-                maxY
-            )
-        }
-
-        return max(
-            bottomInset,
-            min(maxY, linePoint.y + Constants.formattingErrorBannerVerticalGap)
+        formattingErrorBannerView.updateFrame(
+            in: clipView,
+            window: window,
+            textView: textView,
+            characterLocation: characterLocation
         )
     }
 }
