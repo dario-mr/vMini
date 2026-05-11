@@ -40,6 +40,7 @@
 		A00000000000000000000190 /* ErrorBannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000191 /* ErrorBannerView.swift */; };
 		A00000000000000000000192 /* EditorTextViewStyler.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000193 /* EditorTextViewStyler.swift */; };
 		A00000000000000000000194 /* EditorSyntaxHighlightController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000195 /* EditorSyntaxHighlightController.swift */; };
+		A00000000000000000000196 /* EditorViewportController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000197 /* EditorViewportController.swift */; };
 		A00000000000000000000172 /* EditorTextEditing.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000173 /* EditorTextEditing.swift */; };
 		A0000000000000000000018C /* EditorTextEditing.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000173 /* EditorTextEditing.swift */; };
 		A00000000000000000000118 /* EditorViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000108 /* EditorViewController.swift */; };
@@ -121,6 +122,7 @@
 		A00000000000000000000191 /* ErrorBannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorBannerView.swift; sourceTree = "<group>"; };
 		A00000000000000000000193 /* EditorTextViewStyler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorTextViewStyler.swift; sourceTree = "<group>"; };
 		A00000000000000000000195 /* EditorSyntaxHighlightController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorSyntaxHighlightController.swift; sourceTree = "<group>"; };
+		A00000000000000000000197 /* EditorViewportController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorViewportController.swift; sourceTree = "<group>"; };
 		A00000000000000000000173 /* EditorTextEditing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorTextEditing.swift; sourceTree = "<group>"; };
 		A00000000000000000000108 /* EditorViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorViewController.swift; sourceTree = "<group>"; };
 		A00000000000000000000109 /* LineNumberRuler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LineNumberRuler.swift; sourceTree = "<group>"; };
@@ -264,6 +266,7 @@
 				A00000000000000000000191 /* ErrorBannerView.swift */,
 				A00000000000000000000193 /* EditorTextViewStyler.swift */,
 				A00000000000000000000195 /* EditorSyntaxHighlightController.swift */,
+				A00000000000000000000197 /* EditorViewportController.swift */,
 				A00000000000000000000173 /* EditorTextEditing.swift */,
 				A00000000000000000000108 /* EditorViewController.swift */,
 				A0000000000000000000015D /* JSONPrettifier.swift */,
@@ -470,6 +473,7 @@
 				A00000000000000000000190 /* ErrorBannerView.swift in Sources */,
 				A00000000000000000000192 /* EditorTextViewStyler.swift in Sources */,
 				A00000000000000000000194 /* EditorSyntaxHighlightController.swift in Sources */,
+				A00000000000000000000196 /* EditorViewportController.swift in Sources */,
 				A00000000000000000000172 /* EditorTextEditing.swift in Sources */,
 				A00000000000000000000118 /* EditorViewController.swift in Sources */,
 				A0000000000000000000015C /* JSONPrettifier.swift in Sources */,

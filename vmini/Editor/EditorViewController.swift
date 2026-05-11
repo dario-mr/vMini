@@ -32,8 +32,14 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
             ThemeManager.shared.syntaxTheme
         }
     )
-    private var lineNumberRulerWidthConstraint: NSLayoutConstraint?
-    private var hasCompletedInitialViewportReset = false
+    private lazy var viewportController = EditorViewportController(
+        textView: textView,
+        scrollView: scrollView,
+        lineNumberRulerView: lineNumberRulerView,
+        synchronizeWordWrapLayout: { [weak self] in
+            self?.textViewStyler.synchronizeWordWrapLayout()
+        }
+    )
     private var formattingErrorCharacterLocation: Int?
     var formattingErrorMessage: String? {
         formattingErrorBannerView.message
@@ -52,12 +58,10 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
             guard textView.string != newValue else { return }
             textView.string = newValue
             textView.setSelectedRange(NSRange(location: 0, length: 0))
-            hasCompletedInitialViewportReset = false
             if isViewLoaded {
                 textViewStyler.applyParagraphStyle()
                 refreshSyntaxHighlighting()
-                lineNumberRulerView.invalidateLineNumbers()
-                resetInitialViewportIfNeeded()
+                viewportController.handleDocumentTextDidReset()
             }
             notifyCursorPositionChanged()
         }
@@ -80,7 +84,7 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
         view.addSubview(scrollView)
 
         let lineNumberRulerWidthConstraint = lineNumberRulerView.widthAnchor.constraint(equalToConstant: lineNumberRulerView.ruleThickness)
-        self.lineNumberRulerWidthConstraint = lineNumberRulerWidthConstraint
+        viewportController.attachLineNumberRulerWidthConstraint(lineNumberRulerWidthConstraint)
         NSLayoutConstraint.activate([
             lineNumberRulerView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             lineNumberRulerView.topAnchor.constraint(equalTo: view.topAnchor),
@@ -135,7 +139,7 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
     override func viewDidAppear() {
         super.viewDidAppear()
         focusTextView()
-        resetInitialViewportIfNeeded()
+        viewportController.handleViewDidAppear()
     }
 
     override func viewDidLayout() {
@@ -171,7 +175,7 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
             return
         }
 
-        lineNumberRulerView.noteTextStorageDidEdit(
+        viewportController.handleTextStorageDidEdit(
             textStorage,
             editedRange: editedRange,
             changeInLength: delta
@@ -179,7 +183,7 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
     }
 
     func textViewDidChangeSelection(_ notification: Notification) {
-        lineNumberRulerView.needsDisplay = true
+        viewportController.handleSelectionDidChange()
         notifyCursorPositionChanged()
     }
 
@@ -289,7 +293,7 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
         textView.setSelectedRange(selection)
         textView.scrollRangeToVisible(selection)
         focusTextView()
-        lineNumberRulerView.needsDisplay = true
+        viewportController.handleCaretNavigation()
         notifyCursorPositionChanged()
         return true
     }
@@ -331,11 +335,7 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
     }
 
     private func configureLineNumberRuler() {
-        lineNumberRulerView.onRuleThicknessChanged = { [weak self] ruleThickness in
-            self?.lineNumberRulerWidthConstraint?.constant = ruleThickness
-            self?.textViewStyler.synchronizeWordWrapLayout()
-        }
-        lineNumberRulerView.invalidateLineNumbers()
+        viewportController.configureLineNumberRuler()
     }
 
     private func refreshSyntaxHighlighting() {
@@ -399,7 +399,7 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
 
     @objc
     private func handleScrollBoundsChange() {
-        lineNumberRulerView.needsDisplay = true
+        viewportController.handleScrollBoundsChange()
         updateFormattingErrorBannerLayout()
     }
 
@@ -407,54 +407,7 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
     private func handleThemeDidChange() {
         textViewStyler.applyAppearance()
         refreshSyntaxHighlighting()
-        lineNumberRulerView.needsDisplay = true
-    }
-
-    private func resetInitialViewportIfNeeded() {
-        guard !hasCompletedInitialViewportReset else {
-            return
-        }
-
-        enforceInitialViewportReset(remainingPasses: 3)
-    }
-
-    private func enforceInitialViewportReset(remainingPasses: Int) {
-        guard remainingPasses > 0 else {
-            hasCompletedInitialViewportReset = true
-            return
-        }
-
-        DispatchQueue.main.async { [weak self] in
-            guard let self else { return }
-
-            textView.setSelectedRange(NSRange(location: 0, length: 0))
-
-            if let textContainer = textView.textContainer,
-               let layoutManager = textView.layoutManager {
-                layoutManager.ensureLayout(for: textContainer)
-            }
-
-            view.layoutSubtreeIfNeeded()
-
-            let clipView = scrollView.contentView
-            let targetOrigin = NSPoint(x: leftmostViewportOriginX(), y: 0)
-            textView.setBoundsOrigin(.zero)
-            clipView.scroll(to: targetOrigin)
-            scrollView.reflectScrolledClipView(clipView)
-            clipView.setBoundsOrigin(targetOrigin)
-            scrollView.reflectScrolledClipView(clipView)
-            lineNumberRulerView.needsDisplay = true
-
-            if abs(clipView.bounds.origin.x - targetOrigin.x) < 0.5 && textView.bounds.origin == .zero {
-                hasCompletedInitialViewportReset = true
-            } else {
-                enforceInitialViewportReset(remainingPasses: remainingPasses - 1)
-            }
-        }
-    }
-
-    private func leftmostViewportOriginX() -> CGFloat {
-        0
+        viewportController.handleThemeDidChange()
     }
 
     private func presentJSONFormattingError(forSelection: Bool, error: Error, characterOffset: Int) {
