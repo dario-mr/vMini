@@ -49,6 +49,11 @@ final class EditorWindow: NSWindow {
             return true
         }
 
+        if modifiers == [.command], characters == "d" {
+            (contentViewController as? EditorContentViewController)?.duplicateSelectedLines()
+            return true
+        }
+
         if modifiers == [.command], characters == "j" {
             (contentViewController as? EditorContentViewController)?.formatJSON()
             return true

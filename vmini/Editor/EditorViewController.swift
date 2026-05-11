@@ -228,6 +228,42 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
         notifyCursorPositionChanged()
     }
 
+    func duplicateSelectedLines() {
+        guard let textStorage = textView.textStorage else { return }
+
+        let text = textView.string as NSString
+        let selectedRange = textView.selectedRange().clamped(toLength: text.length)
+        let affectedRange = affectedLineRange(in: text, selectedRange: selectedRange)
+        let duplicatedText = duplicatedLineBlockText(for: affectedRange, in: text)
+        let insertionLocation = NSMaxRange(affectedRange)
+
+        guard textView.shouldChangeText(in: NSRange(location: insertionLocation, length: 0), replacementString: duplicatedText) else {
+            return
+        }
+
+        let selectionOffset = (duplicatedText as NSString).length
+        let newSelectedRange = NSRange(
+            location: selectedRange.location + selectionOffset,
+            length: selectedRange.length
+        )
+
+        textStorage.replaceCharacters(in: NSRange(location: insertionLocation, length: 0), with: duplicatedText)
+        textView.didChangeText()
+        textView.setSelectedRange(newSelectedRange)
+        textView.scrollRangeToVisible(newSelectedRange)
+        notifyCursorPositionChanged()
+    }
+
+    @discardableResult
+    func moveSelectedLinesUp() -> Bool {
+        moveSelectedLines(direction: .up)
+    }
+
+    @discardableResult
+    func moveSelectedLinesDown() -> Bool {
+        moveSelectedLines(direction: .down)
+    }
+
     func formatJSONSelectionOrDocument() {
         guard let textStorage = textView.textStorage else { return }
 
@@ -324,6 +360,12 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
         textView.textColor = AppColors.primaryText
         textView.onFileSystemURLsDropped = { [weak self] urls in
             self?.onFileSystemURLsDropped?(urls)
+        }
+        textView.onMoveSelectedLinesUp = { [weak self] in
+            self?.moveSelectedLinesUp() ?? false
+        }
+        textView.onMoveSelectedLinesDown = { [weak self] in
+            self?.moveSelectedLinesDown() ?? false
         }
         applyEditorFont()
         applyParagraphStyle()
@@ -461,6 +503,44 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
 
     private func applyInvisibleCharactersVisibility(_ isVisible: Bool) {
         textView.layoutManager?.showsInvisibleCharacters = isVisible
+    }
+
+    private func moveSelectedLines(direction: LineMoveDirection) -> Bool {
+        guard let textStorage = textView.textStorage else { return false }
+
+        let text = textView.string as NSString
+        let selectedRange = textView.selectedRange().clamped(toLength: text.length)
+        let affectedRange = affectedLineRange(in: text, selectedRange: selectedRange)
+
+        let swap: LineSwapOperation
+        switch direction {
+        case .up:
+            guard let previousRange = previousAdjacentLineRange(before: affectedRange, in: text) else {
+                return false
+            }
+            swap = swappedAdjacentLineBlocks(upperRange: previousRange, lowerRange: affectedRange, in: text)
+        case .down:
+            guard let nextRange = nextAdjacentLineRange(after: affectedRange, in: text) else {
+                return false
+            }
+            swap = swappedAdjacentLineBlocks(upperRange: affectedRange, lowerRange: nextRange, in: text)
+        }
+
+        guard textView.shouldChangeText(in: swap.replacedRange, replacementString: swap.replacementText) else {
+            return false
+        }
+
+        let selectionLocationDelta = direction == .up
+            ? swap.lowerSelectionLocationDelta
+            : swap.upperSelectionLocationDelta
+        let newSelectedRange = NSRange(location: selectedRange.location + selectionLocationDelta, length: selectedRange.length)
+
+        textStorage.replaceCharacters(in: swap.replacedRange, with: swap.replacementText)
+        textView.didChangeText()
+        textView.setSelectedRange(newSelectedRange)
+        textView.scrollRangeToVisible(newSelectedRange)
+        notifyCursorPositionChanged()
+        return true
     }
 
     private func applyEditorWordWrap(_ isEnabled: Bool) {
@@ -606,6 +686,18 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
         0
     }
 
+    private enum LineMoveDirection {
+        case up
+        case down
+    }
+
+    private struct LineSwapOperation {
+        let replacedRange: NSRange
+        let replacementText: String
+        let upperSelectionLocationDelta: Int
+        let lowerSelectionLocationDelta: Int
+    }
+
     private func lineNumber(for characterLocation: Int, in text: NSString) -> Int {
         let clampedLocation = min(max(characterLocation, 0), text.length)
         var lineNumber = 1
@@ -672,6 +764,51 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
         return NSRange(
             location: firstLineRange.location,
             length: NSMaxRange(lastLineRange) - firstLineRange.location
+        )
+    }
+
+    private func duplicatedLineBlockText(for affectedRange: NSRange, in text: NSString) -> String {
+        let lineText = text.substring(with: affectedRange)
+        if NSMaxRange(affectedRange) < text.length || lineText.hasSuffix("\n") {
+            return lineText
+        }
+
+        return "\n" + lineText
+    }
+
+    private func previousAdjacentLineRange(before affectedRange: NSRange, in text: NSString) -> NSRange? {
+        guard affectedRange.location > 0 else { return nil }
+        return text.lineRange(for: NSRange(location: affectedRange.location - 1, length: 0))
+    }
+
+    private func nextAdjacentLineRange(after affectedRange: NSRange, in text: NSString) -> NSRange? {
+        let nextLocation = NSMaxRange(affectedRange)
+        guard nextLocation < text.length else { return nil }
+        return text.lineRange(for: NSRange(location: nextLocation, length: 0))
+    }
+
+    private func swappedAdjacentLineBlocks(upperRange: NSRange, lowerRange: NSRange, in text: NSString) -> LineSwapOperation {
+        let upperText = text.substring(with: upperRange)
+        let lowerText = text.substring(with: lowerRange)
+        let lowerEndsAtEOF = NSMaxRange(lowerRange) == text.length
+        let lowerHasTrailingNewline = lowerText.hasSuffix("\n")
+
+        let replacementText: String
+        let movedBlockDelta: Int
+        if lowerEndsAtEOF && !lowerHasTrailingNewline {
+            let normalizedUpperText = upperText.hasSuffix("\n") ? String(upperText.dropLast()) : upperText
+            replacementText = lowerText + "\n" + normalizedUpperText
+            movedBlockDelta = lowerText.count + 1
+        } else {
+            replacementText = lowerText + upperText
+            movedBlockDelta = lowerRange.length
+        }
+
+        return LineSwapOperation(
+            replacedRange: NSRange(location: upperRange.location, length: NSMaxRange(lowerRange) - upperRange.location),
+            replacementText: replacementText,
+            upperSelectionLocationDelta: movedBlockDelta,
+            lowerSelectionLocationDelta: -upperRange.length
         )
     }
 

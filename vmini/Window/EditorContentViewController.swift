@@ -440,6 +440,20 @@ final class EditorContentViewController: NSViewController {
         currentEditorViewController?.toggleLineComment()
     }
 
+    func duplicateSelectedLines() {
+        currentEditorViewController?.duplicateSelectedLines()
+    }
+
+    @discardableResult
+    func moveSelectedLinesUp() -> Bool {
+        currentEditorViewController?.moveSelectedLinesUp() ?? false
+    }
+
+    @discardableResult
+    func moveSelectedLinesDown() -> Bool {
+        currentEditorViewController?.moveSelectedLinesDown() ?? false
+    }
+
     func formatJSON() {
         currentEditorViewController?.formatJSONSelectionOrDocument()
     }
