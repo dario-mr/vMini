@@ -96,6 +96,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     @objc
+    func openRecentDocument(_ sender: Any?) {
+        guard let fileURL = (sender as? NSMenuItem)?.representedObject as? URL else { return }
+        guard FileManager.default.fileExists(atPath: fileURL.path) else { return }
+
+        OpenURLRouter.open([fileURL], tabbedIn: NSApp.keyWindow ?? NSApp.mainWindow)
+    }
+
+    @objc
+    func clearRecentDocuments(_ sender: Any?) {
+        NSDocumentController.shared.clearRecentDocuments(sender)
+        MenuBuilder.installMainMenu()
+    }
+
+    @objc
     func saveCurrentDocument(_ sender: Any?) {
         OpenDocumentsStore.shared.activeDocument?.save(sender)
     }
@@ -126,6 +140,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @objc
     private func handleOpenDocumentsDidChange() {
         SessionRestorer.saveOpenFiles()
+        MenuBuilder.installMainMenu()
     }
 
     @objc(documentController:didReviewAll:contextInfo:)
@@ -152,6 +167,11 @@ extension AppDelegate: NSMenuItemValidation {
 
         if menuItem.action == #selector(showSettings(_:)) {
             return true
+        }
+
+        if menuItem.action == #selector(openRecentDocument(_:)) {
+            guard let fileURL = menuItem.representedObject as? URL else { return false }
+            return FileManager.default.fileExists(atPath: fileURL.path)
         }
 
         if menuItem.action == #selector(saveCurrentDocument(_:))

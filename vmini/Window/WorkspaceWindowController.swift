@@ -99,7 +99,7 @@ final class WorkspaceWindowController: NSWindowController {
                 guard FileManager.default.fileExists(atPath: fileURL.path) else { continue }
 
                 do {
-                    let document = try openDocument(at: fileURL)
+                    let document = try openDocument(at: fileURL, trackRecentDocument: false)
                     restoredDocuments.append((reference.persistenceIdentifier, document))
                 } catch {
                     NSLog("Could not reopen file %@: %@", fileURL.path as NSString, error.localizedDescription)
@@ -282,8 +282,12 @@ final class WorkspaceWindowController: NSWindowController {
         open(urls, index: index + 1, activate: activeURL, fallbackDocument: fallbackDocument)
     }
 
-    private func openDocument(at url: URL) throws -> Document {
+    private func openDocument(at url: URL, trackRecentDocument: Bool = true) throws -> Document {
         let standardizedURL = url.standardizedFileURL
+
+        if trackRecentDocument {
+            NSDocumentController.shared.noteNewRecentDocumentURL(standardizedURL)
+        }
 
         if let existing = NSDocumentController.shared.document(for: standardizedURL) as? Document {
             return existing
