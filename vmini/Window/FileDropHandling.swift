@@ -45,12 +45,31 @@ final class FileDropTextView: NSTextView {
         static let endKeyCode: UInt16 = 119
         static let pageUpKeyCode: UInt16 = 116
         static let pageDownKeyCode: UInt16 = 121
+        static let upArrowKeyCode: UInt16 = 126
+        static let downArrowKeyCode: UInt16 = 125
     }
 
     var onFileSystemURLsDropped: (([URL]) -> Void)?
+    var onMoveSelectedLinesUp: (() -> Bool)?
+    var onMoveSelectedLinesDown: (() -> Bool)?
 
     override func keyDown(with event: NSEvent) {
         let modifiers = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
+
+        if modifiers.contains([.option, .shift]) && !modifiers.contains(.command) && !modifiers.contains(.control) {
+            switch event.keyCode {
+            case Navigation.upArrowKeyCode:
+                if onMoveSelectedLinesUp?() == true {
+                    return
+                }
+            case Navigation.downArrowKeyCode:
+                if onMoveSelectedLinesDown?() == true {
+                    return
+                }
+            default:
+                break
+            }
+        }
 
         if modifiers.isEmpty {
             switch event.keyCode {
