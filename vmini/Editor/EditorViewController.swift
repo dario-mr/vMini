@@ -14,7 +14,6 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
     private let scrollView = NSScrollView()
     private let formattingErrorBannerView = ErrorBannerView()
     private let textView = FileDropTextView()
-    private let highlighterRegistry = HighlighterRegistry.shared
     private lazy var lineNumberRulerView = LineNumberRulerView(textView: textView)
     private lazy var textViewStyler = EditorTextViewStyler(
         textView: textView,
@@ -24,9 +23,17 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
             self?.lineNumberRulerView.invalidateLineNumbers()
         }
     )
+    private lazy var syntaxHighlightController = EditorSyntaxHighlightController(
+        highlighterRegistry: .shared,
+        textStorageProvider: { [weak self] in
+            self?.textView.textStorage
+        },
+        syntaxThemeProvider: {
+            ThemeManager.shared.syntaxTheme
+        }
+    )
     private var lineNumberRulerWidthConstraint: NSLayoutConstraint?
     private var hasCompletedInitialViewportReset = false
-    private var isApplyingSyntaxHighlighting = false
     private var formattingErrorCharacterLocation: Int?
     var formattingErrorMessage: String? {
         formattingErrorBannerView.message
@@ -154,9 +161,11 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
         range editedRange: NSRange,
         changeInLength delta: Int
     ) {
-        if editedMask.contains(.editedCharacters), !isApplyingSyntaxHighlighting {
-            applySyntaxHighlighting(around: editedRange)
-        }
+        syntaxHighlightController.handleProcessedEditing(
+            editedMask: editedMask,
+            editedRange: editedRange,
+            language: syntaxLanguage
+        )
 
         guard editedMask.contains(.editedCharacters) else {
             return
@@ -331,40 +340,7 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
 
     private func refreshSyntaxHighlighting() {
         guard isViewLoaded else { return }
-        applySyntaxHighlighting(around: nil)
-    }
-
-    private func applySyntaxHighlighting(around editedRange: NSRange?) {
-        guard let textStorage = textView.textStorage else { return }
-
-        let highlighter = highlighterRegistry.highlighter(for: syntaxLanguage)
-        let text = textStorage.string as NSString
-        let fullRange = NSRange(location: 0, length: textStorage.length)
-        let targetRange: NSRange
-        if let editedRange {
-            targetRange = highlighter.expandedHighlightRange(for: editedRange, in: text).clamped(toLength: text.length)
-        } else {
-            targetRange = fullRange
-        }
-
-        guard targetRange.length > 0 else { return }
-
-        isApplyingSyntaxHighlighting = true
-        textStorage.beginEditing()
-        textStorage.applyForegroundColor(currentSyntaxTheme().plainText, range: targetRange)
-        textStorage.applyBackgroundColor(nil, range: targetRange)
-        highlighter.highlight(
-            textStorage: textStorage,
-            in: targetRange,
-            theme: currentSyntaxTheme(),
-            registry: highlighterRegistry
-        )
-        textStorage.endEditing()
-        isApplyingSyntaxHighlighting = false
-    }
-
-    private func currentSyntaxTheme() -> SyntaxTheme {
-        ThemeManager.shared.syntaxTheme
+        syntaxHighlightController.refresh(language: syntaxLanguage)
     }
 
     private func notifyCursorPositionChanged() {
