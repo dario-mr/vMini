@@ -8,6 +8,19 @@ private enum TabLayout {
     static let tabBarHorizontalInset: CGFloat = 2
 }
 
+private final class TabContentBackgroundView: NSView {
+    var onDoubleClickEmptyArea: (() -> Void)?
+
+    override func mouseDown(with event: NSEvent) {
+        if event.clickCount == 2 {
+            onDoubleClickEmptyArea?()
+            return
+        }
+
+        super.mouseDown(with: event)
+    }
+}
+
 private final class DocumentTabView: NSView {
     private enum Layout {
         static let titleLeadingInset: CGFloat = 12
@@ -309,7 +322,7 @@ final class EditorContentViewController: NSViewController {
 
     private let tabBarContainer = NSView()
     private let tabScrollView = NSScrollView()
-    private let tabContentView = NSView()
+    private let tabContentView = TabContentBackgroundView()
     private let sidebarViewController = OpenFilesSidebarViewController()
     private let editorContainerView = NSView()
     private let statusBarView = EditorStatusBarView()
@@ -482,6 +495,9 @@ final class EditorContentViewController: NSViewController {
         tabContentView.translatesAutoresizingMaskIntoConstraints = false
         tabContentView.wantsLayer = true
         tabContentView.layer?.backgroundColor = AppColors.tabBarBackground.cgColor
+        tabContentView.onDoubleClickEmptyArea = { [weak self] in
+            self?.createNewTabFromTabBar()
+        }
         NSLayoutConstraint.activate([
             tabContentView.heightAnchor.constraint(equalToConstant: TabLayout.tabBarHeight),
         ])
@@ -495,6 +511,10 @@ final class EditorContentViewController: NSViewController {
             tabScrollView.topAnchor.constraint(equalTo: tabBarContainer.topAnchor),
             tabScrollView.bottomAnchor.constraint(equalTo: tabBarContainer.bottomAnchor),
         ])
+    }
+
+    private func createNewTabFromTabBar() {
+        (NSApp.delegate as? AppDelegate)?.newDocument(tabContentView)
     }
 
     private func configureStatusBar() {
