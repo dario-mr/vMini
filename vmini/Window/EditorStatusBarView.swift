@@ -5,17 +5,29 @@ struct EditorStatusBarState {
     let autoDetectedSyntaxLanguage: SyntaxLanguage
     let selectedSyntaxLanguage: SyntaxLanguage
     let hasOverride: Bool
+    let cursorPosition: EditorCursorPosition
+}
+
+struct EditorCursorPosition {
+    let line: Int
+    let column: Int
+
+    var displayText: String {
+        "Ln \(line), Col \(column)"
+    }
 }
 
 final class EditorStatusBarView: NSView {
     enum Layout {
         static let preferredHeight: CGFloat = 20
+        static let textSize: CGFloat = 12
     }
 
     var onSelectAutomaticSyntaxHighlighting: (() -> Void)?
     var onSelectSyntaxHighlightingOverride: ((SyntaxLanguage) -> Void)?
 
     private let separatorView = NSView()
+    private let cursorPositionLabel = NSTextField(labelWithString: "")
     private let syntaxStatusButton = NSButton(title: "", target: nil, action: nil)
     private var state: EditorStatusBarState?
 
@@ -38,12 +50,14 @@ final class EditorStatusBarView: NSView {
         self.state = state
 
         guard let state else {
+            cursorPositionLabel.stringValue = ""
             syntaxStatusButton.title = ""
             syntaxStatusButton.attributedTitle = NSAttributedString(string: "")
             syntaxStatusButton.isEnabled = false
             return
         }
 
+        cursorPositionLabel.stringValue = state.cursorPosition.displayText
         syntaxStatusButton.isEnabled = true
         syntaxStatusButton.title = state.title
         applyTitleAppearance()
@@ -71,10 +85,16 @@ final class EditorStatusBarView: NSView {
     }
 
     private func configureButton() {
+        cursorPositionLabel.translatesAutoresizingMaskIntoConstraints = false
+        cursorPositionLabel.font = NSFont.systemFont(ofSize: Layout.textSize, weight: .medium)
+        cursorPositionLabel.lineBreakMode = .byTruncatingTail
+        cursorPositionLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        addSubview(cursorPositionLabel)
+
         syntaxStatusButton.translatesAutoresizingMaskIntoConstraints = false
         syntaxStatusButton.isBordered = false
         syntaxStatusButton.bezelStyle = .regularSquare
-        syntaxStatusButton.font = NSFont.systemFont(ofSize: 11, weight: .medium)
+        syntaxStatusButton.font = NSFont.systemFont(ofSize: Layout.textSize, weight: .medium)
         syntaxStatusButton.image = NSImage(systemSymbolName: "chevron.down", accessibilityDescription: "Select syntax highlighting")
         syntaxStatusButton.symbolConfiguration = NSImage.SymbolConfiguration(pointSize: 9, weight: .semibold)
         syntaxStatusButton.imagePosition = .imageTrailing
@@ -84,12 +104,18 @@ final class EditorStatusBarView: NSView {
         addSubview(syntaxStatusButton)
 
         NSLayoutConstraint.activate([
+            cursorPositionLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 10),
+            cursorPositionLabel.centerYAnchor.constraint(equalTo: centerYAnchor),
+            cursorPositionLabel.trailingAnchor.constraint(lessThanOrEqualTo: syntaxStatusButton.leadingAnchor, constant: -12),
+
             syntaxStatusButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -10),
             syntaxStatusButton.centerYAnchor.constraint(equalTo: centerYAnchor),
         ])
     }
 
     private func applyTitleAppearance() {
+        cursorPositionLabel.textColor = AppColors.sidebarText
+
         let attributedTitle = NSAttributedString(
             string: syntaxStatusButton.title,
             attributes: [

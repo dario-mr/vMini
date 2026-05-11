@@ -765,6 +765,9 @@ final class EditorContentViewController: NSViewController {
         let editorViewController = document.resolvedEditorViewController { [weak self] urls in
             self?.openFileSystemURLs(urls)
         }
+        editorViewController.onCursorPositionChanged = { [weak self] in
+            self?.updateStatusBar()
+        }
         guard currentEditorViewController !== editorViewController else {
             updateStatusBar()
             editorViewController.focusTextView()
@@ -799,7 +802,8 @@ final class EditorContentViewController: NSViewController {
             title: document.syntaxOverrideMenuTitle,
             autoDetectedSyntaxLanguage: document.autoDetectedSyntaxLanguage,
             selectedSyntaxLanguage: document.syntaxLanguage,
-            hasOverride: document.hasSyntaxLanguageOverride
+            hasOverride: document.hasSyntaxLanguageOverride,
+            cursorPosition: currentEditorViewController?.currentCursorPosition() ?? EditorCursorPosition(line: 1, column: 1)
         ))
     }
 
