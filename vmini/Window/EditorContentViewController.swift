@@ -181,7 +181,7 @@ private final class DocumentTabView: NSView {
     func configure(document: Document, isActive: Bool) {
         self.document = document
         self.isActive = isActive
-        titleLabel.stringValue = document.sidebarTitle
+        titleLabel.stringValue = document.shortDisplayTitle
         applyAppearance()
     }
 
