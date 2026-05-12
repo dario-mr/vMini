@@ -146,6 +146,12 @@ final class WorkspaceWindowController: NSWindowController {
         let remaining = documents.filter { $0 !== document }
         document.close()
 
+        guard !OpenDocumentsStore.shared.documents.contains(where: { $0 === document }) else {
+            return
+        }
+
+        ClosedDocumentHistory.shared.record(document: document)
+
         if wasActive {
             let nextSelection: Document?
             if remaining.isEmpty {
@@ -161,6 +167,19 @@ final class WorkspaceWindowController: NSWindowController {
 
         if remaining.isEmpty {
             synchronizeWindowState()
+        }
+    }
+
+    func reopenMostRecentClosedDocument() {
+        guard let reference = ClosedDocumentHistory.shared.popMostRecent() else { return }
+
+        switch reference {
+        case .file(let path):
+            let fileURL = URL(fileURLWithPath: path).standardizedFileURL
+            guard FileManager.default.fileExists(atPath: fileURL.path) else { return }
+            open(urls: [fileURL], activate: fileURL)
+        case .untitled(let sessionID):
+            createUntitledDocument(sessionIdentifier: sessionID)
         }
     }
 

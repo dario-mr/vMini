@@ -132,6 +132,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     @objc
+    func reopenClosedDocument(_ sender: Any?) {
+        WorkspaceWindowController.shared.reopenMostRecentClosedDocument()
+    }
+
+    @objc
     func formatJSON(_ sender: Any?) {
         let editorController = (NSApp.keyWindow?.contentViewController as? EditorContentViewController)
             ?? (NSApp.mainWindow?.contentViewController as? EditorContentViewController)
@@ -207,6 +212,10 @@ extension AppDelegate: NSMenuItemValidation {
 
         if menuItem.action == #selector(showGoToLine(_:)) {
             return OpenDocumentsStore.shared.activeDocument != nil
+        }
+
+        if menuItem.action == #selector(reopenClosedDocument(_:)) {
+            return ClosedDocumentHistory.shared.canReopenClosedDocument
         }
 
         if menuItem.action == #selector(saveCurrentDocument(_:))
