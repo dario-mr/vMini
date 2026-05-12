@@ -22,6 +22,10 @@ final class Document: NSDocument {
         fileURL?.lastPathComponent ?? displayName
     }
 
+    var shortDisplayTitle: String {
+        isDocumentEdited ? "• \(sidebarTitle)" : sidebarTitle
+    }
+
     var windowTitle: String {
         guard let fileURL else {
             return displayName

@@ -162,12 +162,8 @@ final class OpenFilesSidebarViewController: NSViewController, NSTableViewDataSou
         let cellView = (tableView.makeView(withIdentifier: identifier, owner: self) as? NSTableCellView)
             ?? makeCellView(identifier: identifier)
         let document = documents[row]
-        let isEdited = document.isDocumentEdited
         cellView.imageView?.image = icon(for: document)
-        cellView.textField?.attributedStringValue = attributedTitle(
-            for: document,
-            isEdited: isEdited
-        )
+        cellView.textField?.attributedStringValue = attributedTitle(for: document)
         cellView.textField?.font = NSFont.systemFont(ofSize: Constants.rowFontSize, weight: .medium)
         return cellView
     }
@@ -312,10 +308,9 @@ final class OpenFilesSidebarViewController: NSViewController, NSTableViewDataSou
         return icon
     }
 
-    private func attributedTitle(for document: Document, isEdited: Bool) -> NSAttributedString {
-        let title = isEdited ? "• \(document.sidebarTitle)" : document.sidebarTitle
+    private func attributedTitle(for document: Document) -> NSAttributedString {
         return NSAttributedString(
-            string: title,
+            string: document.shortDisplayTitle,
             attributes: [
                 .font: NSFont.systemFont(ofSize: Constants.rowFontSize, weight: .medium),
                 .foregroundColor: AppColors.sidebarText,
