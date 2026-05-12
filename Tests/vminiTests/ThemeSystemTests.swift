@@ -28,14 +28,14 @@ final class ThemeSystemTests: XCTestCase {
     func testDefaultThemeMatchesCurrentPalette() {
         let palette = ThemeCatalog.palette(for: .default)
 
-        XCTAssertTrue(palette.appBackground.isEqual(NSColor(calibratedRed: 0.08, green: 0.11, blue: 0.13, alpha: 1.0)))
-        XCTAssertTrue(palette.windowBackground.isEqual(NSColor(calibratedRed: 0.11, green: 0.14, blue: 0.17, alpha: 1.0)))
-        XCTAssertTrue(palette.editorBackground.isEqual(NSColor(calibratedRed: 0.08, green: 0.16, blue: 0.20, alpha: 1.0)))
-        XCTAssertTrue(palette.tabBarBackground.isEqual(NSColor(calibratedRed: 0.20, green: 0.24, blue: 0.28, alpha: 1.0)))
-        XCTAssertTrue(palette.primaryText.isEqual(NSColor(white: 0.98, alpha: 1.0)))
-        XCTAssertTrue(palette.primaryActionBackground.isEqual(NSColor(calibratedRed: 0.23, green: 0.46, blue: 0.72, alpha: 1.0)))
-        XCTAssertTrue(palette.syntaxHeadingText.isEqual(NSColor(calibratedRed: 0.98, green: 0.69, blue: 0.72, alpha: 1.0)))
-        XCTAssertTrue(palette.syntaxCodeBlockBackground.isEqual(NSColor(white: 1.0, alpha: 0.08)))
+        assertColor(palette.appBackground, matchesHex: 0x141C21)
+        assertColor(palette.windowBackground, matchesHex: 0x1C242B)
+        assertColor(palette.editorBackground, matchesHex: 0x142933)
+        assertColor(palette.tabBarBackground, matchesHex: 0x333D47)
+        assertColor(palette.primaryText, matchesHex: 0xFAFAFA)
+        assertColor(palette.primaryActionBackground, matchesHex: 0x3B75B8)
+        assertColor(palette.syntaxHeadingText, matchesHex: 0xFAB0B8)
+        assertColor(palette.syntaxCodeBlockBackground, matchesHex: 0xFFFFFF, alpha: 0.08)
     }
 
     func testSyntaxThemeIsDerivedFromThemePalette() {
@@ -54,28 +54,80 @@ final class ThemeSystemTests: XCTestCase {
     func testAbsolutelyThemeMatchesCodexAnchors() {
         let palette = ThemeCatalog.palette(for: .absolutely)
 
-        XCTAssertTrue(palette.windowBackground.isEqual(NSColor(calibratedRed: 45.0 / 255.0, green: 45.0 / 255.0, blue: 43.0 / 255.0, alpha: 1.0)))
-        XCTAssertTrue(palette.editorBackground.isEqual(NSColor(calibratedRed: 36.0 / 255.0, green: 36.0 / 255.0, blue: 35.0 / 255.0, alpha: 1.0)))
-        XCTAssertTrue(palette.primaryText.isEqual(NSColor(calibratedRed: 249.0 / 255.0, green: 249.0 / 255.0, blue: 247.0 / 255.0, alpha: 1.0)))
-        XCTAssertTrue(palette.primaryActionBackground.isEqual(NSColor(calibratedRed: 204.0 / 255.0, green: 125.0 / 255.0, blue: 94.0 / 255.0, alpha: 1.0)))
-        XCTAssertTrue(palette.syntaxHeadingMarker.isEqual(NSColor(calibratedRed: 204.0 / 255.0, green: 125.0 / 255.0, blue: 94.0 / 255.0, alpha: 1.0)))
-        XCTAssertTrue(palette.syntaxHeadingText.isEqual(NSColor(calibratedRed: 232.0 / 255.0, green: 165.0 / 255.0, blue: 139.0 / 255.0, alpha: 1.0)))
-        XCTAssertTrue(palette.syntaxLinkURL.isEqual(NSColor(calibratedRed: 0.0, green: 200.0 / 255.0, blue: 83.0 / 255.0, alpha: 1.0)))
+        assertColor(palette.windowBackground, matchesHex: 0x2D2D2B)
+        assertColor(palette.editorBackground, matchesHex: 0x242423)
+        assertColor(palette.primaryText, matchesHex: 0xF9F9F7)
+        assertColor(palette.primaryActionBackground, matchesHex: 0xCC7D5E)
+        assertColor(palette.syntaxHeadingMarker, matchesHex: 0xCC7D5E)
+        assertColor(palette.syntaxHeadingText, matchesHex: 0xE8A58B)
+        assertColor(palette.syntaxLinkURL, matchesHex: 0x00C853)
     }
 
     func testDraculaThemeMatchesOfficialPalette() {
         let palette = ThemeCatalog.palette(for: .dracula)
 
-        XCTAssertTrue(palette.windowBackground.isEqual(NSColor(calibratedRed: 40.0 / 255.0, green: 42.0 / 255.0, blue: 54.0 / 255.0, alpha: 1.0)))
-        XCTAssertTrue(palette.editorBackground.isEqual(NSColor(calibratedRed: 40.0 / 255.0, green: 42.0 / 255.0, blue: 54.0 / 255.0, alpha: 1.0)))
-        XCTAssertTrue(palette.primaryText.isEqual(NSColor(calibratedRed: 248.0 / 255.0, green: 248.0 / 255.0, blue: 242.0 / 255.0, alpha: 1.0)))
-        XCTAssertTrue(palette.primaryActionBackground.isEqual(NSColor(calibratedRed: 162.0 / 255.0, green: 119.0 / 255.0, blue: 222.0 / 255.0, alpha: 1.0)))
-        XCTAssertTrue(palette.syntaxListMarker.isEqual(NSColor(calibratedRed: 255.0 / 255.0, green: 184.0 / 255.0, blue: 108.0 / 255.0, alpha: 1.0)))
-        XCTAssertTrue(palette.syntaxHeadingText.isEqual(NSColor(calibratedRed: 255.0 / 255.0, green: 179.0 / 255.0, blue: 218.0 / 255.0, alpha: 1.0)))
-        XCTAssertTrue(palette.syntaxLinkURL.isEqual(NSColor(calibratedRed: 80.0 / 255.0, green: 250.0 / 255.0, blue: 123.0 / 255.0, alpha: 1.0)))
-        XCTAssertTrue(palette.syntaxComment.isEqual(NSColor(calibratedRed: 139.0 / 255.0, green: 146.0 / 255.0, blue: 178.0 / 255.0, alpha: 1.0)))
-        XCTAssertTrue(palette.syntaxBuiltin.isEqual(NSColor(calibratedRed: 255.0 / 255.0, green: 184.0 / 255.0, blue: 108.0 / 255.0, alpha: 1.0)))
-        XCTAssertTrue(palette.syntaxPropertyKey.isEqual(NSColor(calibratedRed: 139.0 / 255.0, green: 233.0 / 255.0, blue: 253.0 / 255.0, alpha: 1.0)))
+        assertColor(palette.windowBackground, matchesHex: 0x282A36)
+        assertColor(palette.editorBackground, matchesHex: 0x282A36)
+        assertColor(palette.primaryText, matchesHex: 0xF8F8F2)
+        assertColor(palette.primaryActionBackground, matchesHex: 0xA277DE)
+        assertColor(palette.syntaxListMarker, matchesHex: 0xFFB86C)
+        assertColor(palette.syntaxHeadingText, matchesHex: 0xFFB3DA)
+        assertColor(palette.syntaxLinkURL, matchesHex: 0x50FA7B)
+        assertColor(palette.syntaxComment, matchesHex: 0x8B92B2)
+        assertColor(palette.syntaxBuiltin, matchesHex: 0xFFB86C)
+        assertColor(palette.syntaxPropertyKey, matchesHex: 0x8BE9FD)
+    }
+
+    func testGruvboxDarkThemeMatchesOfficialPalette() {
+        let palette = ThemeCatalog.palette(for: .gruvboxDark)
+
+        assertColor(palette.windowBackground, matchesHex: 0x282828)
+        assertColor(palette.editorBackground, matchesHex: 0x282828)
+        assertColor(palette.primaryText, matchesHex: 0xEBDBB2)
+        assertColor(palette.primaryActionBackground, matchesHex: 0x458588)
+        assertColor(palette.syntaxKeyword, matchesHex: 0xFB4934)
+        assertColor(palette.syntaxString, matchesHex: 0xB8BB26)
+        assertColor(palette.syntaxBuiltin, matchesHex: 0xFE8019)
+        assertColor(palette.syntaxPropertyKey, matchesHex: 0xFABD2F)
+    }
+
+    func testSolarizedLightThemeMatchesOfficialPalette() {
+        let palette = ThemeCatalog.palette(for: .solarizedLight)
+
+        assertColor(palette.windowBackground, matchesHex: 0xEEE8D5)
+        assertColor(palette.editorBackground, matchesHex: 0xFDF6E3)
+        assertColor(palette.primaryText, matchesHex: 0x586E75)
+        assertColor(palette.primaryActionBackground, matchesHex: 0x268BD2)
+        assertColor(palette.syntaxKeyword, matchesHex: 0x268BD2)
+        assertColor(palette.syntaxString, matchesHex: 0x859900)
+        assertColor(palette.syntaxBuiltin, matchesHex: 0xCB4B16)
+        assertColor(palette.syntaxPropertyKey, matchesHex: 0xB58900)
+    }
+
+    func testNordThemeMatchesOfficialPalette() {
+        let palette = ThemeCatalog.palette(for: .nord)
+
+        assertColor(palette.windowBackground, matchesHex: 0x2E3440)
+        assertColor(palette.editorBackground, matchesHex: 0x2E3440)
+        assertColor(palette.primaryText, matchesHex: 0xECEFF4)
+        assertColor(palette.primaryActionBackground, matchesHex: 0x5E81AC)
+        assertColor(palette.syntaxKeyword, matchesHex: 0x81A1C1)
+        assertColor(palette.syntaxString, matchesHex: 0xA3BE8C)
+        assertColor(palette.syntaxBuiltin, matchesHex: 0xD08770)
+        assertColor(palette.syntaxPropertyKey, matchesHex: 0x8FBCBB)
+    }
+
+    func testCatppuccinMochaThemeMatchesOfficialPalette() {
+        let palette = ThemeCatalog.palette(for: .catppuccinMocha)
+
+        assertColor(palette.windowBackground, matchesHex: 0x181825)
+        assertColor(palette.editorBackground, matchesHex: 0x1E1E2E)
+        assertColor(palette.primaryText, matchesHex: 0xCDD6F4)
+        assertColor(palette.primaryActionBackground, matchesHex: 0xCBA6F7)
+        assertColor(palette.syntaxKeyword, matchesHex: 0xCBA6F7)
+        assertColor(palette.syntaxString, matchesHex: 0xA6E3A1)
+        assertColor(palette.syntaxBuiltin, matchesHex: 0xFAB387)
+        assertColor(palette.syntaxPropertyKey, matchesHex: 0xF9E2AF)
     }
 
     private func makeUserDefaults() -> UserDefaults {
@@ -83,5 +135,16 @@ final class ThemeSystemTests: XCTestCase {
         let userDefaults = UserDefaults(suiteName: suiteName)!
         userDefaults.removePersistentDomain(forName: suiteName)
         return userDefaults
+    }
+
+    private func assertColor(
+        _ actualColor: NSColor,
+        matchesHex hex: Int,
+        alpha: CGFloat = 1.0,
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) {
+        let expected = NSColor(hex: hex, alpha: alpha)
+        XCTAssertTrue(actualColor.isEqual(expected), file: file, line: line)
     }
 }

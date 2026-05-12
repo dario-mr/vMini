@@ -4,6 +4,10 @@ enum ThemeID: String, CaseIterable {
     case `default` = "default"
     case absolutely = "absolutely"
     case dracula = "dracula"
+    case gruvboxDark = "gruvbox-dark"
+    case solarizedLight = "solarized-light"
+    case nord = "nord"
+    case catppuccinMocha = "catppuccin-mocha"
 
     var displayName: String {
         switch self {
@@ -13,6 +17,23 @@ enum ThemeID: String, CaseIterable {
             "Absolutely"
         case .dracula:
             "Dracula"
+        case .gruvboxDark:
+            "Gruvbox Dark"
+        case .solarizedLight:
+            "Solarized Light"
+        case .nord:
+            "Nord"
+        case .catppuccinMocha:
+            "Catppuccin Mocha"
+        }
+    }
+
+    var preferredAppearance: NSAppearance.Name {
+        switch self {
+        case .solarizedLight:
+            .aqua
+        default:
+            .darkAqua
         }
     }
 }
@@ -89,42 +110,42 @@ enum ThemeCatalog {
         switch themeID {
         case .default:
             ThemePalette(
-                appBackground: NSColor(calibratedRed: 0.08, green: 0.11, blue: 0.13, alpha: 1.0),
-                windowBackground: NSColor(calibratedRed: 0.11, green: 0.14, blue: 0.17, alpha: 1.0),
-                editorBackground: NSColor(calibratedRed: 0.08, green: 0.16, blue: 0.20, alpha: 1.0),
-                tabBarBackground: NSColor(calibratedRed: 0.20, green: 0.24, blue: 0.28, alpha: 1.0),
-                hoveredTabBackground: NSColor(calibratedRed: 0.08, green: 0.16, blue: 0.20, alpha: 0.55),
-                primaryText: NSColor(white: 0.98, alpha: 1.0),
-                sidebarText: NSColor(white: 0.88, alpha: 1.0),
-                folderSidebarText: NSColor(white: 0.86, alpha: 1.0),
-                sidebarHeaderText: NSColor(white: 0.84, alpha: 1.0),
-                inactiveTabText: NSColor(white: 0.77, alpha: 1.0),
-                lineNumberText: NSColor(white: 0.62, alpha: 1.0),
-                activeControlTint: NSColor(white: 0.80, alpha: 1.0),
-                defaultControlTint: NSColor(white: 0.70, alpha: 1.0),
-                hoveredControlTint: NSColor(white: 0.74, alpha: 1.0),
-                inactiveControlTint: NSColor(white: 0.62, alpha: 1.0),
-                primaryActionBackground: NSColor(calibratedRed: 0.23, green: 0.46, blue: 0.72, alpha: 1.0),
-                primaryActionText: NSColor(white: 0.98, alpha: 1.0),
-                subtleSelectionFill: NSColor(white: 1.0, alpha: 0.09),
-                syntaxHeadingMarker: NSColor(calibratedRed: 0.96, green: 0.37, blue: 0.41, alpha: 1.0),
-                syntaxHeadingText: NSColor(calibratedRed: 0.98, green: 0.69, blue: 0.72, alpha: 1.0),
-                syntaxListMarker: NSColor(calibratedRed: 0.98, green: 0.69, blue: 0.31, alpha: 1.0),
-                syntaxBlockquoteMarker: NSColor(calibratedRed: 0.47, green: 0.78, blue: 0.88, alpha: 1.0),
-                syntaxInlineCode: NSColor(calibratedRed: 0.78, green: 0.56, blue: 0.86, alpha: 1.0),
-                syntaxCodeFence: NSColor(calibratedRed: 0.42, green: 0.79, blue: 0.84, alpha: 1.0),
-                syntaxCodeBlockBackground: NSColor(white: 1.0, alpha: 0.08),
-                syntaxLinkText: NSColor(calibratedRed: 0.45, green: 0.71, blue: 0.96, alpha: 1.0),
-                syntaxLinkURL: NSColor(calibratedRed: 0.53, green: 0.89, blue: 0.67, alpha: 1.0),
-                syntaxEmphasisMarker: NSColor(calibratedRed: 0.97, green: 0.64, blue: 0.30, alpha: 1.0),
-                syntaxThematicBreak: NSColor(calibratedRed: 0.73, green: 0.77, blue: 0.80, alpha: 1.0),
-                syntaxComment: NSColor(calibratedRed: 0.46, green: 0.58, blue: 0.62, alpha: 1.0),
-                syntaxString: NSColor(calibratedRed: 0.56, green: 0.84, blue: 0.67, alpha: 1.0),
-                syntaxVariable: NSColor(calibratedRed: 0.77, green: 0.69, blue: 0.95, alpha: 1.0),
-                syntaxKeyword: NSColor(calibratedRed: 0.96, green: 0.37, blue: 0.41, alpha: 1.0),
-                syntaxOperator: NSColor(calibratedRed: 0.57, green: 0.83, blue: 0.92, alpha: 1.0),
-                syntaxBuiltin: NSColor(calibratedRed: 0.98, green: 0.69, blue: 0.31, alpha: 1.0),
-                syntaxPropertyKey: NSColor(calibratedRed: 0.98, green: 0.69, blue: 0.31, alpha: 1.0)
+                appBackground: NSColor(hex: 0x141C21),
+                windowBackground: NSColor(hex: 0x1C242B),
+                editorBackground: NSColor(hex: 0x142933),
+                tabBarBackground: NSColor(hex: 0x333D47),
+                hoveredTabBackground: NSColor(hex: 0x142933, alpha: 0.55),
+                primaryText: NSColor(hex: 0xFAFAFA),
+                sidebarText: NSColor(hex: 0xE0E0E0),
+                folderSidebarText: NSColor(hex: 0xDBDBDB),
+                sidebarHeaderText: NSColor(hex: 0xD6D6D6),
+                inactiveTabText: NSColor(hex: 0xC4C4C4),
+                lineNumberText: NSColor(hex: 0x9E9E9E),
+                activeControlTint: NSColor(hex: 0xCCCCCC),
+                defaultControlTint: NSColor(hex: 0xB3B3B3),
+                hoveredControlTint: NSColor(hex: 0xBDBDBD),
+                inactiveControlTint: NSColor(hex: 0x9E9E9E),
+                primaryActionBackground: NSColor(hex: 0x3B75B8),
+                primaryActionText: NSColor(hex: 0xFAFAFA),
+                subtleSelectionFill: NSColor(hex: 0xFFFFFF, alpha: 0.09),
+                syntaxHeadingMarker: NSColor(hex: 0xF55E69),
+                syntaxHeadingText: NSColor(hex: 0xFAB0B8),
+                syntaxListMarker: NSColor(hex: 0xFAB04F),
+                syntaxBlockquoteMarker: NSColor(hex: 0x78C7E0),
+                syntaxInlineCode: NSColor(hex: 0xC78FDB),
+                syntaxCodeFence: NSColor(hex: 0x6BC9D6),
+                syntaxCodeBlockBackground: NSColor(hex: 0xFFFFFF, alpha: 0.08),
+                syntaxLinkText: NSColor(hex: 0x73B5F5),
+                syntaxLinkURL: NSColor(hex: 0x87E3AB),
+                syntaxEmphasisMarker: NSColor(hex: 0xF7A34D),
+                syntaxThematicBreak: NSColor(hex: 0xBAC4CC),
+                syntaxComment: NSColor(hex: 0x75949E),
+                syntaxString: NSColor(hex: 0x8FD6AB),
+                syntaxVariable: NSColor(hex: 0xC4B0F2),
+                syntaxKeyword: NSColor(hex: 0xF55E69),
+                syntaxOperator: NSColor(hex: 0x91D4EB),
+                syntaxBuiltin: NSColor(hex: 0xFAB04F),
+                syntaxPropertyKey: NSColor(hex: 0xFAB04F)
             )
         case .absolutely:
             ThemePalette(
@@ -158,12 +179,12 @@ enum ThemeCatalog {
                 syntaxEmphasisMarker: NSColor(hex: 0xCC7D5E),
                 syntaxThematicBreak: NSColor(hex: 0x5C5C58),
                 syntaxComment: NSColor(hex: 0x8F8F87),
-                syntaxString: NSColor(hex: 0xCFE7D6),
-                syntaxVariable: NSColor(hex: 0xF2C6B5),
-                syntaxKeyword: NSColor(hex: 0xCC7D5E),
-                syntaxOperator: NSColor(hex: 0xE9E2D6),
-                syntaxBuiltin: NSColor(hex: 0xCC7D5E),
-                syntaxPropertyKey: NSColor(hex: 0xCC7D5E)
+                syntaxString: NSColor(hex: 0xDDE68B),
+                syntaxVariable: NSColor(hex: 0xD7B7F6),
+                syntaxKeyword: NSColor(hex: 0xD97757),
+                syntaxOperator: NSColor(hex: 0xF3E7D4),
+                syntaxBuiltin: NSColor(hex: 0xF0B36A),
+                syntaxPropertyKey: NSColor(hex: 0xE9C07B)
             )
         case .dracula:
             ThemePalette(
@@ -204,11 +225,167 @@ enum ThemeCatalog {
                 syntaxBuiltin: NSColor(hex: 0xFFB86C),
                 syntaxPropertyKey: NSColor(hex: 0x8BE9FD)
             )
+        case .gruvboxDark:
+            ThemePalette(
+                appBackground: NSColor(hex: 0x1D2021),
+                windowBackground: NSColor(hex: 0x282828),
+                editorBackground: NSColor(hex: 0x282828),
+                tabBarBackground: NSColor(hex: 0x3C3836),
+                hoveredTabBackground: NSColor(hex: 0xD79921, alpha: 0.20),
+                primaryText: NSColor(hex: 0xEBDBB2),
+                sidebarText: NSColor(hex: 0xEBDBB2, alpha: 0.92),
+                folderSidebarText: NSColor(hex: 0xD5C4A1),
+                sidebarHeaderText: NSColor(hex: 0xBDAE93),
+                inactiveTabText: NSColor(hex: 0xA89984),
+                lineNumberText: NSColor(hex: 0x7C6F64),
+                activeControlTint: NSColor(hex: 0xEBDBB2),
+                defaultControlTint: NSColor(hex: 0xD5C4A1),
+                hoveredControlTint: NSColor(hex: 0xFABD2F),
+                inactiveControlTint: NSColor(hex: 0x928374),
+                primaryActionBackground: NSColor(hex: 0x458588),
+                primaryActionText: NSColor(hex: 0xFBF1C7),
+                subtleSelectionFill: NSColor(hex: 0x504945, alpha: 0.72),
+                syntaxHeadingMarker: NSColor(hex: 0xFB4934),
+                syntaxHeadingText: NSColor(hex: 0xFABD2F),
+                syntaxListMarker: NSColor(hex: 0xFABD2F),
+                syntaxBlockquoteMarker: NSColor(hex: 0x83A598),
+                syntaxInlineCode: NSColor(hex: 0xD3869B),
+                syntaxCodeFence: NSColor(hex: 0x8EC07C),
+                syntaxCodeBlockBackground: NSColor(hex: 0x3C3836, alpha: 0.48),
+                syntaxLinkText: NSColor(hex: 0x83A598),
+                syntaxLinkURL: NSColor(hex: 0x8EC07C),
+                syntaxEmphasisMarker: NSColor(hex: 0xFE8019),
+                syntaxThematicBreak: NSColor(hex: 0x665C54),
+                syntaxComment: NSColor(hex: 0x928374),
+                syntaxString: NSColor(hex: 0xB8BB26),
+                syntaxVariable: NSColor(hex: 0xD3869B),
+                syntaxKeyword: NSColor(hex: 0xFB4934),
+                syntaxOperator: NSColor(hex: 0x83A598),
+                syntaxBuiltin: NSColor(hex: 0xFE8019),
+                syntaxPropertyKey: NSColor(hex: 0xFABD2F)
+            )
+        case .solarizedLight:
+            ThemePalette(
+                appBackground: NSColor(hex: 0xFDF6E3),
+                windowBackground: NSColor(hex: 0xEEE8D5),
+                editorBackground: NSColor(hex: 0xFDF6E3),
+                tabBarBackground: NSColor(hex: 0xE4DDC8),
+                hoveredTabBackground: NSColor(hex: 0x268BD2, alpha: 0.14),
+                primaryText: NSColor(hex: 0x586E75),
+                sidebarText: NSColor(hex: 0x586E75, alpha: 0.94),
+                folderSidebarText: NSColor(hex: 0x657B83),
+                sidebarHeaderText: NSColor(hex: 0x657B83, alpha: 0.88),
+                inactiveTabText: NSColor(hex: 0x839496),
+                lineNumberText: NSColor(hex: 0x93A1A1),
+                activeControlTint: NSColor(hex: 0x586E75),
+                defaultControlTint: NSColor(hex: 0x657B83),
+                hoveredControlTint: NSColor(hex: 0x268BD2),
+                inactiveControlTint: NSColor(hex: 0x93A1A1),
+                primaryActionBackground: NSColor(hex: 0x268BD2),
+                primaryActionText: NSColor(hex: 0xFDF6E3),
+                subtleSelectionFill: NSColor(hex: 0x93A1A1, alpha: 0.18),
+                syntaxHeadingMarker: NSColor(hex: 0xDC322F),
+                syntaxHeadingText: NSColor(hex: 0xCB4B16),
+                syntaxListMarker: NSColor(hex: 0xB58900),
+                syntaxBlockquoteMarker: NSColor(hex: 0x2AA198),
+                syntaxInlineCode: NSColor(hex: 0x6C71C4),
+                syntaxCodeFence: NSColor(hex: 0x2AA198),
+                syntaxCodeBlockBackground: NSColor(hex: 0xEEE8D5, alpha: 0.78),
+                syntaxLinkText: NSColor(hex: 0x268BD2),
+                syntaxLinkURL: NSColor(hex: 0x859900),
+                syntaxEmphasisMarker: NSColor(hex: 0xCB4B16),
+                syntaxThematicBreak: NSColor(hex: 0x93A1A1),
+                syntaxComment: NSColor(hex: 0x93A1A1),
+                syntaxString: NSColor(hex: 0x859900),
+                syntaxVariable: NSColor(hex: 0x6C71C4),
+                syntaxKeyword: NSColor(hex: 0x268BD2),
+                syntaxOperator: NSColor(hex: 0x2AA198),
+                syntaxBuiltin: NSColor(hex: 0xCB4B16),
+                syntaxPropertyKey: NSColor(hex: 0xB58900)
+            )
+        case .nord:
+            ThemePalette(
+                appBackground: NSColor(hex: 0x2B303B),
+                windowBackground: NSColor(hex: 0x2E3440),
+                editorBackground: NSColor(hex: 0x2E3440),
+                tabBarBackground: NSColor(hex: 0x3B4252),
+                hoveredTabBackground: NSColor(hex: 0x88C0D0, alpha: 0.18),
+                primaryText: NSColor(hex: 0xECEFF4),
+                sidebarText: NSColor(hex: 0xE5E9F0, alpha: 0.94),
+                folderSidebarText: NSColor(hex: 0xD8DEE9),
+                sidebarHeaderText: NSColor(hex: 0xD8DEE9, alpha: 0.84),
+                inactiveTabText: NSColor(hex: 0xBEC8D9),
+                lineNumberText: NSColor(hex: 0x4C566A),
+                activeControlTint: NSColor(hex: 0xECEFF4),
+                defaultControlTint: NSColor(hex: 0xD8DEE9),
+                hoveredControlTint: NSColor(hex: 0x88C0D0),
+                inactiveControlTint: NSColor(hex: 0x4C566A),
+                primaryActionBackground: NSColor(hex: 0x5E81AC),
+                primaryActionText: NSColor(hex: 0xECEFF4),
+                subtleSelectionFill: NSColor(hex: 0x434C5E, alpha: 0.82),
+                syntaxHeadingMarker: NSColor(hex: 0xBF616A),
+                syntaxHeadingText: NSColor(hex: 0xD08770),
+                syntaxListMarker: NSColor(hex: 0xEBCB8B),
+                syntaxBlockquoteMarker: NSColor(hex: 0x88C0D0),
+                syntaxInlineCode: NSColor(hex: 0xB48EAD),
+                syntaxCodeFence: NSColor(hex: 0x8FBCBB),
+                syntaxCodeBlockBackground: NSColor(hex: 0x3B4252, alpha: 0.58),
+                syntaxLinkText: NSColor(hex: 0x88C0D0),
+                syntaxLinkURL: NSColor(hex: 0xA3BE8C),
+                syntaxEmphasisMarker: NSColor(hex: 0xD08770),
+                syntaxThematicBreak: NSColor(hex: 0x4C566A),
+                syntaxComment: NSColor(hex: 0x616E88),
+                syntaxString: NSColor(hex: 0xA3BE8C),
+                syntaxVariable: NSColor(hex: 0xB48EAD),
+                syntaxKeyword: NSColor(hex: 0x81A1C1),
+                syntaxOperator: NSColor(hex: 0x81A1C1),
+                syntaxBuiltin: NSColor(hex: 0xD08770),
+                syntaxPropertyKey: NSColor(hex: 0x8FBCBB)
+            )
+        case .catppuccinMocha:
+            ThemePalette(
+                appBackground: NSColor(hex: 0x11111B),
+                windowBackground: NSColor(hex: 0x181825),
+                editorBackground: NSColor(hex: 0x1E1E2E),
+                tabBarBackground: NSColor(hex: 0x313244),
+                hoveredTabBackground: NSColor(hex: 0xCBA6F7, alpha: 0.18),
+                primaryText: NSColor(hex: 0xCDD6F4),
+                sidebarText: NSColor(hex: 0xCDD6F4, alpha: 0.94),
+                folderSidebarText: NSColor(hex: 0xBAC2DE),
+                sidebarHeaderText: NSColor(hex: 0xBAC2DE, alpha: 0.84),
+                inactiveTabText: NSColor(hex: 0xA6ADC8),
+                lineNumberText: NSColor(hex: 0x6C7086),
+                activeControlTint: NSColor(hex: 0xCDD6F4),
+                defaultControlTint: NSColor(hex: 0xBAC2DE),
+                hoveredControlTint: NSColor(hex: 0xF5C2E7),
+                inactiveControlTint: NSColor(hex: 0x7F849C),
+                primaryActionBackground: NSColor(hex: 0xCBA6F7),
+                primaryActionText: NSColor(hex: 0x1E1E2E),
+                subtleSelectionFill: NSColor(hex: 0x45475A, alpha: 0.86),
+                syntaxHeadingMarker: NSColor(hex: 0xF38BA8),
+                syntaxHeadingText: NSColor(hex: 0xFAB387),
+                syntaxListMarker: NSColor(hex: 0xF9E2AF),
+                syntaxBlockquoteMarker: NSColor(hex: 0x89DCEB),
+                syntaxInlineCode: NSColor(hex: 0xF5C2E7),
+                syntaxCodeFence: NSColor(hex: 0x94E2D5),
+                syntaxCodeBlockBackground: NSColor(hex: 0x313244, alpha: 0.56),
+                syntaxLinkText: NSColor(hex: 0x89DCEB),
+                syntaxLinkURL: NSColor(hex: 0xA6E3A1),
+                syntaxEmphasisMarker: NSColor(hex: 0xFAB387),
+                syntaxThematicBreak: NSColor(hex: 0x6C7086),
+                syntaxComment: NSColor(hex: 0x7F849C),
+                syntaxString: NSColor(hex: 0xA6E3A1),
+                syntaxVariable: NSColor(hex: 0xB4BEFE),
+                syntaxKeyword: NSColor(hex: 0xCBA6F7),
+                syntaxOperator: NSColor(hex: 0x74C7EC),
+                syntaxBuiltin: NSColor(hex: 0xFAB387),
+                syntaxPropertyKey: NSColor(hex: 0xF9E2AF)
+            )
         }
     }
 }
 
-private extension NSColor {
+extension NSColor {
     convenience init(hex: Int, alpha: CGFloat = 1.0) {
         let red = CGFloat((hex >> 16) & 0xFF) / 255.0
         let green = CGFloat((hex >> 8) & 0xFF) / 255.0
