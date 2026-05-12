@@ -184,7 +184,7 @@ enum ThemeCatalog {
                 syntaxKeyword: NSColor(hex: 0xD97757),
                 syntaxOperator: NSColor(hex: 0xF3E7D4),
                 syntaxBuiltin: NSColor(hex: 0xF0B36A),
-                syntaxPropertyKey: NSColor(hex: 0xE9C07B)
+                syntaxPropertyKey: NSColor(hex: 0xCC7D5E)
             )
         case .dracula:
             ThemePalette(
@@ -262,7 +262,7 @@ enum ThemeCatalog {
                 syntaxKeyword: NSColor(hex: 0xFB4934),
                 syntaxOperator: NSColor(hex: 0x83A598),
                 syntaxBuiltin: NSColor(hex: 0xFE8019),
-                syntaxPropertyKey: NSColor(hex: 0xFABD2F)
+                syntaxPropertyKey: NSColor(hex: 0x83A598)
             )
         case .solarizedLight:
             ThemePalette(
@@ -301,7 +301,7 @@ enum ThemeCatalog {
                 syntaxKeyword: NSColor(hex: 0x268BD2),
                 syntaxOperator: NSColor(hex: 0x2AA198),
                 syntaxBuiltin: NSColor(hex: 0xCB4B16),
-                syntaxPropertyKey: NSColor(hex: 0xB58900)
+                syntaxPropertyKey: NSColor(hex: 0xCB4B16)
             )
         case .nord:
             ThemePalette(
@@ -340,7 +340,7 @@ enum ThemeCatalog {
                 syntaxKeyword: NSColor(hex: 0x81A1C1),
                 syntaxOperator: NSColor(hex: 0x81A1C1),
                 syntaxBuiltin: NSColor(hex: 0xD08770),
-                syntaxPropertyKey: NSColor(hex: 0x8FBCBB)
+                syntaxPropertyKey: NSColor(hex: 0x81A1C1)
             )
         case .catppuccinMocha:
             ThemePalette(
@@ -379,7 +379,7 @@ enum ThemeCatalog {
                 syntaxKeyword: NSColor(hex: 0xCBA6F7),
                 syntaxOperator: NSColor(hex: 0x74C7EC),
                 syntaxBuiltin: NSColor(hex: 0xFAB387),
-                syntaxPropertyKey: NSColor(hex: 0xF9E2AF)
+                syntaxPropertyKey: NSColor(hex: 0x89DCEB)
             )
         }
     }
