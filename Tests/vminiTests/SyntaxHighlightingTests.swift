@@ -135,6 +135,51 @@ final class SyntaxHighlightingTests: XCTestCase {
         assertColor(theme.listMarker, at: nsText.range(of: "3.").location, in: storage)
     }
 
+    func testMarkdownIncrementalHighlightingClearsBackgroundAfterClosingFence() {
+        let initialText = """
+        ```sh
+        export hello
+
+        {"name": "adl-fusion"}
+        aaa
+        """
+        let updatedText = """
+        ```sh
+        export hello
+        ```
+
+        {"name": "adl-fusion"}
+        aaa
+        """
+
+        let storage = NSTextStorage(string: initialText)
+        let theme = ThemeCatalog.palette(for: .default).syntaxTheme
+        let initialRange = NSRange(location: 0, length: storage.length)
+        storage.addAttribute(.foregroundColor, value: theme.plainText, range: initialRange)
+
+        let controller = EditorSyntaxHighlightController(
+            highlighterRegistry: .shared,
+            textStorageProvider: { storage },
+            syntaxThemeProvider: { theme }
+        )
+
+        controller.refresh(language: .markdown)
+
+        let updatedNSString = updatedText as NSString
+        let closingFenceRange = updatedNSString.range(of: "```")
+        storage.replaceCharacters(in: NSRange(location: 0, length: storage.length), with: updatedText)
+
+        controller.handleProcessedEditing(
+            editedMask: [.editedCharacters],
+            editedRange: closingFenceRange,
+            language: .markdown
+        )
+
+        let jsonLocation = updatedNSString.range(of: "{\"name\": \"adl-fusion\"}").location
+        XCTAssertNil(storage.attribute(.backgroundColor, at: jsonLocation, effectiveRange: nil))
+        assertColor(theme.plainText, at: updatedNSString.range(of: "aaa").location, in: storage)
+    }
+
     func testBashHighlighterStylesCoreShellTokens() {
         let text = """
         # comment
