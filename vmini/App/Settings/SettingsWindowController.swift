@@ -78,6 +78,9 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
 
     private func applyTheme() {
         window?.backgroundColor = AppColors.windowBackground
+        let appearance = NSAppearance(named: ThemeManager.shared.selectedThemeID.preferredAppearance)
+        window?.appearance = appearance
+        window?.contentViewController?.view.appearance = appearance
     }
 
     @objc
