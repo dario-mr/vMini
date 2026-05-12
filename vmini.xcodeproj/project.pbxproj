@@ -30,6 +30,7 @@
 		A00000000000000000000120 /* UserDefaultsKeys.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000110 /* UserDefaultsKeys.swift */; };
 			A0000000000000000000013A /* WorkspaceWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000013B /* WorkspaceWindowController.swift */; };
 		A00000000000000000000114 /* Document.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000104 /* Document.swift */; };
+		A0000000000000000000019B /* ClosedDocumentHistory.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000019A /* ClosedDocumentHistory.swift */; };
 		A0000000000000000000012C /* DocumentFileWatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000012D /* DocumentFileWatcher.swift */; };
 		A00000000000000000000115 /* OpenDocumentsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000105 /* OpenDocumentsStore.swift */; };
 		A00000000000000000000160 /* SyntaxOverrideStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000161 /* SyntaxOverrideStore.swift */; };
@@ -113,6 +114,7 @@
 		A00000000000000000000110 /* UserDefaultsKeys.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserDefaultsKeys.swift; sourceTree = "<group>"; };
 			A0000000000000000000013B /* WorkspaceWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceWindowController.swift; sourceTree = "<group>"; };
 		A00000000000000000000104 /* Document.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Document.swift; sourceTree = "<group>"; };
+		A0000000000000000000019A /* ClosedDocumentHistory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClosedDocumentHistory.swift; sourceTree = "<group>"; };
 		A0000000000000000000012D /* DocumentFileWatcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentFileWatcher.swift; sourceTree = "<group>"; };
 		A00000000000000000000105 /* OpenDocumentsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenDocumentsStore.swift; sourceTree = "<group>"; };
 		A00000000000000000000161 /* SyntaxOverrideStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyntaxOverrideStore.swift; sourceTree = "<group>"; };
@@ -250,6 +252,7 @@
 		A00000000000000000000132 /* Documents */ = {
 			isa = PBXGroup;
 			children = (
+				A0000000000000000000019A /* ClosedDocumentHistory.swift */,
 				A00000000000000000000104 /* Document.swift */,
 				A0000000000000000000012D /* DocumentFileWatcher.swift */,
 				A00000000000000000000105 /* OpenDocumentsStore.swift */,
@@ -466,6 +469,7 @@
 				A00000000000000000000113 /* VminiApp.swift in Sources */,
 				A0000000000000000000013A /* WorkspaceWindowController.swift in Sources */,
 				A00000000000000000000114 /* Document.swift in Sources */,
+				A0000000000000000000019B /* ClosedDocumentHistory.swift in Sources */,
 				A0000000000000000000012C /* DocumentFileWatcher.swift in Sources */,
 				A00000000000000000000115 /* OpenDocumentsStore.swift in Sources */,
 				A00000000000000000000160 /* SyntaxOverrideStore.swift in Sources */,

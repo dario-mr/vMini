@@ -59,6 +59,8 @@ enum MenuBuilder {
         menu.addItem(.separator())
         let closeItem = menu.addItem(withTitle: "Close", action: #selector(AppDelegate.closeCurrentDocument(_:)), keyEquivalent: "w")
         closeItem.target = NSApp.delegate as AnyObject?
+        let reopenClosedItem = menu.addItem(withTitle: "Reopen Closed Tab", action: #selector(AppDelegate.reopenClosedDocument(_:)), keyEquivalent: "T")
+        reopenClosedItem.target = NSApp.delegate as AnyObject?
         let saveItem = menu.addItem(withTitle: "Save", action: #selector(AppDelegate.saveCurrentDocument(_:)), keyEquivalent: "s")
         saveItem.target = NSApp.delegate as AnyObject?
         let saveAsItem = menu.addItem(withTitle: "Save As…", action: #selector(AppDelegate.saveCurrentDocumentAs(_:)), keyEquivalent: "S")
