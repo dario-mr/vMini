@@ -24,6 +24,17 @@ final class SyntaxHighlightingTests: XCTestCase {
         )
     }
 
+    func testLanguageResolverRecognizesYAMLExtensions() {
+        XCTAssertEqual(
+            SyntaxLanguageResolver.resolve(fileURL: URL(fileURLWithPath: "/tmp/config.yaml"), typeIdentifier: UTType.text.identifier),
+            .yaml
+        )
+        XCTAssertEqual(
+            SyntaxLanguageResolver.resolve(fileURL: URL(fileURLWithPath: "/tmp/config.yml"), typeIdentifier: UTType.text.identifier),
+            .yaml
+        )
+    }
+
     func testLanguageResolverRecognizesShellFilesAndShebangs() {
         XCTAssertEqual(
             SyntaxLanguageResolver.resolve(fileURL: URL(fileURLWithPath: "/tmp/script.sh"), typeIdentifier: UTType.plainText.identifier),
@@ -57,6 +68,8 @@ final class SyntaxHighlightingTests: XCTestCase {
         XCTAssertEqual(SyntaxLanguageResolver.resolveFenceInfoString("zsh"), .bash)
         XCTAssertEqual(SyntaxLanguageResolver.resolveFenceInfoString("shell"), .bash)
         XCTAssertEqual(SyntaxLanguageResolver.resolveFenceInfoString("json"), .json)
+        XCTAssertEqual(SyntaxLanguageResolver.resolveFenceInfoString("yaml"), .yaml)
+        XCTAssertEqual(SyntaxLanguageResolver.resolveFenceInfoString("yml"), .yaml)
     }
 
     func testLanguageResolverDefaultsOtherTextFilesToPlaintext() {
@@ -191,6 +204,52 @@ final class SyntaxHighlightingTests: XCTestCase {
         assertColor(theme.keyword, at: nsText.range(of: "false").location, in: storage)
     }
 
+    func testYAMLHighlighterStylesKeysValuesCommentsAndOperators() {
+        let text = """
+        # comment
+        name: "vmini"
+        enabled: true
+        count: 42
+        ratio: -3.5e+2
+        items:
+          - "one"
+        flow: { retries: 3 }
+        """
+
+        let storage = makeHighlightedStorage(text, language: .yaml)
+        let theme = ThemeCatalog.palette(for: .default).syntaxTheme
+        let nsText = text as NSString
+
+        assertColor(theme.comment, at: nsText.range(of: "# comment").location, in: storage)
+        assertColor(theme.propertyKey, at: nsText.range(of: "name").location, in: storage)
+        assertColor(theme.operator, at: nsText.range(of: ":").location, in: storage)
+        assertColor(theme.string, at: nsText.range(of: "\"vmini\"").location + 1, in: storage)
+        assertColor(theme.string, at: nsText.range(of: "vmini").location, in: storage)
+        assertColor(theme.keyword, at: nsText.range(of: "true").location, in: storage)
+        assertColor(theme.variable, at: nsText.range(of: "42").location, in: storage)
+        assertColor(theme.variable, at: nsText.range(of: "-3.5e+2").location, in: storage)
+        assertColor(theme.operator, at: nsText.range(of: "- \"one\"").location, in: storage)
+        assertColor(theme.operator, at: nsText.range(of: "{").location, in: storage)
+        assertColor(theme.propertyKey, at: nsText.range(of: "retries").location, in: storage)
+    }
+
+    func testYAMLHighlighterStylesBareScalarValuesAsStrings() {
+        let text = """
+        apiVersion: v1
+        server: https://example.com
+        name: ske-8f53bik
+        """
+
+        let storage = makeHighlightedStorage(text, language: .yaml)
+        let theme = ThemeCatalog.palette(for: .default).syntaxTheme
+        let nsText = text as NSString
+
+        assertColor(theme.propertyKey, at: nsText.range(of: "apiVersion").location, in: storage)
+        assertColor(theme.string, at: nsText.range(of: "v1").location, in: storage)
+        assertColor(theme.string, at: nsText.range(of: "https://example.com").location, in: storage)
+        assertColor(theme.string, at: nsText.range(of: "ske-8f53bik").location, in: storage)
+    }
+
     func testEditorViewControllerAppliesAndClearsMarkdownHighlighting() throws {
         let viewController = EditorViewController()
         viewController.loadViewIfNeeded()
@@ -230,6 +289,19 @@ final class SyntaxHighlightingTests: XCTestCase {
         viewController.toggleLineComment()
 
         XCTAssertEqual(viewController.text, "#Host github")
+    }
+
+    func testEditorViewControllerUsesHashCommentPrefixForYAML() throws {
+        let viewController = EditorViewController()
+        viewController.loadViewIfNeeded()
+        viewController.syntaxLanguage = .yaml
+        viewController.text = "name: value"
+
+        let textView = try XCTUnwrap(findTextView(in: viewController.view))
+        textView.setSelectedRange(NSRange(location: 0, length: 0))
+        viewController.toggleLineComment()
+
+        XCTAssertEqual(viewController.text, "#name: value")
     }
 
     func testDocumentSyntaxLanguageUsesDotfileNameAndShebangContent() throws {

@@ -55,6 +55,7 @@
 		A00000000000000000000156 /* BashSyntaxHighlighter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000157 /* BashSyntaxHighlighter.swift */; };
 		A00000000000000000000158 /* SSHConfigSyntaxHighlighter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000159 /* SSHConfigSyntaxHighlighter.swift */; };
 		A0000000000000000000015A /* JSONSyntaxHighlighter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000015B /* JSONSyntaxHighlighter.swift */; };
+		A000000000000000000001A0 /* YAMLSyntaxHighlighter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000001A1 /* YAMLSyntaxHighlighter.swift */; };
 		A0000000000000000000011A /* OpenFilesSidebar.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000010A /* OpenFilesSidebar.swift */; };
 		A0000000000000000000011B /* SidebarSelectionRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000010B /* SidebarSelectionRowView.swift */; };
 		A0000000000000000000011C /* EditorContentViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000010C /* EditorContentViewController.swift */; };
@@ -136,6 +137,7 @@
 		A00000000000000000000157 /* BashSyntaxHighlighter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BashSyntaxHighlighter.swift; sourceTree = "<group>"; };
 		A00000000000000000000159 /* SSHConfigSyntaxHighlighter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SSHConfigSyntaxHighlighter.swift; sourceTree = "<group>"; };
 		A0000000000000000000015B /* JSONSyntaxHighlighter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JSONSyntaxHighlighter.swift; sourceTree = "<group>"; };
+		A000000000000000000001A1 /* YAMLSyntaxHighlighter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YAMLSyntaxHighlighter.swift; sourceTree = "<group>"; };
 		A0000000000000000000010A /* OpenFilesSidebar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenFilesSidebar.swift; sourceTree = "<group>"; };
 		A0000000000000000000010B /* SidebarSelectionRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidebarSelectionRowView.swift; sourceTree = "<group>"; };
 		A0000000000000000000010C /* EditorContentViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorContentViewController.swift; sourceTree = "<group>"; };
@@ -290,6 +292,7 @@
 				A00000000000000000000157 /* BashSyntaxHighlighter.swift */,
 				A00000000000000000000159 /* SSHConfigSyntaxHighlighter.swift */,
 				A0000000000000000000015B /* JSONSyntaxHighlighter.swift */,
+				A000000000000000000001A1 /* YAMLSyntaxHighlighter.swift */,
 				A00000000000000000000141 /* MarkdownSyntaxHighlighter.swift */,
 			);
 			path = SyntaxHighlighting;
@@ -491,6 +494,7 @@
 				A00000000000000000000156 /* BashSyntaxHighlighter.swift in Sources */,
 				A00000000000000000000158 /* SSHConfigSyntaxHighlighter.swift in Sources */,
 				A0000000000000000000015A /* JSONSyntaxHighlighter.swift in Sources */,
+				A000000000000000000001A0 /* YAMLSyntaxHighlighter.swift in Sources */,
 				A00000000000000000000140 /* MarkdownSyntaxHighlighter.swift in Sources */,
 				A0000000000000000000011A /* OpenFilesSidebar.swift in Sources */,
 				A0000000000000000000011B /* SidebarSelectionRowView.swift in Sources */,

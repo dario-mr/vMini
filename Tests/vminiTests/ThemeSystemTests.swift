@@ -61,6 +61,7 @@ final class ThemeSystemTests: XCTestCase {
         assertColor(palette.syntaxHeadingMarker, matchesHex: 0xCC7D5E)
         assertColor(palette.syntaxHeadingText, matchesHex: 0xE8A58B)
         assertColor(palette.syntaxLinkURL, matchesHex: 0x00C853)
+        assertColor(palette.syntaxPropertyKey, matchesHex: 0xCC7D5E)
     }
 
     func testDraculaThemeMatchesOfficialPalette() {
@@ -88,7 +89,7 @@ final class ThemeSystemTests: XCTestCase {
         assertColor(palette.syntaxKeyword, matchesHex: 0xFB4934)
         assertColor(palette.syntaxString, matchesHex: 0xB8BB26)
         assertColor(palette.syntaxBuiltin, matchesHex: 0xFE8019)
-        assertColor(palette.syntaxPropertyKey, matchesHex: 0xFABD2F)
+        assertColor(palette.syntaxPropertyKey, matchesHex: 0x83A598)
     }
 
     func testSolarizedLightThemeMatchesOfficialPalette() {
@@ -101,7 +102,7 @@ final class ThemeSystemTests: XCTestCase {
         assertColor(palette.syntaxKeyword, matchesHex: 0x268BD2)
         assertColor(palette.syntaxString, matchesHex: 0x859900)
         assertColor(palette.syntaxBuiltin, matchesHex: 0xCB4B16)
-        assertColor(palette.syntaxPropertyKey, matchesHex: 0xB58900)
+        assertColor(palette.syntaxPropertyKey, matchesHex: 0xCB4B16)
     }
 
     func testNordThemeMatchesOfficialPalette() {
@@ -114,7 +115,7 @@ final class ThemeSystemTests: XCTestCase {
         assertColor(palette.syntaxKeyword, matchesHex: 0x81A1C1)
         assertColor(palette.syntaxString, matchesHex: 0xA3BE8C)
         assertColor(palette.syntaxBuiltin, matchesHex: 0xD08770)
-        assertColor(palette.syntaxPropertyKey, matchesHex: 0x8FBCBB)
+        assertColor(palette.syntaxPropertyKey, matchesHex: 0x81A1C1)
     }
 
     func testCatppuccinMochaThemeMatchesOfficialPalette() {
@@ -127,7 +128,7 @@ final class ThemeSystemTests: XCTestCase {
         assertColor(palette.syntaxKeyword, matchesHex: 0xCBA6F7)
         assertColor(palette.syntaxString, matchesHex: 0xA6E3A1)
         assertColor(palette.syntaxBuiltin, matchesHex: 0xFAB387)
-        assertColor(palette.syntaxPropertyKey, matchesHex: 0xF9E2AF)
+        assertColor(palette.syntaxPropertyKey, matchesHex: 0x89DCEB)
     }
 
     private func makeUserDefaults() -> UserDefaults {

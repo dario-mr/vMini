@@ -17,6 +17,11 @@ enum SyntaxLanguageResolver {
         "json": .json,
     ]
 
+    private static let yamlFileExtensionMap: [String: SyntaxLanguage] = [
+        "yaml": .yaml,
+        "yml": .yaml,
+    ]
+
     private static let fileNameMap: [String: SyntaxLanguage] = [
         "config": .sshconfig,
         ".zshenv": .bash,
@@ -36,6 +41,8 @@ enum SyntaxLanguageResolver {
         "md": .markdown,
         "markdown": .markdown,
         "json": .json,
+        "yaml": .yaml,
+        "yml": .yaml,
     ]
 
     static func resolve(fileURL: URL?, typeIdentifier: String?, content: String? = nil) -> SyntaxLanguage {
@@ -55,6 +62,11 @@ enum SyntaxLanguageResolver {
 
         if let fileExtension = fileURL?.pathExtension.lowercased(),
            let language = jsonFileExtensionMap[fileExtension] {
+            return language
+        }
+
+        if let fileExtension = fileURL?.pathExtension.lowercased(),
+           let language = yamlFileExtensionMap[fileExtension] {
             return language
         }
 
@@ -221,6 +233,7 @@ final class HighlighterRegistry {
             SSHConfigSyntaxHighlighter(),
             MarkdownSyntaxHighlighter(),
             JSONSyntaxHighlighter(),
+            YAMLSyntaxHighlighter(),
         ]
         self.highlighters = Dictionary(uniqueKeysWithValues: resolvedHighlighters.map { ($0.language, $0) })
     }

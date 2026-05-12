@@ -146,7 +146,7 @@ enum EditorTextEditing {
 
     private static func lineCommentPrefix(for syntaxLanguage: SyntaxLanguage) -> String {
         switch syntaxLanguage {
-        case .bash, .sshconfig:
+        case .bash, .sshconfig, .yaml:
             "#"
         case .plaintext, .markdown, .json:
             "//"
