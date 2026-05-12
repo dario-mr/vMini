@@ -326,6 +326,7 @@ final class EditorContentViewController: NSViewController {
     private let sidebarViewController = OpenFilesSidebarViewController()
     private let editorContainerView = NSView()
     private let statusBarView = EditorStatusBarView()
+    private let fontSizeHUDView = FontSizeHUDView()
     private let resizeHandle = ResizeHandleView()
     private var sidebarWidthConstraint: NSLayoutConstraint?
     private var dragStartWidth: CGFloat = 0
@@ -365,6 +366,7 @@ final class EditorContentViewController: NSViewController {
         view.addSubview(editorContainerView)
         view.addSubview(tabBarContainer)
         view.addSubview(statusBarView)
+        view.addSubview(fontSizeHUDView)
         view.addSubview(resizeHandle)
 
         let widthConstraint = sidebarView.widthAnchor.constraint(equalToConstant: storedSidebarWidth())
@@ -390,6 +392,9 @@ final class EditorContentViewController: NSViewController {
             statusBarView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             statusBarView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
             statusBarView.heightAnchor.constraint(equalToConstant: EditorStatusBarView.Layout.preferredHeight),
+
+            fontSizeHUDView.centerXAnchor.constraint(equalTo: editorContainerView.centerXAnchor),
+            fontSizeHUDView.bottomAnchor.constraint(equalTo: statusBarView.topAnchor, constant: -12),
 
             resizeHandle.centerXAnchor.constraint(equalTo: sidebarView.trailingAnchor),
             resizeHandle.topAnchor.constraint(equalTo: view.topAnchor),
@@ -426,10 +431,12 @@ final class EditorContentViewController: NSViewController {
 
     func increaseEditorFontSize() {
         currentEditorViewController?.increaseFontSize()
+        showFontSizeHUD()
     }
 
     func decreaseEditorFontSize() {
         currentEditorViewController?.decreaseFontSize()
+        showFontSizeHUD()
     }
 
     func focusActiveEditor() {
@@ -568,6 +575,12 @@ final class EditorContentViewController: NSViewController {
         tabBarContainer.layer?.backgroundColor = AppColors.tabBarBackground.cgColor
         tabContentView.layer?.backgroundColor = AppColors.tabBarBackground.cgColor
         statusBarView.applyTheme()
+        fontSizeHUDView.applyTheme()
+    }
+
+    private func showFontSizeHUD() {
+        guard currentEditorViewController != nil else { return }
+        fontSizeHUDView.show(fontSize: EditorSettings.currentFontSize())
     }
 
     private func syncWorkspace() {
