@@ -590,7 +590,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
-				MARKETING_VERSION = 1.0.9;
+				MARKETING_VERSION = 1.0.10;
 				PRODUCT_MODULE_NAME = vmini;
 				PRODUCT_BUNDLE_IDENTIFIER = com.miniapp.vmini;
 				PRODUCT_NAME = vMini;
@@ -614,7 +614,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
-				MARKETING_VERSION = 1.0.9;
+				MARKETING_VERSION = 1.0.10;
 				PRODUCT_MODULE_NAME = vmini;
 				PRODUCT_BUNDLE_IDENTIFIER = com.miniapp.vmini;
 				PRODUCT_NAME = vMini;

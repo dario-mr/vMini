@@ -17,12 +17,10 @@ final class MarkdownSyntaxHighlighter: SyntaxHighlighter {
     let language: SyntaxLanguage = .markdown
 
     func expandedHighlightRange(for editedRange: NSRange, in text: NSString) -> NSRange {
-        let lineRange = text.lineRange(for: editedRange.clamped(toLength: text.length))
-        if let containingFence = fenceBlocks(in: text).first(where: { $0.totalRange.intersects(lineRange) }) {
-            return containingFence.totalRange
-        }
-
-        return lineRange
+        // Fenced code blocks are stateful: opening or closing a fence can change
+        // how every following line should be classified. Re-highlight the full
+        // document to avoid stale code-block background and nested syntax.
+        NSRange(location: 0, length: text.length)
     }
 
     func highlight(
