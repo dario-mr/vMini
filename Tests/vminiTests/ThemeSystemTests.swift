@@ -34,8 +34,8 @@ final class ThemeSystemTests: XCTestCase {
         assertColor(palette.tabBarBackground, matchesHex: 0x333D47)
         assertColor(palette.primaryText, matchesHex: 0xFAFAFA)
         assertColor(palette.primaryActionBackground, matchesHex: 0x3B75B8)
-        assertColor(palette.syntaxHeadingText, matchesHex: 0xFAB0B8)
-        assertColor(palette.syntaxCodeBlockBackground, matchesHex: 0xFFFFFF, alpha: 0.08)
+        assertColor(palette.syntaxPalette.headingText, matchesHex: 0xFAB0B8)
+        assertColor(palette.syntaxPalette.codeBlockBackground, matchesHex: 0xFFFFFF, alpha: 0.08)
     }
 
     func testSyntaxThemeIsDerivedFromThemePalette() {
@@ -43,12 +43,12 @@ final class ThemeSystemTests: XCTestCase {
         let syntaxTheme = palette.syntaxTheme
 
         XCTAssertTrue(syntaxTheme.plainText.isEqual(palette.primaryText))
-        XCTAssertTrue(syntaxTheme.codeFence.isEqual(palette.syntaxCodeFence))
-        XCTAssertTrue(syntaxTheme.codeBlockBackground.isEqual(palette.syntaxCodeBlockBackground))
-        XCTAssertTrue(syntaxTheme.linkURL.isEqual(palette.syntaxLinkURL))
-        XCTAssertTrue(syntaxTheme.keyword.isEqual(palette.syntaxKeyword))
-        XCTAssertTrue(syntaxTheme.comment.isEqual(palette.syntaxComment))
-        XCTAssertTrue(syntaxTheme.propertyKey.isEqual(palette.syntaxPropertyKey))
+        XCTAssertTrue(syntaxTheme.codeFence.isEqual(palette.syntaxPalette.codeFence))
+        XCTAssertTrue(syntaxTheme.codeBlockBackground.isEqual(palette.syntaxPalette.codeBlockBackground))
+        XCTAssertTrue(syntaxTheme.linkURL.isEqual(palette.syntaxPalette.linkURL))
+        XCTAssertTrue(syntaxTheme.keyword.isEqual(palette.syntaxPalette.keyword))
+        XCTAssertTrue(syntaxTheme.comment.isEqual(palette.syntaxPalette.comment))
+        XCTAssertTrue(syntaxTheme.propertyKey.isEqual(palette.syntaxPalette.propertyKey))
     }
 
     func testAbsolutelyThemeMatchesCodexAnchors() {
@@ -58,10 +58,10 @@ final class ThemeSystemTests: XCTestCase {
         assertColor(palette.editorBackground, matchesHex: 0x242423)
         assertColor(palette.primaryText, matchesHex: 0xF9F9F7)
         assertColor(palette.primaryActionBackground, matchesHex: 0xCC7D5E)
-        assertColor(palette.syntaxHeadingMarker, matchesHex: 0xCC7D5E)
-        assertColor(palette.syntaxHeadingText, matchesHex: 0xE8A58B)
-        assertColor(palette.syntaxLinkURL, matchesHex: 0x00C853)
-        assertColor(palette.syntaxPropertyKey, matchesHex: 0xCC7D5E)
+        assertColor(palette.syntaxPalette.headingMarker, matchesHex: 0xCC7D5E)
+        assertColor(palette.syntaxPalette.headingText, matchesHex: 0xE8A58B)
+        assertColor(palette.syntaxPalette.linkURL, matchesHex: 0x00C853)
+        assertColor(palette.syntaxPalette.propertyKey, matchesHex: 0xCC7D5E)
     }
 
     func testDraculaThemeMatchesOfficialPalette() {
@@ -71,12 +71,12 @@ final class ThemeSystemTests: XCTestCase {
         assertColor(palette.editorBackground, matchesHex: 0x282A36)
         assertColor(palette.primaryText, matchesHex: 0xF8F8F2)
         assertColor(palette.primaryActionBackground, matchesHex: 0xA277DE)
-        assertColor(palette.syntaxListMarker, matchesHex: 0xFFB86C)
-        assertColor(palette.syntaxHeadingText, matchesHex: 0xFFB3DA)
-        assertColor(palette.syntaxLinkURL, matchesHex: 0x50FA7B)
-        assertColor(palette.syntaxComment, matchesHex: 0x8B92B2)
-        assertColor(palette.syntaxBuiltin, matchesHex: 0xFFB86C)
-        assertColor(palette.syntaxPropertyKey, matchesHex: 0x8BE9FD)
+        assertColor(palette.syntaxPalette.listMarker, matchesHex: 0xFFB86C)
+        assertColor(palette.syntaxPalette.headingText, matchesHex: 0xFFB3DA)
+        assertColor(palette.syntaxPalette.linkURL, matchesHex: 0x50FA7B)
+        assertColor(palette.syntaxPalette.comment, matchesHex: 0x8B92B2)
+        assertColor(palette.syntaxPalette.builtin, matchesHex: 0xFFB86C)
+        assertColor(palette.syntaxPalette.propertyKey, matchesHex: 0x8BE9FD)
     }
 
     func testGruvboxDarkThemeMatchesOfficialPalette() {
@@ -86,10 +86,10 @@ final class ThemeSystemTests: XCTestCase {
         assertColor(palette.editorBackground, matchesHex: 0x282828)
         assertColor(palette.primaryText, matchesHex: 0xEBDBB2)
         assertColor(palette.primaryActionBackground, matchesHex: 0x458588)
-        assertColor(palette.syntaxKeyword, matchesHex: 0xFB4934)
-        assertColor(palette.syntaxString, matchesHex: 0xB8BB26)
-        assertColor(palette.syntaxBuiltin, matchesHex: 0xFE8019)
-        assertColor(palette.syntaxPropertyKey, matchesHex: 0x83A598)
+        assertColor(palette.syntaxPalette.keyword, matchesHex: 0xFB4934)
+        assertColor(palette.syntaxPalette.string, matchesHex: 0xB8BB26)
+        assertColor(palette.syntaxPalette.builtin, matchesHex: 0xFE8019)
+        assertColor(palette.syntaxPalette.propertyKey, matchesHex: 0x83A598)
     }
 
     func testSolarizedLightThemeMatchesOfficialPalette() {
@@ -99,10 +99,10 @@ final class ThemeSystemTests: XCTestCase {
         assertColor(palette.editorBackground, matchesHex: 0xFDF6E3)
         assertColor(palette.primaryText, matchesHex: 0x586E75)
         assertColor(palette.primaryActionBackground, matchesHex: 0x268BD2)
-        assertColor(palette.syntaxKeyword, matchesHex: 0x268BD2)
-        assertColor(palette.syntaxString, matchesHex: 0x859900)
-        assertColor(palette.syntaxBuiltin, matchesHex: 0xCB4B16)
-        assertColor(palette.syntaxPropertyKey, matchesHex: 0xCB4B16)
+        assertColor(palette.syntaxPalette.keyword, matchesHex: 0x268BD2)
+        assertColor(palette.syntaxPalette.string, matchesHex: 0x859900)
+        assertColor(palette.syntaxPalette.builtin, matchesHex: 0xCB4B16)
+        assertColor(palette.syntaxPalette.propertyKey, matchesHex: 0xCB4B16)
     }
 
     func testNordThemeMatchesOfficialPalette() {
@@ -112,10 +112,10 @@ final class ThemeSystemTests: XCTestCase {
         assertColor(palette.editorBackground, matchesHex: 0x2E3440)
         assertColor(palette.primaryText, matchesHex: 0xECEFF4)
         assertColor(palette.primaryActionBackground, matchesHex: 0x5E81AC)
-        assertColor(palette.syntaxKeyword, matchesHex: 0x81A1C1)
-        assertColor(palette.syntaxString, matchesHex: 0xA3BE8C)
-        assertColor(palette.syntaxBuiltin, matchesHex: 0xD08770)
-        assertColor(palette.syntaxPropertyKey, matchesHex: 0x81A1C1)
+        assertColor(palette.syntaxPalette.keyword, matchesHex: 0x81A1C1)
+        assertColor(palette.syntaxPalette.string, matchesHex: 0xA3BE8C)
+        assertColor(palette.syntaxPalette.builtin, matchesHex: 0xD08770)
+        assertColor(palette.syntaxPalette.propertyKey, matchesHex: 0x81A1C1)
     }
 
     func testCatppuccinMochaThemeMatchesOfficialPalette() {
@@ -125,10 +125,10 @@ final class ThemeSystemTests: XCTestCase {
         assertColor(palette.editorBackground, matchesHex: 0x1E1E2E)
         assertColor(palette.primaryText, matchesHex: 0xCDD6F4)
         assertColor(palette.primaryActionBackground, matchesHex: 0xCBA6F7)
-        assertColor(palette.syntaxKeyword, matchesHex: 0xCBA6F7)
-        assertColor(palette.syntaxString, matchesHex: 0xA6E3A1)
-        assertColor(palette.syntaxBuiltin, matchesHex: 0xFAB387)
-        assertColor(palette.syntaxPropertyKey, matchesHex: 0x89DCEB)
+        assertColor(palette.syntaxPalette.keyword, matchesHex: 0xCBA6F7)
+        assertColor(palette.syntaxPalette.string, matchesHex: 0xA6E3A1)
+        assertColor(palette.syntaxPalette.builtin, matchesHex: 0xFAB387)
+        assertColor(palette.syntaxPalette.propertyKey, matchesHex: 0x89DCEB)
     }
 
     private func makeUserDefaults() -> UserDefaults {

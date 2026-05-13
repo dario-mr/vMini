@@ -12,7 +12,9 @@
 		A00000000000000000000175 /* XCTest.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A00000000000000000000176 /* XCTest.framework */; };
 		A00000000000000000000123 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000122 /* Assets.xcassets */; };
 		A00000000000000000000111 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000101 /* AppDelegate.swift */; };
+		A000000000000000000001C0 /* ActiveWorkspaceResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000001C1 /* ActiveWorkspaceResolver.swift */; };
 		A0000000000000000000013C /* AppColors.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000013D /* AppColors.swift */; };
+		A000000000000000000001C2 /* AppCommandDispatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000001C3 /* AppCommandDispatcher.swift */; };
 		A00000000000000000000124 /* DocumentController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000125 /* DocumentController.swift */; };
 		A00000000000000000000146 /* SettingsCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000147 /* SettingsCoordinator.swift */; };
 		A0000000000000000000016A /* AppButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000016B /* AppButton.swift */; };
@@ -24,20 +26,39 @@
 		A00000000000000000000112 /* MenuBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000102 /* MenuBuilder.swift */; };
 		A0000000000000000000014C /* ThemeSelectionRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000014D /* ThemeSelectionRowView.swift */; };
 		A0000000000000000000014E /* ThemeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000014F /* ThemeManager.swift */; };
+		A000000000000000000001FA /* ObservationToken.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000001FB /* ObservationToken.swift */; };
+		A00000000000000000000201 /* WorkspacePersistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000200 /* WorkspacePersistence.swift */; };
+		A000000000000000000001E4 /* ThemeID.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000001E5 /* ThemeID.swift */; };
 		A00000000000000000000150 /* ThemePalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000151 /* ThemePalette.swift */; };
+		A000000000000000000001E6 /* SyntaxThemePalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000001E7 /* SyntaxThemePalette.swift */; };
+		A000000000000000000001E8 /* ThemeCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000001E9 /* ThemeCatalog.swift */; };
+		A000000000000000000001EA /* DefaultTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000001EB /* DefaultTheme.swift */; };
+		A000000000000000000001EC /* AbsolutelyTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000001ED /* AbsolutelyTheme.swift */; };
+		A000000000000000000001EE /* DraculaTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000001EF /* DraculaTheme.swift */; };
+		A000000000000000000001F0 /* GruvboxDarkTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000001F1 /* GruvboxDarkTheme.swift */; };
+		A000000000000000000001F2 /* SolarizedLightTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000001F3 /* SolarizedLightTheme.swift */; };
+		A000000000000000000001F4 /* NordTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000001F5 /* NordTheme.swift */; };
+		A000000000000000000001F6 /* CatppuccinMochaTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000001F7 /* CatppuccinMochaTheme.swift */; };
 		A00000000000000000000152 /* ThemeStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000153 /* ThemeStore.swift */; };
 		A00000000000000000000113 /* VminiApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000103 /* VminiApp.swift */; };
 		A00000000000000000000120 /* UserDefaultsKeys.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000110 /* UserDefaultsKeys.swift */; };
 			A0000000000000000000013A /* WorkspaceWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000013B /* WorkspaceWindowController.swift */; };
 		A00000000000000000000114 /* Document.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000104 /* Document.swift */; };
 		A0000000000000000000019B /* ClosedDocumentHistory.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000019A /* ClosedDocumentHistory.swift */; };
+		A000000000000000000001C4 /* DocumentContentController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000001C5 /* DocumentContentController.swift */; };
+		A000000000000000000001C6 /* DocumentEditorSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000001C7 /* DocumentEditorSession.swift */; };
+		A000000000000000000001C8 /* DocumentExternalChangeCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000001C9 /* DocumentExternalChangeCoordinator.swift */; };
+		A00000000000000000000203 /* DocumentFileLifecycleController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000202 /* DocumentFileLifecycleController.swift */; };
 		A0000000000000000000012C /* DocumentFileWatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000012D /* DocumentFileWatcher.swift */; };
 		A00000000000000000000115 /* OpenDocumentsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000105 /* OpenDocumentsStore.swift */; };
 		A00000000000000000000160 /* SyntaxOverrideStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000161 /* SyntaxOverrideStore.swift */; };
 		A00000000000000000000162 /* RestorableDocumentReference.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000163 /* RestorableDocumentReference.swift */; };
 		A00000000000000000000116 /* SessionRestorer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000106 /* SessionRestorer.swift */; };
 		A00000000000000000000117 /* EditorSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000107 /* EditorSettings.swift */; };
+		A000000000000000000001CA /* EditorCommandController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000001CB /* EditorCommandController.swift */; };
 		A00000000000000000000168 /* EditorFont.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000169 /* EditorFont.swift */; };
+		A000000000000000000001CC /* EditorFormattingErrorPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000001CD /* EditorFormattingErrorPresenter.swift */; };
+		A000000000000000000001CE /* EditorSettingsObserver.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000001CF /* EditorSettingsObserver.swift */; };
 		A00000000000000000000190 /* ErrorBannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000191 /* ErrorBannerView.swift */; };
 		A00000000000000000000192 /* EditorTextViewStyler.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000193 /* EditorTextViewStyler.swift */; };
 		A00000000000000000000194 /* EditorSyntaxHighlightController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000195 /* EditorSyntaxHighlightController.swift */; };
@@ -58,13 +79,29 @@
 		A0000000000000000000015A /* JSONSyntaxHighlighter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000015B /* JSONSyntaxHighlighter.swift */; };
 		A000000000000000000001A0 /* YAMLSyntaxHighlighter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000001A1 /* YAMLSyntaxHighlighter.swift */; };
 		A0000000000000000000011A /* OpenFilesSidebar.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000010A /* OpenFilesSidebar.swift */; };
+		A000000000000000000001D0 /* FolderSidebarExpansionController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000001D1 /* FolderSidebarExpansionController.swift */; };
+		A000000000000000000001D2 /* FolderSidebarSelectionController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000001D3 /* FolderSidebarSelectionController.swift */; };
+		A000000000000000000001D4 /* FolderTreeNode.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000001D5 /* FolderTreeNode.swift */; };
+		A000000000000000000001D6 /* FolderTreeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000001D7 /* FolderTreeProvider.swift */; };
 		A0000000000000000000011B /* SidebarSelectionRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000010B /* SidebarSelectionRowView.swift */; };
+		A00000000000000000000205 /* OpenFilesSidebarTableController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000204 /* OpenFilesSidebarTableController.swift */; };
+		A00000000000000000000207 /* OpenFoldersSidebarOutlineController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000206 /* OpenFoldersSidebarOutlineController.swift */; };
 		A0000000000000000000011C /* EditorContentViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000010C /* EditorContentViewController.swift */; };
 		A0000000000000000000011D /* EditorWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000010D /* EditorWindow.swift */; };
 		A00000000000000000000164 /* EditorStatusBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000165 /* EditorStatusBarView.swift */; };
 		A00000000000000000000199 /* FontSizeHUDView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000198 /* FontSizeHUDView.swift */; };
 		A0000000000000000000011F /* ResizeHandleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000010F /* ResizeHandleView.swift */; };
 		A00000000000000000000126 /* FileDropHandling.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000127 /* FileDropHandling.swift */; };
+		A000000000000000000001D8 /* WindowFramePersistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000001D9 /* WindowFramePersistence.swift */; };
+		A000000000000000000001B1 /* ActiveEditorCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000001B0 /* ActiveEditorCoordinator.swift */; };
+		A000000000000000000001B3 /* EditorStatusBarStateBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000001B2 /* EditorStatusBarStateBuilder.swift */; };
+		A000000000000000000001B5 /* OpenFilesSidebarResizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000001B4 /* OpenFilesSidebarResizer.swift */; };
+		A000000000000000000001B7 /* EditorTabBarController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000001B6 /* EditorTabBarController.swift */; };
+		A000000000000000000001B9 /* DocumentTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000001B8 /* DocumentTabView.swift */; };
+		A000000000000000000001BB /* EditorTabBarLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000001BA /* EditorTabBarLayout.swift */; };
+		A000000000000000000001BD /* TabContentBackgroundView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000001BC /* TabContentBackgroundView.swift */; };
+		A000000000000000000001DA /* WorkspaceDocumentCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000001DB /* WorkspaceDocumentCoordinator.swift */; };
+		A000000000000000000001DC /* WorkspaceDocumentOpener.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000001DD /* WorkspaceDocumentOpener.swift */; };
 		A00000000000000000000128 /* OpenFoldersStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000012A /* OpenFoldersStore.swift */; };
 		A00000000000000000000129 /* OpenFoldersSidebar.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000012B /* OpenFoldersSidebar.swift */; };
 		A00000000000000000000177 /* EditorTextEditingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000178 /* EditorTextEditingTests.swift */; };
@@ -72,6 +109,10 @@
 		A0000000000000000000017B /* EditorFontTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000017C /* EditorFontTests.swift */; };
 		A0000000000000000000017D /* SyntaxHighlightingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000017E /* SyntaxHighlightingTests.swift */; };
 		A0000000000000000000017F /* ThemeSystemTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000180 /* ThemeSystemTests.swift */; };
+		A00000000000000000000210 /* WorkspaceStateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000209 /* WorkspaceStateTests.swift */; };
+		A0000000000000000000020A /* SessionWorkflowTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000020B /* SessionWorkflowTests.swift */; };
+		A0000000000000000000020C /* SidebarAndPersistenceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000020D /* SidebarAndPersistenceTests.swift */; };
+		A0000000000000000000020E /* WorkspaceSessionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000020F /* WorkspaceSessionManager.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -93,12 +134,18 @@
 		A0000000000000000000017C /* EditorFontTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorFontTests.swift; sourceTree = "<group>"; };
 		A0000000000000000000017E /* SyntaxHighlightingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyntaxHighlightingTests.swift; sourceTree = "<group>"; };
 		A00000000000000000000180 /* ThemeSystemTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeSystemTests.swift; sourceTree = "<group>"; };
+		A00000000000000000000209 /* WorkspaceStateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceStateTests.swift; sourceTree = "<group>"; };
+		A0000000000000000000020B /* SessionWorkflowTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionWorkflowTests.swift; sourceTree = "<group>"; };
+		A0000000000000000000020D /* SidebarAndPersistenceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidebarAndPersistenceTests.swift; sourceTree = "<group>"; };
+		A0000000000000000000020F /* WorkspaceSessionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceSessionManager.swift; sourceTree = "<group>"; };
 		A00000000000000000000182 /* vminiTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = vminiTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		A0000000000000000000018F /* SyntaxLanguage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyntaxLanguage.swift; sourceTree = "<group>"; };
 		A00000000000000000000008 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A00000000000000000000122 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A00000000000000000000101 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		A000000000000000000001C1 /* ActiveWorkspaceResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveWorkspaceResolver.swift; sourceTree = "<group>"; };
 		A0000000000000000000013D /* AppColors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppColors.swift; sourceTree = "<group>"; };
+		A000000000000000000001C3 /* AppCommandDispatcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppCommandDispatcher.swift; sourceTree = "<group>"; };
 		A00000000000000000000125 /* DocumentController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentController.swift; sourceTree = "<group>"; };
 		A00000000000000000000147 /* SettingsCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsCoordinator.swift; sourceTree = "<group>"; };
 		A0000000000000000000016B /* AppButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppButton.swift; sourceTree = "<group>"; };
@@ -110,20 +157,39 @@
 		A00000000000000000000102 /* MenuBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBuilder.swift; sourceTree = "<group>"; };
 		A0000000000000000000014D /* ThemeSelectionRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeSelectionRowView.swift; sourceTree = "<group>"; };
 		A0000000000000000000014F /* ThemeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeManager.swift; sourceTree = "<group>"; };
+		A000000000000000000001FB /* ObservationToken.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ObservationToken.swift; sourceTree = "<group>"; };
+		A00000000000000000000200 /* WorkspacePersistence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspacePersistence.swift; sourceTree = "<group>"; };
+		A000000000000000000001E5 /* ThemeID.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeID.swift; sourceTree = "<group>"; };
 		A00000000000000000000151 /* ThemePalette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemePalette.swift; sourceTree = "<group>"; };
+		A000000000000000000001E7 /* SyntaxThemePalette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyntaxThemePalette.swift; sourceTree = "<group>"; };
+		A000000000000000000001E9 /* ThemeCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeCatalog.swift; sourceTree = "<group>"; };
+		A000000000000000000001EB /* DefaultTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultTheme.swift; sourceTree = "<group>"; };
+		A000000000000000000001ED /* AbsolutelyTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AbsolutelyTheme.swift; sourceTree = "<group>"; };
+		A000000000000000000001EF /* DraculaTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DraculaTheme.swift; sourceTree = "<group>"; };
+		A000000000000000000001F1 /* GruvboxDarkTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GruvboxDarkTheme.swift; sourceTree = "<group>"; };
+		A000000000000000000001F3 /* SolarizedLightTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SolarizedLightTheme.swift; sourceTree = "<group>"; };
+		A000000000000000000001F5 /* NordTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NordTheme.swift; sourceTree = "<group>"; };
+		A000000000000000000001F7 /* CatppuccinMochaTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CatppuccinMochaTheme.swift; sourceTree = "<group>"; };
 		A00000000000000000000153 /* ThemeStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeStore.swift; sourceTree = "<group>"; };
 		A00000000000000000000103 /* VminiApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VminiApp.swift; sourceTree = "<group>"; };
 		A00000000000000000000110 /* UserDefaultsKeys.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserDefaultsKeys.swift; sourceTree = "<group>"; };
-			A0000000000000000000013B /* WorkspaceWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceWindowController.swift; sourceTree = "<group>"; };
+		A0000000000000000000013B /* WorkspaceWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceWindowController.swift; sourceTree = "<group>"; };
 		A00000000000000000000104 /* Document.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Document.swift; sourceTree = "<group>"; };
 		A0000000000000000000019A /* ClosedDocumentHistory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClosedDocumentHistory.swift; sourceTree = "<group>"; };
+		A000000000000000000001C5 /* DocumentContentController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentContentController.swift; sourceTree = "<group>"; };
+		A000000000000000000001C7 /* DocumentEditorSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentEditorSession.swift; sourceTree = "<group>"; };
+		A000000000000000000001C9 /* DocumentExternalChangeCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentExternalChangeCoordinator.swift; sourceTree = "<group>"; };
+		A00000000000000000000202 /* DocumentFileLifecycleController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentFileLifecycleController.swift; sourceTree = "<group>"; };
 		A0000000000000000000012D /* DocumentFileWatcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentFileWatcher.swift; sourceTree = "<group>"; };
 		A00000000000000000000105 /* OpenDocumentsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenDocumentsStore.swift; sourceTree = "<group>"; };
 		A00000000000000000000161 /* SyntaxOverrideStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyntaxOverrideStore.swift; sourceTree = "<group>"; };
 		A00000000000000000000163 /* RestorableDocumentReference.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestorableDocumentReference.swift; sourceTree = "<group>"; };
 		A00000000000000000000106 /* SessionRestorer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionRestorer.swift; sourceTree = "<group>"; };
 		A00000000000000000000107 /* EditorSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorSettings.swift; sourceTree = "<group>"; };
+		A000000000000000000001CB /* EditorCommandController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorCommandController.swift; sourceTree = "<group>"; };
 		A00000000000000000000169 /* EditorFont.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorFont.swift; sourceTree = "<group>"; };
+		A000000000000000000001CD /* EditorFormattingErrorPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorFormattingErrorPresenter.swift; sourceTree = "<group>"; };
+		A000000000000000000001CF /* EditorSettingsObserver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorSettingsObserver.swift; sourceTree = "<group>"; };
 		A00000000000000000000191 /* ErrorBannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorBannerView.swift; sourceTree = "<group>"; };
 		A00000000000000000000193 /* EditorTextViewStyler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorTextViewStyler.swift; sourceTree = "<group>"; };
 		A00000000000000000000195 /* EditorSyntaxHighlightController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorSyntaxHighlightController.swift; sourceTree = "<group>"; };
@@ -141,13 +207,29 @@
 		A0000000000000000000015B /* JSONSyntaxHighlighter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JSONSyntaxHighlighter.swift; sourceTree = "<group>"; };
 		A000000000000000000001A1 /* YAMLSyntaxHighlighter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YAMLSyntaxHighlighter.swift; sourceTree = "<group>"; };
 		A0000000000000000000010A /* OpenFilesSidebar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenFilesSidebar.swift; sourceTree = "<group>"; };
+		A000000000000000000001D1 /* FolderSidebarExpansionController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FolderSidebarExpansionController.swift; sourceTree = "<group>"; };
+		A000000000000000000001D3 /* FolderSidebarSelectionController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FolderSidebarSelectionController.swift; sourceTree = "<group>"; };
+		A000000000000000000001D5 /* FolderTreeNode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FolderTreeNode.swift; sourceTree = "<group>"; };
+		A000000000000000000001D7 /* FolderTreeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FolderTreeProvider.swift; sourceTree = "<group>"; };
 		A0000000000000000000010B /* SidebarSelectionRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidebarSelectionRowView.swift; sourceTree = "<group>"; };
+		A00000000000000000000204 /* OpenFilesSidebarTableController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenFilesSidebarTableController.swift; sourceTree = "<group>"; };
+		A00000000000000000000206 /* OpenFoldersSidebarOutlineController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenFoldersSidebarOutlineController.swift; sourceTree = "<group>"; };
 		A0000000000000000000010C /* EditorContentViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorContentViewController.swift; sourceTree = "<group>"; };
 		A0000000000000000000010D /* EditorWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorWindow.swift; sourceTree = "<group>"; };
 		A00000000000000000000165 /* EditorStatusBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorStatusBarView.swift; sourceTree = "<group>"; };
 		A00000000000000000000198 /* FontSizeHUDView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FontSizeHUDView.swift; sourceTree = "<group>"; };
 		A0000000000000000000010F /* ResizeHandleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResizeHandleView.swift; sourceTree = "<group>"; };
 		A00000000000000000000127 /* FileDropHandling.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileDropHandling.swift; sourceTree = "<group>"; };
+		A000000000000000000001B0 /* ActiveEditorCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveEditorCoordinator.swift; sourceTree = "<group>"; };
+		A000000000000000000001B2 /* EditorStatusBarStateBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorStatusBarStateBuilder.swift; sourceTree = "<group>"; };
+		A000000000000000000001D9 /* WindowFramePersistence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowFramePersistence.swift; sourceTree = "<group>"; };
+		A000000000000000000001B4 /* OpenFilesSidebarResizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenFilesSidebarResizer.swift; sourceTree = "<group>"; };
+		A000000000000000000001B6 /* EditorTabBarController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorTabBarController.swift; sourceTree = "<group>"; };
+		A000000000000000000001B8 /* DocumentTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentTabView.swift; sourceTree = "<group>"; };
+		A000000000000000000001BA /* EditorTabBarLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorTabBarLayout.swift; sourceTree = "<group>"; };
+		A000000000000000000001BC /* TabContentBackgroundView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabContentBackgroundView.swift; sourceTree = "<group>"; };
+		A000000000000000000001DB /* WorkspaceDocumentCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceDocumentCoordinator.swift; sourceTree = "<group>"; };
+		A000000000000000000001DD /* WorkspaceDocumentOpener.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceDocumentOpener.swift; sourceTree = "<group>"; };
 		A0000000000000000000012A /* OpenFoldersStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenFoldersStore.swift; sourceTree = "<group>"; };
 		A0000000000000000000012B /* OpenFoldersSidebar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenFoldersSidebar.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -186,32 +268,44 @@
 		A00000000000000000000032 /* vmini */ = {
 			isa = PBXGroup;
 			children = (
-				A00000000000000000000131 /* App */,
+				A00000000000000000000131 /* Application */,
 				A00000000000000000000122 /* Assets.xcassets */,
-				A00000000000000000000132 /* Documents */,
-				A00000000000000000000133 /* Editor */,
-				A00000000000000000000134 /* Sidebar */,
-				A00000000000000000000135 /* Window */,
+				A000000000000000000001E0 /* Core */,
+				A000000000000000000001E2 /* Features */,
 				A00000000000000000000008 /* Info.plist */,
 			);
 			path = vmini;
 			sourceTree = "<group>";
 		};
-		A00000000000000000000131 /* App */ = {
+		A00000000000000000000131 /* Application */ = {
 			isa = PBXGroup;
 			children = (
 				A0000000000000000000013D /* AppColors.swift */,
 				A00000000000000000000101 /* AppDelegate.swift */,
+				A000000000000000000001DF /* Commands */,
 				A00000000000000000000170 /* Controls */,
 				A00000000000000000000125 /* DocumentController.swift */,
-				A00000000000000000000171 /* GoToLine */,
-				A00000000000000000000154 /* Settings */,
-				A00000000000000000000102 /* MenuBuilder.swift */,
-				A00000000000000000000155 /* Theme */,
-				A00000000000000000000110 /* UserDefaultsKeys.swift */,
+				A000000000000000000001DE /* Menu */,
 				A00000000000000000000103 /* VminiApp.swift */,
 			);
-			path = App;
+			path = Application;
+			sourceTree = "<group>";
+		};
+		A000000000000000000001DE /* Menu */ = {
+			isa = PBXGroup;
+			children = (
+				A00000000000000000000102 /* MenuBuilder.swift */,
+			);
+			path = Menu;
+			sourceTree = "<group>";
+		};
+		A000000000000000000001DF /* Commands */ = {
+			isa = PBXGroup;
+			children = (
+				A000000000000000000001C1 /* ActiveWorkspaceResolver.swift */,
+				A000000000000000000001C3 /* AppCommandDispatcher.swift */,
+			);
+			path = Commands;
 			sourceTree = "<group>";
 		};
 		A00000000000000000000170 /* Controls */ = {
@@ -220,6 +314,47 @@
 				A0000000000000000000016B /* AppButton.swift */,
 			);
 			path = Controls;
+			sourceTree = "<group>";
+		};
+		A000000000000000000001E0 /* Core */ = {
+			isa = PBXGroup;
+			children = (
+				A000000000000000000001FB /* ObservationToken.swift */,
+				A00000000000000000000208 /* Persistence */,
+				A000000000000000000001E1 /* Settings */,
+				A00000000000000000000155 /* Theme */,
+			);
+			path = Core;
+			sourceTree = "<group>";
+		};
+		A00000000000000000000208 /* Persistence */ = {
+			isa = PBXGroup;
+			children = (
+				A00000000000000000000200 /* WorkspacePersistence.swift */,
+			);
+			path = Persistence;
+			sourceTree = "<group>";
+		};
+		A000000000000000000001E1 /* Settings */ = {
+			isa = PBXGroup;
+			children = (
+				A00000000000000000000169 /* EditorFont.swift */,
+				A00000000000000000000107 /* EditorSettings.swift */,
+				A00000000000000000000110 /* UserDefaultsKeys.swift */,
+			);
+			path = Settings;
+			sourceTree = "<group>";
+		};
+		A000000000000000000001E2 /* Features */ = {
+			isa = PBXGroup;
+			children = (
+				A00000000000000000000133 /* Editor */,
+				A00000000000000000000171 /* GoToLine */,
+				A00000000000000000000154 /* Settings */,
+				A00000000000000000000134 /* Sidebar */,
+				A000000000000000000001E3 /* Workspace */,
+			);
+			path = Features;
 			sourceTree = "<group>";
 		};
 		A00000000000000000000171 /* GoToLine */ = {
@@ -246,6 +381,10 @@
 		A00000000000000000000155 /* Theme */ = {
 			isa = PBXGroup;
 			children = (
+				A000000000000000000001F8 /* Catalog */,
+				A000000000000000000001E7 /* SyntaxThemePalette.swift */,
+				A000000000000000000001E9 /* ThemeCatalog.swift */,
+				A000000000000000000001E5 /* ThemeID.swift */,
 				A0000000000000000000014F /* ThemeManager.swift */,
 				A00000000000000000000151 /* ThemePalette.swift */,
 				A00000000000000000000153 /* ThemeStore.swift */,
@@ -253,16 +392,44 @@
 			path = Theme;
 			sourceTree = "<group>";
 		};
+		A000000000000000000001F8 /* Catalog */ = {
+			isa = PBXGroup;
+			children = (
+				A000000000000000000001ED /* AbsolutelyTheme.swift */,
+				A000000000000000000001F7 /* CatppuccinMochaTheme.swift */,
+				A000000000000000000001EB /* DefaultTheme.swift */,
+				A000000000000000000001EF /* DraculaTheme.swift */,
+				A000000000000000000001F1 /* GruvboxDarkTheme.swift */,
+				A000000000000000000001F5 /* NordTheme.swift */,
+				A000000000000000000001F3 /* SolarizedLightTheme.swift */,
+			);
+			path = Catalog;
+			sourceTree = "<group>";
+		};
+		A000000000000000000001E3 /* Workspace */ = {
+			isa = PBXGroup;
+			children = (
+				A00000000000000000000132 /* Documents */,
+				A00000000000000000000135 /* Window */,
+			);
+			path = Workspace;
+			sourceTree = "<group>";
+		};
 		A00000000000000000000132 /* Documents */ = {
 			isa = PBXGroup;
 			children = (
 				A0000000000000000000019A /* ClosedDocumentHistory.swift */,
+				A000000000000000000001C5 /* DocumentContentController.swift */,
+				A000000000000000000001C7 /* DocumentEditorSession.swift */,
+				A000000000000000000001C9 /* DocumentExternalChangeCoordinator.swift */,
+				A00000000000000000000202 /* DocumentFileLifecycleController.swift */,
 				A00000000000000000000104 /* Document.swift */,
 				A0000000000000000000012D /* DocumentFileWatcher.swift */,
 				A00000000000000000000105 /* OpenDocumentsStore.swift */,
 				A00000000000000000000161 /* SyntaxOverrideStore.swift */,
 				A00000000000000000000163 /* RestorableDocumentReference.swift */,
 				A00000000000000000000106 /* SessionRestorer.swift */,
+				A0000000000000000000020F /* WorkspaceSessionManager.swift */,
 			);
 			path = Documents;
 			sourceTree = "<group>";
@@ -270,8 +437,9 @@
 		A00000000000000000000133 /* Editor */ = {
 			isa = PBXGroup;
 			children = (
-				A00000000000000000000107 /* EditorSettings.swift */,
-				A00000000000000000000169 /* EditorFont.swift */,
+				A000000000000000000001CB /* EditorCommandController.swift */,
+				A000000000000000000001CD /* EditorFormattingErrorPresenter.swift */,
+				A000000000000000000001CF /* EditorSettingsObserver.swift */,
 				A00000000000000000000191 /* ErrorBannerView.swift */,
 				A00000000000000000000193 /* EditorTextViewStyler.swift */,
 				A00000000000000000000195 /* EditorSyntaxHighlightController.swift */,
@@ -304,10 +472,24 @@
 		A00000000000000000000134 /* Sidebar */ = {
 			isa = PBXGroup;
 			children = (
+				A000000000000000000001D1 /* FolderSidebarExpansionController.swift */,
+				A000000000000000000001D3 /* FolderSidebarSelectionController.swift */,
+				A000000000000000000001D5 /* FolderTreeNode.swift */,
+				A000000000000000000001D7 /* FolderTreeProvider.swift */,
 				A0000000000000000000010A /* OpenFilesSidebar.swift */,
+				A00000000000000000000204 /* OpenFilesSidebarTableController.swift */,
 				A0000000000000000000012B /* OpenFoldersSidebar.swift */,
+				A00000000000000000000206 /* OpenFoldersSidebarOutlineController.swift */,
 				A0000000000000000000012A /* OpenFoldersStore.swift */,
 				A0000000000000000000010B /* SidebarSelectionRowView.swift */,
+			);
+			path = Sidebar;
+			sourceTree = "<group>";
+		};
+		A000000000000000000001BE /* Sidebar */ = {
+			isa = PBXGroup;
+			children = (
+				A000000000000000000001B4 /* OpenFilesSidebarResizer.swift */,
 			);
 			path = Sidebar;
 			sourceTree = "<group>";
@@ -315,15 +497,33 @@
 		A00000000000000000000135 /* Window */ = {
 			isa = PBXGroup;
 			children = (
+				A000000000000000000001B0 /* ActiveEditorCoordinator.swift */,
 				A0000000000000000000010C /* EditorContentViewController.swift */,
+				A000000000000000000001B2 /* EditorStatusBarStateBuilder.swift */,
+				A000000000000000000001BF /* TabBar */,
 				A0000000000000000000010D /* EditorWindow.swift */,
 				A00000000000000000000198 /* FontSizeHUDView.swift */,
 				A00000000000000000000165 /* EditorStatusBarView.swift */,
 				A00000000000000000000127 /* FileDropHandling.swift */,
 				A0000000000000000000010F /* ResizeHandleView.swift */,
+				A000000000000000000001BE /* Sidebar */,
+				A000000000000000000001D9 /* WindowFramePersistence.swift */,
+				A000000000000000000001DB /* WorkspaceDocumentCoordinator.swift */,
+				A000000000000000000001DD /* WorkspaceDocumentOpener.swift */,
 				A0000000000000000000013B /* WorkspaceWindowController.swift */,
 			);
 			path = Window;
+			sourceTree = "<group>";
+		};
+		A000000000000000000001BF /* TabBar */ = {
+			isa = PBXGroup;
+			children = (
+				A000000000000000000001B8 /* DocumentTabView.swift */,
+				A000000000000000000001B6 /* EditorTabBarController.swift */,
+				A000000000000000000001BA /* EditorTabBarLayout.swift */,
+				A000000000000000000001BC /* TabContentBackgroundView.swift */,
+			);
+			path = TabBar;
 			sourceTree = "<group>";
 		};
 		A00000000000000000000033 /* Frameworks */ = {
@@ -360,6 +560,9 @@
 				A0000000000000000000017C /* EditorFontTests.swift */,
 				A0000000000000000000017E /* SyntaxHighlightingTests.swift */,
 				A00000000000000000000180 /* ThemeSystemTests.swift */,
+				A00000000000000000000209 /* WorkspaceStateTests.swift */,
+				A0000000000000000000020B /* SessionWorkflowTests.swift */,
+				A0000000000000000000020D /* SidebarAndPersistenceTests.swift */,
 			);
 			path = vminiTests;
 			sourceTree = "<group>";
@@ -458,6 +661,8 @@
 			files = (
 				A0000000000000000000013C /* AppColors.swift in Sources */,
 				A00000000000000000000111 /* AppDelegate.swift in Sources */,
+				A000000000000000000001C0 /* ActiveWorkspaceResolver.swift in Sources */,
+				A000000000000000000001C2 /* AppCommandDispatcher.swift in Sources */,
 				A00000000000000000000124 /* DocumentController.swift in Sources */,
 				A0000000000000000000016A /* AppButton.swift in Sources */,
 				A0000000000000000000016C /* GoToLineViewController.swift in Sources */,
@@ -469,20 +674,40 @@
 				A00000000000000000000112 /* MenuBuilder.swift in Sources */,
 				A0000000000000000000014C /* ThemeSelectionRowView.swift in Sources */,
 				A0000000000000000000014E /* ThemeManager.swift in Sources */,
+				A000000000000000000001FA /* ObservationToken.swift in Sources */,
+				A00000000000000000000201 /* WorkspacePersistence.swift in Sources */,
+				A000000000000000000001E4 /* ThemeID.swift in Sources */,
 				A00000000000000000000150 /* ThemePalette.swift in Sources */,
+				A000000000000000000001E6 /* SyntaxThemePalette.swift in Sources */,
+				A000000000000000000001E8 /* ThemeCatalog.swift in Sources */,
+				A000000000000000000001EA /* DefaultTheme.swift in Sources */,
+				A000000000000000000001EC /* AbsolutelyTheme.swift in Sources */,
+				A000000000000000000001EE /* DraculaTheme.swift in Sources */,
+				A000000000000000000001F0 /* GruvboxDarkTheme.swift in Sources */,
+				A000000000000000000001F2 /* SolarizedLightTheme.swift in Sources */,
+				A000000000000000000001F4 /* NordTheme.swift in Sources */,
+				A000000000000000000001F6 /* CatppuccinMochaTheme.swift in Sources */,
 				A00000000000000000000152 /* ThemeStore.swift in Sources */,
 				A00000000000000000000120 /* UserDefaultsKeys.swift in Sources */,
 				A00000000000000000000113 /* VminiApp.swift in Sources */,
 				A0000000000000000000013A /* WorkspaceWindowController.swift in Sources */,
 				A00000000000000000000114 /* Document.swift in Sources */,
 				A0000000000000000000019B /* ClosedDocumentHistory.swift in Sources */,
+				A000000000000000000001C4 /* DocumentContentController.swift in Sources */,
+				A000000000000000000001C6 /* DocumentEditorSession.swift in Sources */,
+				A000000000000000000001C8 /* DocumentExternalChangeCoordinator.swift in Sources */,
+				A00000000000000000000203 /* DocumentFileLifecycleController.swift in Sources */,
 				A0000000000000000000012C /* DocumentFileWatcher.swift in Sources */,
 				A00000000000000000000115 /* OpenDocumentsStore.swift in Sources */,
 				A00000000000000000000160 /* SyntaxOverrideStore.swift in Sources */,
 				A00000000000000000000162 /* RestorableDocumentReference.swift in Sources */,
 				A00000000000000000000116 /* SessionRestorer.swift in Sources */,
+				A0000000000000000000020E /* WorkspaceSessionManager.swift in Sources */,
 				A00000000000000000000117 /* EditorSettings.swift in Sources */,
+				A000000000000000000001CA /* EditorCommandController.swift in Sources */,
 				A00000000000000000000168 /* EditorFont.swift in Sources */,
+				A000000000000000000001CC /* EditorFormattingErrorPresenter.swift in Sources */,
+				A000000000000000000001CE /* EditorSettingsObserver.swift in Sources */,
 				A00000000000000000000190 /* ErrorBannerView.swift in Sources */,
 				A00000000000000000000192 /* EditorTextViewStyler.swift in Sources */,
 				A00000000000000000000194 /* EditorSyntaxHighlightController.swift in Sources */,
@@ -500,15 +725,31 @@
 				A0000000000000000000015A /* JSONSyntaxHighlighter.swift in Sources */,
 				A000000000000000000001A0 /* YAMLSyntaxHighlighter.swift in Sources */,
 				A00000000000000000000140 /* MarkdownSyntaxHighlighter.swift in Sources */,
+				A000000000000000000001D0 /* FolderSidebarExpansionController.swift in Sources */,
+				A000000000000000000001D2 /* FolderSidebarSelectionController.swift in Sources */,
+				A000000000000000000001D4 /* FolderTreeNode.swift in Sources */,
+				A000000000000000000001D6 /* FolderTreeProvider.swift in Sources */,
 				A0000000000000000000011A /* OpenFilesSidebar.swift in Sources */,
+				A00000000000000000000205 /* OpenFilesSidebarTableController.swift in Sources */,
 				A0000000000000000000011B /* SidebarSelectionRowView.swift in Sources */,
 				A0000000000000000000011C /* EditorContentViewController.swift in Sources */,
 				A0000000000000000000011D /* EditorWindow.swift in Sources */,
 				A00000000000000000000199 /* FontSizeHUDView.swift in Sources */,
+				A000000000000000000001B1 /* ActiveEditorCoordinator.swift in Sources */,
 				A00000000000000000000164 /* EditorStatusBarView.swift in Sources */,
+				A000000000000000000001B3 /* EditorStatusBarStateBuilder.swift in Sources */,
 				A00000000000000000000126 /* FileDropHandling.swift in Sources */,
 				A0000000000000000000011F /* ResizeHandleView.swift in Sources */,
+				A000000000000000000001B5 /* OpenFilesSidebarResizer.swift in Sources */,
+				A000000000000000000001D8 /* WindowFramePersistence.swift in Sources */,
+				A000000000000000000001B7 /* EditorTabBarController.swift in Sources */,
+				A000000000000000000001B9 /* DocumentTabView.swift in Sources */,
+				A000000000000000000001BB /* EditorTabBarLayout.swift in Sources */,
+				A000000000000000000001BD /* TabContentBackgroundView.swift in Sources */,
+				A000000000000000000001DA /* WorkspaceDocumentCoordinator.swift in Sources */,
+				A000000000000000000001DC /* WorkspaceDocumentOpener.swift in Sources */,
 				A00000000000000000000129 /* OpenFoldersSidebar.swift in Sources */,
+				A00000000000000000000207 /* OpenFoldersSidebarOutlineController.swift in Sources */,
 				A00000000000000000000128 /* OpenFoldersStore.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -522,6 +763,9 @@
 				A0000000000000000000017B /* EditorFontTests.swift in Sources */,
 				A0000000000000000000017D /* SyntaxHighlightingTests.swift in Sources */,
 				A0000000000000000000017F /* ThemeSystemTests.swift in Sources */,
+				A00000000000000000000210 /* WorkspaceStateTests.swift in Sources */,
+				A0000000000000000000020A /* SessionWorkflowTests.swift in Sources */,
+				A0000000000000000000020C /* SidebarAndPersistenceTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
