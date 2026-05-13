@@ -80,4 +80,57 @@ final class EditorTextEditingTests: XCTestCase {
         XCTAssertNil(EditorTextEditing.moveSelectedLines(in: text, selectedRange: NSRange(location: 0, length: 0), direction: .up))
         XCTAssertNil(EditorTextEditing.moveSelectedLines(in: text, selectedRange: NSRange(location: 4, length: 0), direction: .down))
     }
+
+    func testBracketMatchingFindsPairAfterOpeningBracket() throws {
+        let text = "call(foo[bar])" as NSString
+
+        let match = try XCTUnwrap(
+            EditorBracketMatching.match(
+                near: NSRange(location: 5, length: 0),
+                in: text
+            )
+        )
+
+        XCTAssertEqual(match.range, NSRange(location: 4, length: 1))
+        XCTAssertEqual(match.matchingRange, NSRange(location: 13, length: 1))
+    }
+
+    func testBracketMatchingFindsPairBeforeClosingBracket() throws {
+        let text = "{ alpha: [beta] }" as NSString
+
+        let match = try XCTUnwrap(
+            EditorBracketMatching.match(
+                near: NSRange(location: 14, length: 0),
+                in: text
+            )
+        )
+
+        XCTAssertEqual(match.range, NSRange(location: 14, length: 1))
+        XCTAssertEqual(match.matchingRange, NSRange(location: 9, length: 1))
+    }
+
+    func testBracketMatchingHonorsNestedPairs() throws {
+        let text = "([{}])" as NSString
+
+        let match = try XCTUnwrap(
+            EditorBracketMatching.match(
+                near: NSRange(location: 1, length: 0),
+                in: text
+            )
+        )
+
+        XCTAssertEqual(match.range, NSRange(location: 0, length: 1))
+        XCTAssertEqual(match.matchingRange, NSRange(location: 5, length: 1))
+    }
+
+    func testBracketMatchingReturnsNilWhenNoAdjacentBracketExists() {
+        let text = "plain text" as NSString
+
+        XCTAssertNil(
+            EditorBracketMatching.match(
+                near: NSRange(location: 3, length: 0),
+                in: text
+            )
+        )
+    }
 }
