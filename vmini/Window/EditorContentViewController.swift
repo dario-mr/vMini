@@ -280,6 +280,8 @@ private final class DocumentTabView: NSView {
         menu.addItem(NSMenuItem(title: "Close", action: #selector(closeFromMenu), keyEquivalent: ""))
         menu.addItem(NSMenuItem(title: "Close Others", action: #selector(closeOthersFromMenu), keyEquivalent: ""))
         menu.addItem(NSMenuItem(title: "Close All", action: #selector(closeAllFromMenu), keyEquivalent: ""))
+        menu.addItem(.separator())
+        menu.addItem(NSMenuItem(title: "Copy Path", action: #selector(copyPathFromMenu), keyEquivalent: ""))
 
         for item in menu.items {
             item.target = self
@@ -303,6 +305,25 @@ private final class DocumentTabView: NSView {
     @objc
     private func closeAllFromMenu() {
         onCloseAll?()
+    }
+
+    @objc
+    private func copyPathFromMenu() {
+        guard let path = document?.fileURL?.path else { return }
+
+        let pasteboard = NSPasteboard.general
+        pasteboard.clearContents()
+        pasteboard.setString(path, forType: .string)
+    }
+}
+
+extension DocumentTabView: NSMenuItemValidation {
+    func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
+        if menuItem.action == #selector(copyPathFromMenu) {
+            return document?.fileURL != nil
+        }
+
+        return true
     }
 }
 
