@@ -480,6 +480,10 @@ final class EditorContentViewController: NSViewController {
         currentEditorViewController?.duplicateSelectedLines()
     }
 
+    func deleteCurrentLine() {
+        currentEditorViewController?.deleteCurrentLine()
+    }
+
     @discardableResult
     func moveSelectedLinesUp() -> Bool {
         currentEditorViewController?.moveSelectedLinesUp() ?? false

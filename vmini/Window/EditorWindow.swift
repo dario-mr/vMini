@@ -54,6 +54,11 @@ final class EditorWindow: NSWindow {
             return true
         }
 
+        if modifiers == [.command], event.keyCode == 51 {
+            (contentViewController as? EditorContentViewController)?.deleteCurrentLine()
+            return true
+        }
+
         if modifiers == [.command], characters == "j" {
             (contentViewController as? EditorContentViewController)?.formatJSON()
             return true
