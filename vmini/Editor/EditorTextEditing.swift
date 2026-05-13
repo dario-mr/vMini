@@ -95,6 +95,21 @@ enum EditorTextEditing {
         )
     }
 
+    static func deleteCurrentLine(in text: NSString, selectedRange: NSRange) -> EditorTextEdit {
+        let clampedSelectedRange = clampedRange(selectedRange, toLength: text.length)
+        let affectedRange = affectedLineRange(in: text, selectedRange: clampedSelectedRange)
+        let resultingLength = max(text.length - affectedRange.length, 0)
+
+        return EditorTextEdit(
+            replacementRange: affectedRange,
+            replacementText: "",
+            selectedRange: NSRange(
+                location: min(affectedRange.location, resultingLength),
+                length: 0
+            )
+        )
+    }
+
     static func moveSelectedLines(
         in text: NSString,
         selectedRange: NSRange,

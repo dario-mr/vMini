@@ -97,6 +97,34 @@ final class EditorCommandTests: XCTestCase {
         XCTAssertNil(viewController.formattingErrorMessage)
     }
 
+    func testDeleteCurrentLineRemovesLineAtCaret() throws {
+        let viewController = EditorViewController()
+        viewController.loadViewIfNeeded()
+        viewController.text = "alpha\nbeta\ngamma"
+
+        let textView = try XCTUnwrap(findTextView(in: viewController.view))
+        textView.setSelectedRange(NSRange(location: 7, length: 0))
+
+        viewController.deleteCurrentLine()
+
+        XCTAssertEqual(viewController.text, "alpha\ngamma")
+        XCTAssertEqual(textView.selectedRange(), NSRange(location: 6, length: 0))
+    }
+
+    func testDeleteCurrentLineRemovesSelectedLines() throws {
+        let viewController = EditorViewController()
+        viewController.loadViewIfNeeded()
+        viewController.text = "alpha\nbeta\ngamma\ndelta"
+
+        let textView = try XCTUnwrap(findTextView(in: viewController.view))
+        textView.setSelectedRange(NSRange(location: 2, length: 8))
+
+        viewController.deleteCurrentLine()
+
+        XCTAssertEqual(viewController.text, "gamma\ndelta")
+        XCTAssertEqual(textView.selectedRange(), NSRange(location: 0, length: 0))
+    }
+
     func testEscapeCollapsesActiveSelectionToInsertionPoint() {
         let textView = FileDropTextView(frame: NSRect(x: 0, y: 0, width: 300, height: 200))
         textView.string = "hello world"

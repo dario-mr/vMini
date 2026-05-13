@@ -221,6 +221,14 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
         applyBufferEdit(edit, using: textStorage, scrollSelectionIntoView: true)
     }
 
+    func deleteCurrentLine() {
+        guard let textStorage = textView.textStorage else { return }
+
+        let text = textView.string as NSString
+        let edit = EditorTextEditing.deleteCurrentLine(in: text, selectedRange: textView.selectedRange())
+        applyBufferEdit(edit, using: textStorage, scrollSelectionIntoView: true)
+    }
+
     @discardableResult
     func moveSelectedLinesUp() -> Bool {
         moveSelectedLines(direction: .up)
