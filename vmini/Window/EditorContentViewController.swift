@@ -282,6 +282,7 @@ private final class DocumentTabView: NSView {
         menu.addItem(NSMenuItem(title: "Close All", action: #selector(closeAllFromMenu), keyEquivalent: ""))
         menu.addItem(.separator())
         menu.addItem(NSMenuItem(title: "Copy Path", action: #selector(copyPathFromMenu), keyEquivalent: ""))
+        menu.addItem(NSMenuItem(title: "Show in Finder", action: #selector(showInFinderFromMenu), keyEquivalent: ""))
 
         for item in menu.items {
             item.target = self
@@ -315,11 +316,18 @@ private final class DocumentTabView: NSView {
         pasteboard.clearContents()
         pasteboard.setString(path, forType: .string)
     }
+
+    @objc
+    private func showInFinderFromMenu() {
+        guard let fileURL = document?.fileURL else { return }
+        NSWorkspace.shared.activateFileViewerSelecting([fileURL])
+    }
 }
 
 extension DocumentTabView: NSMenuItemValidation {
     func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
-        if menuItem.action == #selector(copyPathFromMenu) {
+        if menuItem.action == #selector(copyPathFromMenu)
+            || menuItem.action == #selector(showInFinderFromMenu) {
             return document?.fileURL != nil
         }
 
