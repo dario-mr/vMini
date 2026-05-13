@@ -32,6 +32,12 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
             ThemeManager.shared.syntaxTheme
         }
     )
+    private lazy var bracketHighlightController = EditorBracketHighlightController(
+        textView: textView,
+        highlightColorProvider: {
+            AppColors.primaryActionBackground.withAlphaComponent(0.35)
+        }
+    )
     private lazy var viewportController = EditorViewportController(
         textView: textView,
         scrollView: scrollView,
@@ -155,6 +161,7 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
     func textDidChange(_ notification: Notification) {
         clearFormattingErrorBanner()
         textViewStyler.synchronizeWordWrapLayout()
+        bracketHighlightController.refresh()
         onTextChanged?()
         notifyCursorPositionChanged()
     }
@@ -184,6 +191,7 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
 
     func textViewDidChangeSelection(_ notification: Notification) {
         viewportController.handleSelectionDidChange()
+        bracketHighlightController.refresh()
         notifyCursorPositionChanged()
     }
 
@@ -332,6 +340,7 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
         textViewStyler.configureTextView()
         formattingErrorBannerView.applyTheme()
         refreshSyntaxHighlighting()
+        bracketHighlightController.refresh()
     }
 
     private func configureFormattingErrorBanner() {
@@ -349,6 +358,7 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
     private func refreshSyntaxHighlighting() {
         guard isViewLoaded else { return }
         syntaxHighlightController.refresh(language: syntaxLanguage)
+        bracketHighlightController.refresh()
     }
 
     private func notifyCursorPositionChanged() {

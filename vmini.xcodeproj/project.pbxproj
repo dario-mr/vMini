@@ -42,6 +42,7 @@
 		A00000000000000000000192 /* EditorTextViewStyler.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000193 /* EditorTextViewStyler.swift */; };
 		A00000000000000000000194 /* EditorSyntaxHighlightController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000195 /* EditorSyntaxHighlightController.swift */; };
 		A00000000000000000000196 /* EditorViewportController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000197 /* EditorViewportController.swift */; };
+		A000000000000000000001A2 /* EditorBracketHighlightController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000001A3 /* EditorBracketHighlightController.swift */; };
 		A00000000000000000000172 /* EditorTextEditing.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000173 /* EditorTextEditing.swift */; };
 		A0000000000000000000018C /* EditorTextEditing.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000173 /* EditorTextEditing.swift */; };
 		A00000000000000000000118 /* EditorViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000108 /* EditorViewController.swift */; };
@@ -127,6 +128,7 @@
 		A00000000000000000000193 /* EditorTextViewStyler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorTextViewStyler.swift; sourceTree = "<group>"; };
 		A00000000000000000000195 /* EditorSyntaxHighlightController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorSyntaxHighlightController.swift; sourceTree = "<group>"; };
 		A00000000000000000000197 /* EditorViewportController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorViewportController.swift; sourceTree = "<group>"; };
+		A000000000000000000001A3 /* EditorBracketHighlightController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorBracketHighlightController.swift; sourceTree = "<group>"; };
 		A00000000000000000000173 /* EditorTextEditing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorTextEditing.swift; sourceTree = "<group>"; };
 		A00000000000000000000108 /* EditorViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorViewController.swift; sourceTree = "<group>"; };
 		A00000000000000000000109 /* LineNumberRuler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LineNumberRuler.swift; sourceTree = "<group>"; };
@@ -273,6 +275,7 @@
 				A00000000000000000000191 /* ErrorBannerView.swift */,
 				A00000000000000000000193 /* EditorTextViewStyler.swift */,
 				A00000000000000000000195 /* EditorSyntaxHighlightController.swift */,
+				A000000000000000000001A3 /* EditorBracketHighlightController.swift */,
 				A00000000000000000000197 /* EditorViewportController.swift */,
 				A00000000000000000000173 /* EditorTextEditing.swift */,
 				A00000000000000000000108 /* EditorViewController.swift */,
@@ -483,6 +486,7 @@
 				A00000000000000000000190 /* ErrorBannerView.swift in Sources */,
 				A00000000000000000000192 /* EditorTextViewStyler.swift in Sources */,
 				A00000000000000000000194 /* EditorSyntaxHighlightController.swift in Sources */,
+				A000000000000000000001A2 /* EditorBracketHighlightController.swift in Sources */,
 				A00000000000000000000196 /* EditorViewportController.swift in Sources */,
 				A00000000000000000000172 /* EditorTextEditing.swift in Sources */,
 				A00000000000000000000118 /* EditorViewController.swift in Sources */,
@@ -590,7 +594,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
-				MARKETING_VERSION = 1.0.10;
+				MARKETING_VERSION = 1.0.11;
 				PRODUCT_MODULE_NAME = vmini;
 				PRODUCT_BUNDLE_IDENTIFIER = com.miniapp.vmini;
 				PRODUCT_NAME = vMini;
@@ -614,7 +618,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
-				MARKETING_VERSION = 1.0.10;
+				MARKETING_VERSION = 1.0.11;
 				PRODUCT_MODULE_NAME = vmini;
 				PRODUCT_BUNDLE_IDENTIFIER = com.miniapp.vmini;
 				PRODUCT_NAME = vMini;
