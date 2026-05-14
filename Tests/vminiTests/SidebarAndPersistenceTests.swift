@@ -99,6 +99,44 @@ final class SidebarAndPersistenceTests: XCTestCase {
         XCTAssertEqual(persistence.syntaxLanguageOverrides["/tmp/file.txt"], SyntaxLanguage.yaml.rawValue)
     }
 
+    func testOpenFoldersSidebarOutlineControllerOnlyShowsRemoveFolderForRootNodes() throws {
+        let rootURL = try makeTemporaryDirectory(name: "menu-root")
+        let childDirectoryURL = rootURL.appendingPathComponent("Child", isDirectory: true)
+        try FileManager.default.createDirectory(at: childDirectoryURL, withIntermediateDirectories: true)
+
+        let persistence = WorkspacePersistence(userDefaults: makeUserDefaults(prefix: "SidebarAndPersistenceTests.ContextMenu"))
+        let store = OpenFoldersStore(persistence: persistence)
+        let controller = OpenFoldersSidebarOutlineController(folderStore: store, treeProvider: FolderTreeProvider(fileManager: .default))
+        let outlineView = OutlineViewSpy()
+        let menu = NSMenu()
+
+        controller.attach(to: outlineView)
+        store.add([rootURL])
+        controller.apply(
+            state: OpenFoldersStore.State(
+                folderURLs: store.folderURLs,
+                selectedURL: store.selectedURL,
+                expandedFolderPaths: [rootURL.path]
+            )
+        )
+
+        guard let rootNode = outlineView.stubbedItemsByRow[0] as? FolderTreeNode else {
+            return XCTFail("Expected root node at row 0")
+        }
+        let childNode = rootNode.children[0]
+        outlineView.stubbedItemsByRow[1] = childNode
+
+        outlineView.stubbedClickedRow = 0
+        controller.menuNeedsUpdate(menu)
+        XCTAssertEqual(menu.items.map(\.title), ["Remove Folder"])
+        XCTAssertEqual(menu.items.first?.representedObject as? URL, rootURL)
+
+        menu.removeAllItems()
+        outlineView.stubbedClickedRow = 1
+        controller.menuNeedsUpdate(menu)
+        XCTAssertTrue(menu.items.isEmpty)
+    }
+
     private func makeTemporaryDirectory(name: String) throws -> URL {
         let url = FileManager.default.temporaryDirectory
             .appendingPathComponent("SidebarAndPersistenceTests-\(name)-\(UUID().uuidString)", isDirectory: true)
@@ -144,6 +182,35 @@ private final class OutlineViewSpy: NSOutlineView {
     var rowsByIdentifier: [ObjectIdentifier: Int] = [:]
     var recordedSelectedRowIndexes = IndexSet()
     var didDeselectAll = false
+    var stubbedItemsByRow: [Int: Any] = [:]
+    var stubbedClickedRow = -1
+
+    override var clickedRow: Int {
+        stubbedClickedRow
+    }
+
+    override func reloadData() {
+        super.reloadData()
+
+        guard let dataSource else { return }
+
+        stubbedItemsByRow.removeAll()
+        rowsByIdentifier.removeAll()
+
+        let rootCount = dataSource.outlineView!(self, numberOfChildrenOfItem: nil)
+        for index in 0..<rootCount {
+            let item = dataSource.outlineView!(self, child: index, ofItem: nil)
+            stubbedItemsByRow[index] = item
+
+            if let node = item as? FolderTreeNode {
+                rowsByIdentifier[ObjectIdentifier(node)] = index
+            }
+        }
+    }
+
+    override func item(atRow row: Int) -> Any? {
+        stubbedItemsByRow[row]
+    }
 
     override func isItemExpanded(_ item: Any?) -> Bool {
         guard let node = item as? FolderTreeNode else { return false }

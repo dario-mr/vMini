@@ -120,11 +120,11 @@ final class OpenFoldersSidebarOutlineController: NSObject, NSOutlineViewDataSour
         guard let outlineView else { return }
         let row = outlineView.clickedRow
         guard row >= 0, let node = outlineView.item(atRow: row) as? FolderTreeNode else { return }
-        guard let folderURL = rootFolderURL(containing: node.url) else { return }
+        guard isRootNode(node) else { return }
 
         let item = NSMenuItem(title: "Remove Folder", action: #selector(removeFolder(_:)), keyEquivalent: "")
         item.target = self
-        item.representedObject = folderURL
+        item.representedObject = node.url
         menu.addItem(item)
     }
 
@@ -221,10 +221,7 @@ final class OpenFoldersSidebarOutlineController: NSObject, NSOutlineViewDataSour
         item as? FolderTreeNode
     }
 
-    private func rootFolderURL(containing url: URL) -> URL? {
-        let path = url.standardizedFileURL.path
-        return folderStore.folderURLs.first { rootURL in
-            path == rootURL.path || path.hasPrefix(rootURL.path + "/")
-        }
+    private func isRootNode(_ node: FolderTreeNode) -> Bool {
+        rootNodes.contains { $0 === node }
     }
 }
