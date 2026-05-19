@@ -26,6 +26,7 @@ final class MarkdownSyntaxHighlighter: SyntaxHighlighter {
     func highlight(
         textStorage: NSTextStorage,
         in range: NSRange?,
+        baseFont: NSFont,
         theme: SyntaxTheme,
         registry: HighlighterRegistry
     ) {
@@ -36,8 +37,8 @@ final class MarkdownSyntaxHighlighter: SyntaxHighlighter {
         }
 
         let fences = fenceBlocks(in: text)
-        applyFenceStyling(textStorage: textStorage, text: text, fences: fences, targetRange: targetRange, theme: theme, registry: registry)
-        applyLineStyling(textStorage: textStorage, text: text, fences: fences, targetRange: targetRange, theme: theme)
+        applyFenceStyling(textStorage: textStorage, text: text, fences: fences, targetRange: targetRange, baseFont: baseFont, theme: theme, registry: registry)
+        applyLineStyling(textStorage: textStorage, text: text, fences: fences, targetRange: targetRange, baseFont: baseFont, theme: theme)
     }
 
     private func applyFenceStyling(
@@ -45,6 +46,7 @@ final class MarkdownSyntaxHighlighter: SyntaxHighlighter {
         text: NSString,
         fences: [FenceBlock],
         targetRange: NSRange,
+        baseFont: NSFont,
         theme: SyntaxTheme,
         registry: HighlighterRegistry
     ) {
@@ -82,6 +84,7 @@ final class MarkdownSyntaxHighlighter: SyntaxHighlighter {
             nestedHighlighter.highlight(
                 textStorage: textStorage,
                 in: nestedRange,
+                baseFont: baseFont,
                 theme: theme,
                 registry: registry
             )
@@ -93,8 +96,10 @@ final class MarkdownSyntaxHighlighter: SyntaxHighlighter {
         text: NSString,
         fences: [FenceBlock],
         targetRange: NSRange,
+        baseFont: NSFont,
         theme: SyntaxTheme
     ) {
+        let headingFont = EditorFontResolver.boldVariant(of: baseFont)
         var location = 0
         while location < text.length {
             let lineRange = text.lineRange(for: NSRange(location: location, length: 0))
@@ -105,9 +110,17 @@ final class MarkdownSyntaxHighlighter: SyntaxHighlighter {
                 switch classification {
                 case .fence, .fenceContent:
                     break
-                case let .heading(markerRange, textRange):
-                    applyIfIntersecting(textStorage: textStorage, theme: theme, role: .headingMarker, range: markerRange, targetRange: targetRange)
-                    applyIfIntersecting(textStorage: textStorage, theme: theme, role: .headingText, range: textRange, targetRange: targetRange)
+                case let .heading(level, markerRange, textRange):
+                    let fullHeadingRange = NSUnionRange(markerRange, textRange)
+                    textStorage.applyFont(headingFont, range: NSIntersectionRange(fullHeadingRange, targetRange))
+                    applyHeadingStyling(
+                        textStorage: textStorage,
+                        level: level,
+                        markerRange: markerRange,
+                        textRange: textRange,
+                        targetRange: targetRange,
+                        theme: theme
+                    )
                     applyInlineStyling(textStorage: textStorage, lineRange: contentRange, text: text, theme: theme, targetRange: targetRange)
                 case let .blockquote(markerRange):
                     applyIfIntersecting(textStorage: textStorage, theme: theme, role: .blockquoteMarker, range: markerRange, targetRange: targetRange)
@@ -165,9 +178,38 @@ final class MarkdownSyntaxHighlighter: SyntaxHighlighter {
         textStorage.applyForegroundColor(theme.color(for: role), range: visibleRange)
     }
 
+    private func applyHeadingStyling(
+        textStorage: NSTextStorage,
+        level: Int,
+        markerRange: NSRange,
+        textRange: NSRange,
+        targetRange: NSRange,
+        theme: SyntaxTheme
+    ) {
+        let visibleMarkerRange = NSIntersectionRange(markerRange, targetRange)
+        if visibleMarkerRange.length > 0 {
+            textStorage.applyForegroundColor(theme.color(for: .headingMarker), range: visibleMarkerRange)
+        }
+
+        let visibleTextRange = NSIntersectionRange(textRange, targetRange)
+        guard visibleTextRange.length > 0 else { return }
+        textStorage.applyForegroundColor(headingTextColor(for: level, theme: theme), range: visibleTextRange)
+    }
+
+    private func headingTextColor(for level: Int, theme: SyntaxTheme) -> NSColor {
+        switch level {
+        case 1:
+            theme.headingMarker
+        case 2:
+            theme.headingText.blended(withFraction: 0.5, of: theme.headingMarker) ?? theme.headingText
+        default:
+            theme.headingText
+        }
+    }
+
     private enum LineClassification {
         case plainText
-        case heading(markerRange: NSRange, textRange: NSRange)
+        case heading(level: Int, markerRange: NSRange, textRange: NSRange)
         case blockquote(markerRange: NSRange)
         case unorderedList(markerRange: NSRange)
         case orderedList(markerRange: NSRange)
@@ -196,6 +238,7 @@ final class MarkdownSyntaxHighlighter: SyntaxHighlighter {
             let textStart = baseLocation + markerLength
             let remainingLength = max(contentRange.upperBound - textStart, 0)
             return .heading(
+                level: markerLength,
                 markerRange: headingRange,
                 textRange: NSRange(location: textStart, length: remainingLength)
             )

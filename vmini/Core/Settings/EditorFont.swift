@@ -96,6 +96,17 @@ struct EditorFontResolver {
         }
     }
 
+    static func boldVariant(of font: NSFont) -> NSFont {
+        let fontManager = NSFontManager.shared
+        let convertedFont = fontManager.convert(font, toHaveTrait: .boldFontMask)
+        if convertedFont != font {
+            return convertedFont
+        }
+
+        let descriptor = font.fontDescriptor.withSymbolicTraits(font.fontDescriptor.symbolicTraits.union(.bold))
+        return NSFont(descriptor: descriptor, size: font.pointSize) ?? font
+    }
+
     private static func fallbackFont(size: CGFloat) -> NSFont {
         font(for: .systemMonospaced, size: size)
     }

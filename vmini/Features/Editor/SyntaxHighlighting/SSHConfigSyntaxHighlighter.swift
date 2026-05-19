@@ -16,6 +16,7 @@ final class SSHConfigSyntaxHighlighter: SyntaxHighlighter {
     func highlight(
         textStorage: NSTextStorage,
         in range: NSRange?,
+        baseFont: NSFont,
         theme: SyntaxTheme,
         registry: HighlighterRegistry
     ) {
