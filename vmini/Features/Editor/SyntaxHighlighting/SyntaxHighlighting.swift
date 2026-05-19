@@ -215,6 +215,7 @@ protocol SyntaxHighlighter {
     func highlight(
         textStorage: NSTextStorage,
         in range: NSRange?,
+        baseFont: NSFont,
         theme: SyntaxTheme,
         registry: HighlighterRegistry
     )
@@ -274,6 +275,11 @@ extension NSTextStorage {
     func applyForegroundColor(_ color: NSColor, range: NSRange) {
         guard range.length > 0 else { return }
         addAttribute(.foregroundColor, value: color, range: range)
+    }
+
+    func applyFont(_ font: NSFont, range: NSRange) {
+        guard range.length > 0 else { return }
+        addAttribute(.font, value: font, range: range)
     }
 
     func applyBackgroundColor(_ color: NSColor?, range: NSRange) {

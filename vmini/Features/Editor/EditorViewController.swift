@@ -34,6 +34,12 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
         },
         syntaxThemeProvider: {
             ThemeManager.shared.syntaxTheme
+        },
+        baseFontProvider: {
+            EditorFontResolver.font(
+                for: EditorSettings.currentFontID(),
+                size: EditorSettings.currentFontSize()
+            )
         }
     )
     private lazy var bracketHighlightController = EditorBracketHighlightController(

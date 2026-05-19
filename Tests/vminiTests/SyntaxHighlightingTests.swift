@@ -86,6 +86,8 @@ final class SyntaxHighlightingTests: XCTestCase {
     func testMarkdownHighlighterStylesCoreMarkdownTokens() throws {
         let text = """
         # Title
+        ## Subtitle
+        ### Section
         - item
         1. ordered
         > quote
@@ -102,9 +104,15 @@ final class SyntaxHighlightingTests: XCTestCase {
         let storage = makeHighlightedStorage(text, language: .markdown)
         let theme = ThemeCatalog.palette(for: .default).syntaxTheme
         let nsText = text as NSString
+        let h1Color = theme.headingMarker
+        let h2Color = theme.headingText.blended(withFraction: 0.5, of: theme.headingMarker) ?? theme.headingText
 
         assertColor(theme.headingMarker, at: nsText.range(of: "#").location, in: storage)
-        assertColor(theme.headingText, at: nsText.range(of: "Title").location, in: storage)
+        assertColor(h1Color, at: nsText.range(of: "Title").location, in: storage)
+        assertBoldFont(at: nsText.range(of: "#").location, in: storage)
+        assertBoldFont(at: nsText.range(of: "Title").location, in: storage)
+        assertColor(h2Color, at: nsText.range(of: "Subtitle").location, in: storage)
+        assertColor(theme.headingText, at: nsText.range(of: "Section").location, in: storage)
         assertColor(theme.listMarker, at: nsText.range(of: "- item").location, in: storage)
         assertColor(theme.listMarker, at: nsText.range(of: "1. ordered").location, in: storage)
         assertColor(theme.blockquoteMarker, at: nsText.range(of: "> quote").location, in: storage)
@@ -154,13 +162,16 @@ final class SyntaxHighlightingTests: XCTestCase {
 
         let storage = NSTextStorage(string: initialText)
         let theme = ThemeCatalog.palette(for: .default).syntaxTheme
+        let baseFont = EditorFontResolver.font(for: .fallback, size: 13)
         let initialRange = NSRange(location: 0, length: storage.length)
         storage.addAttribute(.foregroundColor, value: theme.plainText, range: initialRange)
+        storage.addAttribute(.font, value: baseFont, range: initialRange)
 
         let controller = EditorSyntaxHighlightController(
             highlighterRegistry: .shared,
             textStorageProvider: { storage },
-            syntaxThemeProvider: { theme }
+            syntaxThemeProvider: { theme },
+            baseFontProvider: { baseFont }
         )
 
         controller.refresh(language: .markdown)
@@ -304,10 +315,15 @@ final class SyntaxHighlightingTests: XCTestCase {
         let storage = try XCTUnwrap(viewController.textStorage)
         let nsText = viewController.text as NSString
         let syntaxTheme = ThemeManager.shared.syntaxTheme
+        let h1Color = syntaxTheme.headingMarker
         assertColor(syntaxTheme.headingMarker, at: nsText.range(of: "#").location, in: storage)
+        assertColor(h1Color, at: nsText.range(of: "Title").location, in: storage)
+        assertBoldFont(at: nsText.range(of: "#").location, in: storage)
+        assertBoldFont(at: nsText.range(of: "Title").location, in: storage)
 
         viewController.syntaxLanguage = .plaintext
         assertColor(syntaxTheme.plainText, at: nsText.range(of: "#").location, in: storage)
+        assertNonBoldFont(at: nsText.range(of: "#").location, in: storage)
     }
 
     func testEditorViewControllerUsesShellCommentPrefixForBash() throws {
@@ -416,11 +432,14 @@ final class SyntaxHighlightingTests: XCTestCase {
     private func makeHighlightedStorage(_ text: String, language: SyntaxLanguage) -> NSTextStorage {
         let storage = NSTextStorage(string: text)
         let theme = ThemeCatalog.palette(for: .default).syntaxTheme
+        let baseFont = EditorFontResolver.font(for: .fallback, size: 13)
         let fullRange = NSRange(location: 0, length: storage.length)
+        storage.addAttribute(.font, value: baseFont, range: fullRange)
         storage.addAttribute(.foregroundColor, value: theme.plainText, range: fullRange)
         HighlighterRegistry.shared.highlighter(for: language).highlight(
             textStorage: storage,
             in: fullRange,
+            baseFont: baseFont,
             theme: theme,
             registry: HighlighterRegistry.shared
         )
@@ -451,5 +470,17 @@ final class SyntaxHighlightingTests: XCTestCase {
         let actual = storage.attribute(.backgroundColor, at: location, effectiveRange: nil) as? NSColor
         XCTAssertNotNil(actual, file: file, line: line)
         XCTAssertTrue(actual?.isEqual(expected) == true, file: file, line: line)
+    }
+
+    private func assertBoldFont(at location: Int, in storage: NSTextStorage, file: StaticString = #filePath, line: UInt = #line) {
+        let font = storage.attribute(.font, at: location, effectiveRange: nil) as? NSFont
+        XCTAssertNotNil(font, file: file, line: line)
+        XCTAssertTrue(font?.fontDescriptor.symbolicTraits.contains(.bold) == true, file: file, line: line)
+    }
+
+    private func assertNonBoldFont(at location: Int, in storage: NSTextStorage, file: StaticString = #filePath, line: UInt = #line) {
+        let font = storage.attribute(.font, at: location, effectiveRange: nil) as? NSFont
+        XCTAssertNotNil(font, file: file, line: line)
+        XCTAssertFalse(font?.fontDescriptor.symbolicTraits.contains(.bold) == true, file: file, line: line)
     }
 }
