@@ -38,6 +38,7 @@ extension ThemeCatalog {
             keyword: NSColor(hex: 0x81A1C1),
             operator: NSColor(hex: 0x81A1C1),
             builtin: NSColor(hex: 0xD08770),
+            option: NSColor(hex: 0xA3BE8C),
             propertyKey: NSColor(hex: 0x81A1C1)
         )
     )

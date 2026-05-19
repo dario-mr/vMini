@@ -197,6 +197,10 @@ final class SyntaxHighlightingTests: XCTestCase {
         if [ \"$HOME\" = \"foo\" ]; then
           export PATH=$(pwd)
           echo '$USER'
+          git remote -v
+          ssh -T git@github-personal
+          git config --global user.email
+          ssh-add --apple-use-keychain ~/.ssh/macbookpro
         fi
         """
 
@@ -212,6 +216,12 @@ final class SyntaxHighlightingTests: XCTestCase {
         assertColor(theme.builtin, at: nsText.range(of: "export").location, in: storage)
         assertColor(theme.variable, at: nsText.range(of: "$(pwd)").location, in: storage)
         assertColor(theme.string, at: nsText.range(of: "'$USER'").location, in: storage)
+        assertColor(theme.builtin, at: nsText.range(of: "git remote -v").location, in: storage)
+        assertColor(theme.option, at: nsText.range(of: "-v").location, in: storage)
+        assertColor(theme.option, at: nsText.range(of: "-T").location, in: storage)
+        assertColor(theme.option, at: nsText.range(of: "--global").location, in: storage)
+        assertColor(theme.builtin, at: nsText.range(of: "ssh-add --apple-use-keychain").location, in: storage)
+        assertColor(theme.option, at: nsText.range(of: "--apple-use-keychain").location, in: storage)
     }
 
     func testSSHConfigHighlighterStylesKeywordsValuesAndComments() {

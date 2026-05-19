@@ -18,6 +18,7 @@ struct SyntaxThemePalette {
     let keyword: NSColor
     let `operator`: NSColor
     let builtin: NSColor
+    let option: NSColor
     let propertyKey: NSColor
 
     func makeSyntaxTheme(plainText: NSColor) -> SyntaxTheme {
@@ -40,6 +41,7 @@ struct SyntaxThemePalette {
             keyword: keyword,
             operator: self.operator,
             builtin: builtin,
+            option: option,
             propertyKey: propertyKey
         )
     }
