@@ -139,6 +139,7 @@ enum SyntaxColorRole {
     case keyword
     case `operator`
     case builtin
+    case option
     case propertyKey
 }
 
@@ -161,6 +162,7 @@ struct SyntaxTheme {
     let keyword: NSColor
     let `operator`: NSColor
     let builtin: NSColor
+    let option: NSColor
     let propertyKey: NSColor
 
     func color(for role: SyntaxColorRole) -> NSColor {
@@ -201,6 +203,8 @@ struct SyntaxTheme {
             self.operator
         case .builtin:
             builtin
+        case .option:
+            option
         case .propertyKey:
             propertyKey
         }

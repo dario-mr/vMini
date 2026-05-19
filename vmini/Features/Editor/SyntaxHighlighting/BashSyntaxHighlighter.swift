@@ -73,6 +73,7 @@ final class BashSyntaxHighlighter: SyntaxHighlighter {
         var tokens: [Token] = []
         let characters = Array(text)
         var index = 0
+        var expectsCommand = true
 
         while index < characters.count {
             let character = characters[index]
@@ -104,8 +105,18 @@ final class BashSyntaxHighlighter: SyntaxHighlighter {
                 continue
             }
 
+            if character == "-", let end = optionTokenEnd(in: characters, from: index) {
+                tokens.append(Token(range: nsRange(start: index, end: end, in: text), role: .option))
+                index = end
+                continue
+            }
+
             if let operatorLength = operatorLength(in: characters, at: index) {
                 tokens.append(Token(range: nsRange(start: index, end: index + operatorLength, in: text), role: .operator))
+                expectsCommand = commandExpectationAfterOperator(
+                    String(characters[index..<(index + operatorLength)]),
+                    previousExpectation: expectsCommand
+                )
                 index += operatorLength
                 continue
             }
@@ -113,10 +124,16 @@ final class BashSyntaxHighlighter: SyntaxHighlighter {
             if character.isShellWordStart {
                 let end = indexAfterWord(in: characters, from: index)
                 let word = String(characters[index..<end])
+                let nextCharacter = end < characters.count ? characters[end] : nil
                 if Self.keywords.contains(word) {
                     tokens.append(Token(range: nsRange(start: index, end: end, in: text), role: .keyword))
+                    expectsCommand = commandExpectationAfterKeyword(word)
                 } else if Self.builtins.contains(word) {
                     tokens.append(Token(range: nsRange(start: index, end: end, in: text), role: .builtin))
+                    expectsCommand = false
+                } else if expectsCommand, nextCharacter != "=" {
+                    tokens.append(Token(range: nsRange(start: index, end: end, in: text), role: .builtin))
+                    expectsCommand = false
                 }
                 index = end
                 continue
@@ -124,8 +141,13 @@ final class BashSyntaxHighlighter: SyntaxHighlighter {
 
             if character == ".", isStandaloneDotBuiltin(in: characters, at: index) {
                 tokens.append(Token(range: nsRange(start: index, end: index + 1, in: text), role: .builtin))
+                expectsCommand = false
                 index += 1
                 continue
+            }
+
+            if character == "\n" {
+                expectsCommand = true
             }
 
             index += 1
@@ -329,6 +351,44 @@ final class BashSyntaxHighlighter: SyntaxHighlighter {
         end > start ? end : nil
     }
 
+    private func optionTokenEnd(in characters: [Character], from index: Int) -> Int? {
+        guard index + 1 < characters.count else {
+            return nil
+        }
+
+        let next = characters[index + 1]
+        guard next == "-" || next.isLetter || next.isNumber else {
+            return nil
+        }
+
+        var current = index + 1
+        while current < characters.count, characters[current].isShellOptionCharacter {
+            current += 1
+        }
+
+        return current > index + 1 ? current : nil
+    }
+
+    private func commandExpectationAfterOperator(_ op: String, previousExpectation: Bool) -> Bool {
+        switch op {
+        case ";", ";;", "&&", "||", "|", "|&", "&", "(", "{":
+            true
+        case "=":
+            previousExpectation
+        default:
+            false
+        }
+    }
+
+    private func commandExpectationAfterKeyword(_ keyword: String) -> Bool {
+        switch keyword {
+        case "if", "then", "else", "elif", "while", "until", "do":
+            true
+        default:
+            false
+        }
+    }
+
     private func nsRange(start: Int, end: Int, in text: String) -> NSRange {
         let startIndex = text.index(text.startIndex, offsetBy: start)
         let endIndex = text.index(text.startIndex, offsetBy: end)
@@ -347,6 +407,10 @@ private extension Character {
 
     var isShellVariableCharacter: Bool {
         isLetter || isNumber || self == "_"
+    }
+
+    var isShellOptionCharacter: Bool {
+        isLetter || isNumber || self == "-" || self == "_"
     }
 
     var isShellSpecialVariable: Bool {

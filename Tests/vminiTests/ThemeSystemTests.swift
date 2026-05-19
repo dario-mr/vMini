@@ -48,6 +48,7 @@ final class ThemeSystemTests: XCTestCase {
         XCTAssertTrue(syntaxTheme.linkURL.isEqual(palette.syntaxPalette.linkURL))
         XCTAssertTrue(syntaxTheme.keyword.isEqual(palette.syntaxPalette.keyword))
         XCTAssertTrue(syntaxTheme.comment.isEqual(palette.syntaxPalette.comment))
+        XCTAssertTrue(syntaxTheme.option.isEqual(palette.syntaxPalette.option))
         XCTAssertTrue(syntaxTheme.propertyKey.isEqual(palette.syntaxPalette.propertyKey))
     }
 
