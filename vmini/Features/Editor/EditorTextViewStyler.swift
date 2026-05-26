@@ -2,6 +2,11 @@ import AppKit
 
 @MainActor
 final class EditorTextViewStyler {
+    private enum Constants {
+        static let textInsetWidth: CGFloat = 0
+        static let textInsetHeight: CGFloat = 2
+    }
+
     private let textView: NSTextView
     private let scrollView: NSScrollView
     private let lineSpacing: CGFloat
@@ -32,7 +37,10 @@ final class EditorTextViewStyler {
         textView.maxSize = NSSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude)
         textView.isHorizontallyResizable = true
         textView.isVerticallyResizable = true
-        textView.textContainerInset = NSSize(width: 12, height: 12)
+        textView.textContainerInset = NSSize(
+            width: Constants.textInsetWidth,
+            height: Constants.textInsetHeight
+        )
 
         if let textContainer = textView.textContainer {
             textContainer.widthTracksTextView = false
