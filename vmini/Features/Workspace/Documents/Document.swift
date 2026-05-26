@@ -86,7 +86,7 @@ final class Document: NSDocument {
 
     override var fileURL: URL? {
         didSet {
-            Task { @MainActor in
+            MainActor.assumeIsolated {
                 fileLifecycleController.handleFileURLChange(
                     from: oldValue,
                     to: fileURL,
@@ -103,7 +103,7 @@ final class Document: NSDocument {
                 )
 
                 if Self.didMoveToTrash(from: oldValue, to: fileURL) {
-                    self.close()
+                    close()
                 }
             }
         }
