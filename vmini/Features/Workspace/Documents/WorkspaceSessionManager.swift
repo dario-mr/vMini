@@ -43,6 +43,16 @@ final class WorkspaceSessionManager {
         saveOpenFiles()
     }
 
+    func refreshTerminationSnapshotIfNeeded() {
+        guard isTerminationSnapshotLocked else { return }
+        persist(
+            SessionSnapshot(
+                documentReferences: openDocumentsStore.documents.map(restorableReference(for:)),
+                activeDocumentReference: openDocumentsStore.activeDocument.map(restorableReference(for:))
+            )
+        )
+    }
+
     @discardableResult
     func reopenLastFiles() -> Bool {
         guard let snapshot = restoredSnapshot() else {

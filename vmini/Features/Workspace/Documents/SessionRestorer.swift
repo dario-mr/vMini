@@ -20,6 +20,10 @@ enum SessionRestorer {
         manager.cancelTermination()
     }
 
+    static func refreshTerminationSnapshotIfNeeded() {
+        manager.refreshTerminationSnapshotIfNeeded()
+    }
+
     @discardableResult
     static func reopenLastFiles() -> Bool {
         manager.reopenLastFiles()

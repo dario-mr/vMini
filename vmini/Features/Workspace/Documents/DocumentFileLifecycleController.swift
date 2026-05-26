@@ -39,6 +39,7 @@ final class DocumentFileLifecycleController {
         editorSession.update(text: currentText, syntaxLanguage: syntaxLanguage)
         onSyntaxHighlightingChanged()
         openDocumentsStore.refresh()
+        SessionRestorer.refreshTerminationSnapshotIfNeeded()
     }
 
     func prepareForSave() {

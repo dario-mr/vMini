@@ -1,3 +1,3 @@
 # TODO
 
-- bug is back: when closing with an unsaved change, after reopening the app, opened tabs are lost
+- when selecting text, highlight its instances in the document, like in intellij/sublime
