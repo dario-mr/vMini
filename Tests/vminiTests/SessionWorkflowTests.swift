@@ -91,6 +91,52 @@ final class SessionWorkflowTests: XCTestCase {
         )
     }
 
+    func testSessionManagerRefreshTerminationSnapshotIfNeededUpdatesSavedFileReferenceWhileLocked() async throws {
+        let persistence = WorkspacePersistence(userDefaults: makeUserDefaults(prefix: "SessionWorkflowTests.TerminationRefresh"))
+        let store = OpenDocumentsStore()
+        let sessionManager = WorkspaceSessionManager(
+            persistence: persistence,
+            openDocumentsStore: store,
+            documentRouter: RecordingDocumentRouter()
+        )
+        let fileURL = try makeTemporaryFile(named: "saved-on-quit.txt", contents: "saved")
+        let document = makeDocument(store: store)
+
+        store.register(document, makeActive: true)
+        sessionManager.prepareForTermination()
+        XCTAssertEqual(sessionManager.restoredDocumentReferences(), [.untitled(sessionID: document.sessionIdentifier)])
+
+        document.fileURL = fileURL
+        await Task.yield()
+        sessionManager.refreshTerminationSnapshotIfNeeded()
+
+        XCTAssertEqual(sessionManager.restoredDocumentReferences(), [.file(path: fileURL.standardizedFileURL.path)])
+        XCTAssertEqual(sessionManager.restoredActiveDocumentReference(), .file(path: fileURL.standardizedFileURL.path))
+
+        store.unregister(document)
+        XCTAssertEqual(sessionManager.restoredDocumentReferences(), [.file(path: fileURL.standardizedFileURL.path)])
+    }
+
+    func testSessionManagerLockedSnapshotUpdatesImmediatelyWhenUntitledDocumentGetsSaved() throws {
+        let persistence = WorkspacePersistence(userDefaults: makeUserDefaults(prefix: "SessionWorkflowTests.TerminationImmediateRefresh"))
+        let store = OpenDocumentsStore()
+        let sessionManager = WorkspaceSessionManager(
+            persistence: persistence,
+            openDocumentsStore: store,
+            documentRouter: RecordingDocumentRouter()
+        )
+        let fileURL = try makeTemporaryFile(named: "saved-on-quit-immediate.txt", contents: "saved")
+        let document = makeDocument(store: store)
+
+        store.register(document, makeActive: true)
+        sessionManager.prepareForTermination()
+
+        document.fileURL = fileURL
+
+        XCTAssertEqual(sessionManager.restoredDocumentReferences(), [.file(path: fileURL.standardizedFileURL.path)])
+        XCTAssertEqual(sessionManager.restoredActiveDocumentReference(), .file(path: fileURL.standardizedFileURL.path))
+    }
+
     func testSessionManagerPersistsDocumentOrderAfterReorder() async throws {
         let persistence = WorkspacePersistence(userDefaults: makeUserDefaults(prefix: "SessionWorkflowTests.Reorder"))
         let store = OpenDocumentsStore()
@@ -193,6 +239,30 @@ final class SessionWorkflowTests: XCTestCase {
         XCTAssertEqual(store.documents.count, 1)
         XCTAssertNil(store.activeDocument?.fileURL)
         XCTAssertEqual(store.activeDocument?.sessionIdentifier, sessionIdentifier)
+    }
+
+    func testSessionManagerPersistsSavedFileReferenceForFormerlyUntitledDocumentBeforeTermination() async throws {
+        let persistence = WorkspacePersistence(userDefaults: makeUserDefaults(prefix: "SessionWorkflowTests.SaveOnQuit"))
+        let store = OpenDocumentsStore()
+        let sessionManager = WorkspaceSessionManager(
+            persistence: persistence,
+            openDocumentsStore: store,
+            documentRouter: RecordingDocumentRouter()
+        )
+        let document = makeDocument(store: store)
+        let fileURL = try makeTemporaryFile(named: "saved-on-quit.txt", contents: "saved")
+
+        store.register(document, makeActive: true)
+        sessionManager.saveOpenFiles()
+        XCTAssertEqual(sessionManager.restoredDocumentReferences(), [.untitled(sessionID: document.sessionIdentifier)])
+
+        document.fileURL = fileURL
+        await Task.yield()
+
+        sessionManager.prepareForTermination()
+
+        XCTAssertEqual(sessionManager.restoredDocumentReferences(), [.file(path: fileURL.standardizedFileURL.path)])
+        XCTAssertEqual(sessionManager.restoredActiveDocumentReference(), .file(path: fileURL.standardizedFileURL.path))
     }
 
     func testSyntaxOverrideMigratesFromUntitledDocumentToSavedFileIdentifier() async throws {
