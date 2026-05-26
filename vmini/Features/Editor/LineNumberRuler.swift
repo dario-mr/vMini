@@ -2,8 +2,8 @@ import AppKit
 
 final class LineNumberRulerView: NSView {
     private enum Constants {
-        static let minThickness: CGFloat = 36
-        static let horizontalPadding: CGFloat = 8
+        static let minThickness: CGFloat = 42
+        static let horizontalPadding: CGFloat = 14
     }
 
     private weak var textView: NSTextView?
@@ -149,7 +149,8 @@ final class LineNumberRulerView: NSView {
     }
 
     private func lineNumberFont() -> NSFont {
-        textView?.font ?? NSFont.monospacedSystemFont(ofSize: 13, weight: .light)
+        let pointSize = textView?.font?.pointSize ?? 13
+        return NSFont.monospacedDigitSystemFont(ofSize: pointSize, weight: .light)
     }
 
     private func drawTrailingLineNumberIfNeeded(
