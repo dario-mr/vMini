@@ -6,6 +6,7 @@ final class OpenFoldersStore {
         let folderURLs: [URL]
         let selectedURL: URL?
         let expandedFolderPaths: Set<String>
+        let contentVersion: Int
     }
 
     static let shared = OpenFoldersStore()
@@ -14,6 +15,7 @@ final class OpenFoldersStore {
     private(set) var folderURLs: [URL] = []
     private(set) var selectedURL: URL?
     private var expandedFolderPaths: Set<String> = []
+    private var contentVersion = 0
     private var observers: [UUID: (State) -> Void] = [:]
     private var isObserverNotificationScheduled = false
 
@@ -101,6 +103,11 @@ final class OpenFoldersStore {
         scheduleObserverNotification()
     }
 
+    func refreshContents() {
+        contentVersion += 1
+        scheduleObserverNotification()
+    }
+
     private func isDirectory(_ url: URL) -> Bool {
         var isDirectory: ObjCBool = false
         return FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirectory) && isDirectory.boolValue
@@ -115,7 +122,8 @@ final class OpenFoldersStore {
         State(
             folderURLs: folderURLs,
             selectedURL: selectedURL,
-            expandedFolderPaths: expandedFolderPaths
+            expandedFolderPaths: expandedFolderPaths,
+            contentVersion: contentVersion
         )
     }
 

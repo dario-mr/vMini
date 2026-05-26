@@ -18,6 +18,7 @@ final class OpenFoldersSidebarViewController: NSViewController {
     private let outlineView = NSOutlineView()
     private let folderStore: OpenFoldersStore
     private let outlineController: OpenFoldersSidebarOutlineController
+    private let folderWatcher = SidebarFolderWatcher()
     private var expandedLayoutConstraints: [NSLayoutConstraint] = []
     private var foldersObservation: ObservationToken?
     private var themeObservation: ObservationToken?
@@ -71,7 +72,9 @@ final class OpenFoldersSidebarViewController: NSViewController {
         super.viewDidLoad()
 
         foldersObservation = folderStore.observe { [weak self] state in
-            self?.outlineController.apply(state: state)
+            guard let self else { return }
+            self.outlineController.apply(state: state)
+            self.updateFolderWatcher(for: state)
         }
         themeObservation = ThemeManager.shared.observe { [weak self] _ in
             self?.applyTheme()
@@ -115,6 +118,15 @@ final class OpenFoldersSidebarViewController: NSViewController {
     private func applyTheme() {
         headerLabel.textColor = AppColors.sidebarHeaderText
         outlineController.applyTheme()
+    }
+
+    private func updateFolderWatcher(for state: OpenFoldersStore.State) {
+        let watchedURLs = state.folderURLs + state.expandedFolderPaths.map {
+            URL(fileURLWithPath: $0, isDirectory: true)
+        }
+        folderWatcher.watch(directoryURLs: watchedURLs) { [weak self] in
+            self?.folderStore.refreshContents()
+        }
     }
 
     func setCollapsed(_ isCollapsed: Bool) {

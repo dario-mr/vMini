@@ -46,6 +46,11 @@ final class OpenFoldersSidebarOutlineController: NSObject, NSOutlineViewDataSour
             return
         }
 
+        if previousState?.contentVersion != state.contentVersion {
+            reloadFolders()
+            return
+        }
+
         if previousState?.expandedFolderPaths != state.expandedFolderPaths {
             applyExpansionState()
         }

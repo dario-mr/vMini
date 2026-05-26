@@ -60,10 +60,14 @@ final class DocumentFileLifecycleController {
         readFromData: (Data, String) throws -> Void,
         updateResolvedFileType: (String) -> Void,
         onReload: () -> Void,
+        onMissingFile: () -> Void,
         onExternalChangeReload: @escaping @MainActor (Bool) -> Void
     ) {
         guard let fileURL else { return }
-        guard FileManager.default.fileExists(atPath: fileURL.path) else { return }
+        guard FileManager.default.fileExists(atPath: fileURL.path) else {
+            onMissingFile()
+            return
+        }
 
         do {
             let typeName = try typeResolver.typeForContents(of: fileURL)

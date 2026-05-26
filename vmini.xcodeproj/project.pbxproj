@@ -113,6 +113,7 @@
 		A0000000000000000000020A /* SessionWorkflowTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000020B /* SessionWorkflowTests.swift */; };
 		A0000000000000000000020C /* SidebarAndPersistenceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000020D /* SidebarAndPersistenceTests.swift */; };
 		A0000000000000000000020E /* WorkspaceSessionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000020F /* WorkspaceSessionManager.swift */; };
+		A00000000000000000000211 /* SidebarFolderWatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000212 /* SidebarFolderWatcher.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -138,6 +139,7 @@
 		A0000000000000000000020B /* SessionWorkflowTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionWorkflowTests.swift; sourceTree = "<group>"; };
 		A0000000000000000000020D /* SidebarAndPersistenceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidebarAndPersistenceTests.swift; sourceTree = "<group>"; };
 		A0000000000000000000020F /* WorkspaceSessionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceSessionManager.swift; sourceTree = "<group>"; };
+		A00000000000000000000212 /* SidebarFolderWatcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidebarFolderWatcher.swift; sourceTree = "<group>"; };
 		A00000000000000000000182 /* vminiTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = vminiTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		A0000000000000000000018F /* SyntaxLanguage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyntaxLanguage.swift; sourceTree = "<group>"; };
 		A00000000000000000000008 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -481,6 +483,7 @@
 				A0000000000000000000012B /* OpenFoldersSidebar.swift */,
 				A00000000000000000000206 /* OpenFoldersSidebarOutlineController.swift */,
 				A0000000000000000000012A /* OpenFoldersStore.swift */,
+				A00000000000000000000212 /* SidebarFolderWatcher.swift */,
 				A0000000000000000000010B /* SidebarSelectionRowView.swift */,
 			);
 			path = Sidebar;
@@ -751,6 +754,7 @@
 				A00000000000000000000129 /* OpenFoldersSidebar.swift in Sources */,
 				A00000000000000000000207 /* OpenFoldersSidebarOutlineController.swift in Sources */,
 				A00000000000000000000128 /* OpenFoldersStore.swift in Sources */,
+				A00000000000000000000211 /* SidebarFolderWatcher.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

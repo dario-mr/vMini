@@ -116,7 +116,8 @@ final class SidebarAndPersistenceTests: XCTestCase {
             state: OpenFoldersStore.State(
                 folderURLs: store.folderURLs,
                 selectedURL: store.selectedURL,
-                expandedFolderPaths: [rootURL.path]
+                expandedFolderPaths: [rootURL.path],
+                contentVersion: 0
             )
         )
 
@@ -135,6 +136,29 @@ final class SidebarAndPersistenceTests: XCTestCase {
         outlineView.stubbedClickedRow = 1
         controller.menuNeedsUpdate(menu)
         XCTAssertTrue(menu.items.isEmpty)
+    }
+
+    func testOpenFoldersStoreRefreshContentsNotifiesObservers() async {
+        let persistence = WorkspacePersistence(userDefaults: makeUserDefaults(prefix: "SidebarAndPersistenceTests.Refresh"))
+        let store = OpenFoldersStore(persistence: persistence)
+        let expectation = expectation(description: "refresh notification")
+        var observedStates: [OpenFoldersStore.State] = []
+
+        let token = store.observe { state in
+            observedStates.append(state)
+            if observedStates.count == 2 {
+                expectation.fulfill()
+            }
+        }
+        defer { token.cancel() }
+
+        store.refreshContents()
+
+        await fulfillment(of: [expectation], timeout: 1)
+        XCTAssertEqual(observedStates.count, 2)
+        XCTAssertEqual(observedStates[1].contentVersion, observedStates[0].contentVersion + 1)
+        XCTAssertEqual(observedStates[1].folderURLs, observedStates[0].folderURLs)
+        XCTAssertEqual(observedStates[1].expandedFolderPaths, observedStates[0].expandedFolderPaths)
     }
 
     private func makeTemporaryDirectory(name: String) throws -> URL {

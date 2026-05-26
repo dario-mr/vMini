@@ -104,7 +104,7 @@ final class WorkspaceStateTests: XCTestCase {
         await Task.yield()
 
         XCTAssertEqual(observedStates.count, 2)
-        XCTAssertEqual(observedStates[0], .init(folderURLs: [], selectedURL: nil, expandedFolderPaths: []))
+        XCTAssertEqual(observedStates[0], .init(folderURLs: [], selectedURL: nil, expandedFolderPaths: [], contentVersion: 0))
         XCTAssertEqual(observedStates[1].folderURLs, [rootURL.standardizedFileURL])
         XCTAssertEqual(observedStates[1].selectedURL, rootURL.standardizedFileURL)
         XCTAssertEqual(observedStates[1].expandedFolderPaths, [rootURL.standardizedFileURL.path])

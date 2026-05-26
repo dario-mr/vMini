@@ -101,6 +101,10 @@ final class Document: NSDocument {
                         self?.notifySyntaxHighlightingDidChange()
                     }
                 )
+
+                if Self.didMoveToTrash(from: oldValue, to: fileURL) {
+                    self.close()
+                }
             }
         }
     }
@@ -157,6 +161,9 @@ final class Document: NSDocument {
             onReload: { [weak self] in
                 self?.updateChangeCount(.changeCleared)
                 self?.undoManager?.removeAllActions()
+            },
+            onMissingFile: { [weak self] in
+                self?.close()
             },
             onExternalChangeReload: { [weak self] restartWatcher in
                 guard restartWatcher else { return }
@@ -234,6 +241,16 @@ final class Document: NSDocument {
 
     private static func persistenceIdentifier(for fileURL: URL) -> String {
         fileURL.standardizedFileURL.path
+    }
+
+    private static func didMoveToTrash(from oldURL: URL?, to newURL: URL?) -> Bool {
+        guard let oldURL, let newURL else { return false }
+        return !isTrashURL(oldURL) && isTrashURL(newURL)
+    }
+
+    private static func isTrashURL(_ url: URL) -> Bool {
+        let trashComponentNames = Set([".Trash", "Trash"])
+        return !trashComponentNames.isDisjoint(with: url.standardizedFileURL.pathComponents)
     }
 
     private func notifySyntaxHighlightingDidChange() {
