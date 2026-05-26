@@ -222,6 +222,26 @@ final class SessionWorkflowTests: XCTestCase {
         )
     }
 
+    func testDocumentClosesWhenFileURLMovesIntoTrash() async throws {
+        let store = OpenDocumentsStore()
+        let document = makeDocument(store: store)
+        let fileURL = try makeTemporaryFile(named: "trash-me.txt", contents: "bye")
+        let trashURL = fileURL
+            .deletingLastPathComponent()
+            .appendingPathComponent(".Trash", isDirectory: true)
+            .appendingPathComponent(fileURL.lastPathComponent)
+
+        document.fileURL = fileURL
+        await Task.yield()
+        store.register(document, makeActive: true)
+
+        document.fileURL = trashURL
+        await Task.yield()
+
+        XCTAssertFalse(store.contains(document))
+        XCTAssertNil(store.activeDocument)
+    }
+
     private func makeDocument(
         store: OpenDocumentsStore,
         sessionIdentifier: UUID = UUID()
