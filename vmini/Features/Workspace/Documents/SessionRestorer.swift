@@ -12,6 +12,10 @@ enum SessionRestorer {
         manager.saveOpenFiles()
     }
 
+    static func scheduleSaveOpenFiles() {
+        manager.scheduleSaveOpenFiles()
+    }
+
     static func prepareForTermination() {
         manager.prepareForTermination()
     }

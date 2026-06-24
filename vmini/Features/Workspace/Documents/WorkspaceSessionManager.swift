@@ -11,6 +11,7 @@ final class WorkspaceSessionManager {
     private let openDocumentsStore: OpenDocumentsStore
     private let documentRouter: WorkspaceDocumentRouting
     private var isTerminationSnapshotLocked = false
+    private var pendingSaveTask: Task<Void, Never>?
 
     init(
         persistence: WorkspacePersistence,
@@ -23,6 +24,8 @@ final class WorkspaceSessionManager {
     }
 
     func saveOpenFiles() {
+        pendingSaveTask?.cancel()
+        pendingSaveTask = nil
         guard !isTerminationSnapshotLocked else { return }
 
         persist(
@@ -31,6 +34,17 @@ final class WorkspaceSessionManager {
                 activeDocumentReference: openDocumentsStore.activeDocument.map(restorableReference(for:))
             )
         )
+    }
+
+    func scheduleSaveOpenFiles() {
+        guard !isTerminationSnapshotLocked else { return }
+
+        pendingSaveTask?.cancel()
+        pendingSaveTask = Task { [weak self] in
+            try? await Task.sleep(for: .milliseconds(250))
+            guard !Task.isCancelled else { return }
+            self?.saveOpenFiles()
+        }
     }
 
     func prepareForTermination() {

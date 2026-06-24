@@ -28,6 +28,8 @@ final class SidebarAndPersistenceTests: XCTestCase {
         let childURL = rootURL.appendingPathComponent("child", isDirectory: true)
         let rootNode = FolderTreeNode(
             url: rootURL,
+            title: rootURL.lastPathComponent,
+            isDirectory: true,
             provider: StubFolderProvider(tree: [rootURL: [childURL], childURL: []])
         )
         let childNode = rootNode.children[0]
@@ -54,7 +56,12 @@ final class SidebarAndPersistenceTests: XCTestCase {
     func testFolderSidebarSelectionControllerOnlySelectsVisibleExpandedNodes() {
         let rootURL = URL(fileURLWithPath: "/tmp/root", isDirectory: true)
         let childURL = rootURL.appendingPathComponent("child.txt")
-        let rootNode = FolderTreeNode(url: rootURL, provider: StubFolderProvider(tree: [rootURL: [childURL]]))
+        let rootNode = FolderTreeNode(
+            url: rootURL,
+            title: rootURL.lastPathComponent,
+            isDirectory: true,
+            provider: StubFolderProvider(tree: [rootURL: [childURL]])
+        )
         let childNode = rootNode.children[0]
         let persistence = WorkspacePersistence(userDefaults: makeUserDefaults(prefix: "SidebarAndPersistenceTests.Selection"))
         let store = OpenFoldersStore(persistence: persistence)
@@ -117,7 +124,8 @@ final class SidebarAndPersistenceTests: XCTestCase {
                 folderURLs: store.folderURLs,
                 selectedURL: store.selectedURL,
                 expandedFolderPaths: [rootURL.path],
-                contentVersion: 0
+                contentVersion: 0,
+                refreshedFolderPaths: []
             )
         )
 
@@ -152,7 +160,7 @@ final class SidebarAndPersistenceTests: XCTestCase {
         }
         defer { token.cancel() }
 
-        store.refreshContents()
+        store.refreshContents(at: [])
 
         await fulfillment(of: [expectation], timeout: 1)
         XCTAssertEqual(observedStates.count, 2)
@@ -194,7 +202,14 @@ private final class StubFolderProvider: FolderTreeProviding {
     }
 
     func childNodes(for url: URL) -> [FolderTreeNode] {
-        (tree[url] ?? []).map { FolderTreeNode(url: $0, provider: self) }
+        (tree[url] ?? []).map { childURL in
+            FolderTreeNode(
+                url: childURL,
+                title: childURL.lastPathComponent,
+                isDirectory: tree[childURL] != nil,
+                provider: self
+            )
+        }
     }
 }
 

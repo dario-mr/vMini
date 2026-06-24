@@ -23,10 +23,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    func applicationDidBecomeActive(_ notification: Notification) {
-        MenuBuilder.installMainMenu(commandTarget: commandDispatcher)
-    }
-
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
         let documentController = NSDocumentController.shared
         guard documentController.hasEditedDocuments else {
@@ -73,8 +69,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func handleOpenDocumentsDidChange() {
-        SessionRestorer.saveOpenFiles()
-        MenuBuilder.installMainMenu(commandTarget: commandDispatcher)
+        SessionRestorer.scheduleSaveOpenFiles()
     }
 
     @objc(documentController:didReviewAll:contextInfo:)

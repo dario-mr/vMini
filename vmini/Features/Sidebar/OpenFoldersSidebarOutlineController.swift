@@ -14,6 +14,7 @@ final class OpenFoldersSidebarOutlineController: NSObject, NSOutlineViewDataSour
     private let treeProvider: FolderTreeProvider
     private weak var outlineView: NSOutlineView?
     private var rootNodes: [FolderTreeNode] = []
+    private var iconsByPath: [String: NSImage] = [:]
     private var isApplyingExpansionState = false
     private var isApplyingSelection = false
     private var observedState: OpenFoldersStore.State?
@@ -47,7 +48,7 @@ final class OpenFoldersSidebarOutlineController: NSObject, NSOutlineViewDataSour
         }
 
         if previousState?.contentVersion != state.contentVersion {
-            reloadFolders()
+            refreshFolders(changedPaths: state.refreshedFolderPaths)
             return
         }
 
@@ -163,9 +164,37 @@ final class OpenFoldersSidebarOutlineController: NSObject, NSOutlineViewDataSour
     private func reloadFolders() {
         guard let outlineView else { return }
 
+        iconsByPath = iconsByPath.filter { FileManager.default.fileExists(atPath: $0.key) }
         rootNodes = treeProvider.rootNodes(for: folderStore.folderURLs)
         outlineView.reloadData()
         applyExpansionState()
+        applySelection()
+    }
+
+    private func refreshFolders(changedPaths: Set<String>) {
+        guard let outlineView, !changedPaths.isEmpty else {
+            reloadFolders()
+            return
+        }
+
+        iconsByPath = iconsByPath.filter { FileManager.default.fileExists(atPath: $0.key) }
+        treeProvider.invalidateContents(
+            at: changedPaths.map { URL(fileURLWithPath: $0, isDirectory: true) }
+        )
+
+        var didReloadAnyItem = false
+        for path in changedPaths.sorted(by: { $0.count > $1.count }) {
+            guard let node = nodeMatchingPath(path, in: rootNodes) else { continue }
+            outlineView.reloadItem(node, reloadChildren: true)
+            didReloadAnyItem = true
+        }
+
+        if !didReloadAnyItem {
+            rootNodes = treeProvider.rootNodes(for: folderStore.folderURLs)
+            outlineView.reloadData()
+            applyExpansionState()
+        }
+
         applySelection()
     }
 
@@ -217,8 +246,14 @@ final class OpenFoldersSidebarOutlineController: NSObject, NSOutlineViewDataSour
     }
 
     private func icon(for node: FolderTreeNode) -> NSImage {
+        let path = node.url.path
+        if let cachedIcon = iconsByPath[path] {
+            return cachedIcon
+        }
+
         let icon = NSWorkspace.shared.icon(forFile: node.url.path)
         icon.size = NSSize(width: 16, height: 16)
+        iconsByPath[path] = icon
         return icon
     }
 
@@ -228,5 +263,21 @@ final class OpenFoldersSidebarOutlineController: NSObject, NSOutlineViewDataSour
 
     private func isRootNode(_ node: FolderTreeNode) -> Bool {
         rootNodes.contains { $0 === node }
+    }
+
+    private func nodeMatchingPath(_ path: String, in nodes: [FolderTreeNode]) -> FolderTreeNode? {
+        for node in nodes {
+            let nodePath = node.url.standardizedFileURL.path
+            if nodePath == path {
+                return node
+            }
+
+            if outlineView?.isItemExpanded(node) == true,
+               let childNode = nodeMatchingPath(path, in: node.children) {
+                return childNode
+            }
+        }
+
+        return nil
     }
 }

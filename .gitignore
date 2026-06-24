@@ -16,3 +16,7 @@ Package.resolved
 DerivedData/
 build/
 *.xcuserdata/
+
+# Local profiling artifacts
+profiles/
+default.profraw

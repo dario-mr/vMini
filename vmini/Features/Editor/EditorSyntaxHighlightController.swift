@@ -8,6 +8,9 @@ final class EditorSyntaxHighlightController {
     private let baseFontProvider: () -> NSFont
 
     private var isApplyingHighlighting = false
+    private var pendingRefreshTask: Task<Void, Never>?
+    private var pendingHighlightRange: NSRange?
+    private var pendingLanguage: SyntaxLanguage = .plaintext
 
     init(
         highlighterRegistry: HighlighterRegistry,
@@ -22,7 +25,7 @@ final class EditorSyntaxHighlightController {
     }
 
     func refresh(language: SyntaxLanguage) {
-        applyHighlighting(around: nil, language: language)
+        scheduleHighlightingRefresh(around: nil, language: language, debounceNanoseconds: 0)
     }
 
     func handleProcessedEditing(
@@ -34,7 +37,38 @@ final class EditorSyntaxHighlightController {
             return
         }
 
-        applyHighlighting(around: editedRange, language: language)
+        scheduleHighlightingRefresh(
+            around: editedRange,
+            language: language,
+            debounceNanoseconds: 75_000_000
+        )
+    }
+
+    private func scheduleHighlightingRefresh(
+        around editedRange: NSRange?,
+        language: SyntaxLanguage,
+        debounceNanoseconds: UInt64
+    ) {
+        pendingLanguage = language
+        pendingHighlightRange = mergedRange(existing: pendingHighlightRange, incoming: editedRange)
+        pendingRefreshTask?.cancel()
+        pendingRefreshTask = Task { @MainActor [weak self] in
+            guard let self else { return }
+
+            if debounceNanoseconds > 0 {
+                try? await Task.sleep(nanoseconds: debounceNanoseconds)
+            } else {
+                await Task.yield()
+            }
+
+            guard !Task.isCancelled else { return }
+
+            let targetRange = self.pendingHighlightRange
+            let targetLanguage = self.pendingLanguage
+            self.pendingHighlightRange = nil
+            self.pendingRefreshTask = nil
+            self.applyHighlighting(around: targetRange, language: targetLanguage)
+        }
     }
 
     private func applyHighlighting(around editedRange: NSRange?, language: SyntaxLanguage) {
@@ -68,5 +102,16 @@ final class EditorSyntaxHighlightController {
         )
         textStorage.endEditing()
         isApplyingHighlighting = false
+    }
+
+    private func mergedRange(existing: NSRange?, incoming: NSRange?) -> NSRange? {
+        switch (existing, incoming) {
+        case (_, nil):
+            return nil
+        case (nil, let range?):
+            return range
+        case (let existingRange?, let incomingRange?):
+            return NSUnionRange(existingRange, incomingRange)
+        }
     }
 }

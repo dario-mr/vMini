@@ -3,7 +3,7 @@ import UniformTypeIdentifiers
 
 @MainActor
 final class Document: NSDocument {
-    static let supportedTypes: [UTType] = [.plainText, .text]
+    nonisolated static let supportedTypes: [UTType] = [.plainText, .text]
 
     let sessionIdentifier: UUID
 

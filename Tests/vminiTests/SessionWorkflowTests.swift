@@ -194,6 +194,9 @@ final class SessionWorkflowTests: XCTestCase {
         history.record(document: document)
 
         coordinator.reopenMostRecentClosedDocument()
+        for _ in 0..<20 where store.documents.isEmpty {
+            try await Task.sleep(for: .milliseconds(25))
+        }
 
         XCTAssertEqual(store.documents.count, 1)
         XCTAssertEqual(store.activeDocument?.fileURL?.standardizedFileURL, fileURL.standardizedFileURL)
