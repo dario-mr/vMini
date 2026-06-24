@@ -316,7 +316,7 @@ final class SyntaxHighlightingTests: XCTestCase {
         assertColor(theme.string, at: nsText.range(of: "ske-8f53bik").location, in: storage)
     }
 
-    func testEditorViewControllerAppliesAndClearsMarkdownHighlighting() throws {
+    func testEditorViewControllerAppliesAndClearsMarkdownHighlighting() async throws {
         let viewController = EditorViewController()
         viewController.loadViewIfNeeded()
         viewController.syntaxLanguage = .markdown
@@ -326,12 +326,28 @@ final class SyntaxHighlightingTests: XCTestCase {
         let nsText = viewController.text as NSString
         let syntaxTheme = ThemeManager.shared.syntaxTheme
         let h1Color = syntaxTheme.headingMarker
+        try await waitForCondition {
+            let markerColor = storage.attribute(.foregroundColor, at: nsText.range(of: "#").location, effectiveRange: nil) as? NSColor
+            let titleColor = storage.attribute(.foregroundColor, at: nsText.range(of: "Title").location, effectiveRange: nil) as? NSColor
+            let markerFont = storage.attribute(.font, at: nsText.range(of: "#").location, effectiveRange: nil) as? NSFont
+            let titleFont = storage.attribute(.font, at: nsText.range(of: "Title").location, effectiveRange: nil) as? NSFont
+            return markerColor?.isEqual(syntaxTheme.headingMarker) == true
+                && titleColor?.isEqual(h1Color) == true
+                && markerFont?.fontDescriptor.symbolicTraits.contains(.bold) == true
+                && titleFont?.fontDescriptor.symbolicTraits.contains(.bold) == true
+        }
         assertColor(syntaxTheme.headingMarker, at: nsText.range(of: "#").location, in: storage)
         assertColor(h1Color, at: nsText.range(of: "Title").location, in: storage)
         assertBoldFont(at: nsText.range(of: "#").location, in: storage)
         assertBoldFont(at: nsText.range(of: "Title").location, in: storage)
 
         viewController.syntaxLanguage = .plaintext
+        try await waitForCondition {
+            let markerColor = storage.attribute(.foregroundColor, at: nsText.range(of: "#").location, effectiveRange: nil) as? NSColor
+            let markerFont = storage.attribute(.font, at: nsText.range(of: "#").location, effectiveRange: nil) as? NSFont
+            return markerColor?.isEqual(syntaxTheme.plainText) == true
+                && markerFont?.fontDescriptor.symbolicTraits.contains(.bold) != true
+        }
         assertColor(syntaxTheme.plainText, at: nsText.range(of: "#").location, in: storage)
         assertNonBoldFont(at: nsText.range(of: "#").location, in: storage)
     }
@@ -492,5 +508,21 @@ final class SyntaxHighlightingTests: XCTestCase {
         let font = storage.attribute(.font, at: location, effectiveRange: nil) as? NSFont
         XCTAssertNotNil(font, file: file, line: line)
         XCTAssertFalse(font?.fontDescriptor.symbolicTraits.contains(.bold) == true, file: file, line: line)
+    }
+
+    private func waitForCondition(
+        timeoutNanoseconds: UInt64 = 1_000_000_000,
+        pollNanoseconds: UInt64 = 25_000_000,
+        condition: @escaping @MainActor () -> Bool
+    ) async throws {
+        let deadline = DispatchTime.now().uptimeNanoseconds + timeoutNanoseconds
+        while DispatchTime.now().uptimeNanoseconds < deadline {
+            if condition() {
+                return
+            }
+            try await Task.sleep(nanoseconds: pollNanoseconds)
+        }
+
+        XCTFail("Timed out waiting for condition")
     }
 }

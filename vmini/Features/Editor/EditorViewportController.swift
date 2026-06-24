@@ -45,7 +45,7 @@ final class EditorViewportController {
     }
 
     func handleSelectionDidChange() {
-        lineNumberRulerView.needsDisplay = true
+        lineNumberRulerView.handleSelectionDidChange()
     }
 
     func handleTextStorageDidEdit(

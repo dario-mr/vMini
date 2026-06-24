@@ -41,6 +41,35 @@ If you have a real Apple team configured for distribution signing, pass it in:
 DEVELOPMENT_TEAM=YOURTEAMID ./scripts/package.sh
 ```
 
+## Profile interactions
+
+Record a CLI trace for focus, tab switching, and sidebar file-open latency:
+
+```bash
+./scripts/profile-interactions.sh --duration 30s
+```
+
+The script builds the app, launches it under `xctrace`, and records `Time Profiler` plus the app's
+signpost intervals.
+
+While the trace is running, reproduce these interactions:
+
+- Bring `vMini` to the foreground from the Dock while it is already open
+- Switch tabs a few times
+- Click files from the sidebar folders section
+
+Artifacts are saved under `profiles/`:
+
+- `vmini.trace`: raw Instruments trace
+- `trace-toc.xml`: exported trace table-of-contents metadata
+- `run-info.txt`: basic run details
+
+Use `--skip-build` to reuse the current build:
+
+```bash
+./scripts/profile-interactions.sh --skip-build --duration 30s
+```
+
 ## GitHub Release
 
 - Push a tag like `v1.0.0`
@@ -49,7 +78,8 @@ DEVELOPMENT_TEAM=YOURTEAMID ./scripts/package.sh
 
 ## Regenerate app icon
 
-Override [icon_512x512@2x.png](vmini/Assets.xcassets/AppIcon.appiconset/icon_512x512@2x.png) with the new `1024x1024` icon, then run:
+Override [icon_512x512@2x.png](vmini/Assets.xcassets/AppIcon.appiconset/icon_512x512@2x.png) with
+the new `1024x1024` icon, then run:
 
 ```bash
 ./scripts/generate-app-icon-set.sh

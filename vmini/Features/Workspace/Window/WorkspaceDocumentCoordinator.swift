@@ -56,17 +56,21 @@ final class WorkspaceDocumentCoordinator: WorkspaceDocumentRouting {
     }
 
     func open(urls: [URL], activate activeURL: URL? = nil) {
-        documentOpener.open(
-            urls,
-            activate: activeURL,
-            fallbackDocument: openDocumentsStore.activeDocument,
-            presentDocument: { [weak self] document in
-                self?.present(document: document)
-            },
-            noDocumentFallback: { [weak self] in
-                self?.onNeedsWindowStateRefresh?()
-            }
-        )
+        let fallbackDocument = openDocumentsStore.activeDocument
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            await documentOpener.openInBackground(
+                urls,
+                activate: activeURL,
+                fallbackDocument: fallbackDocument,
+                presentDocument: { [weak self] document in
+                    self?.present(document: document)
+                },
+                noDocumentFallback: { [weak self] in
+                    self?.onNeedsWindowStateRefresh?()
+                }
+            )
+        }
     }
 
     func createUntitledDocument() {

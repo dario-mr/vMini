@@ -7,6 +7,7 @@ final class OpenFoldersStore {
         let selectedURL: URL?
         let expandedFolderPaths: Set<String>
         let contentVersion: Int
+        let refreshedFolderPaths: Set<String>
     }
 
     static let shared = OpenFoldersStore()
@@ -16,6 +17,7 @@ final class OpenFoldersStore {
     private(set) var selectedURL: URL?
     private var expandedFolderPaths: Set<String> = []
     private var contentVersion = 0
+    private var refreshedFolderPaths: Set<String> = []
     private var observers: [UUID: (State) -> Void] = [:]
     private var isObserverNotificationScheduled = false
 
@@ -103,7 +105,8 @@ final class OpenFoldersStore {
         scheduleObserverNotification()
     }
 
-    func refreshContents() {
+    func refreshContents(at urls: [URL]) {
+        refreshedFolderPaths.formUnion(urls.map(\.standardizedFileURL.path))
         contentVersion += 1
         scheduleObserverNotification()
     }
@@ -123,12 +126,14 @@ final class OpenFoldersStore {
             folderURLs: folderURLs,
             selectedURL: selectedURL,
             expandedFolderPaths: expandedFolderPaths,
-            contentVersion: contentVersion
+            contentVersion: contentVersion,
+            refreshedFolderPaths: refreshedFolderPaths
         )
     }
 
     private func notifyObservers() {
         let state = currentState()
+        refreshedFolderPaths.removeAll()
         for observer in observers.values {
             observer(state)
         }

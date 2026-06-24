@@ -114,6 +114,7 @@
 		A0000000000000000000020C /* SidebarAndPersistenceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000020D /* SidebarAndPersistenceTests.swift */; };
 		A0000000000000000000020E /* WorkspaceSessionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000020F /* WorkspaceSessionManager.swift */; };
 		A00000000000000000000211 /* SidebarFolderWatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000212 /* SidebarFolderWatcher.swift */; };
+		A00000000000000000000214 /* AppPerformanceProfiler.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000213 /* AppPerformanceProfiler.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -140,6 +141,7 @@
 		A0000000000000000000020D /* SidebarAndPersistenceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidebarAndPersistenceTests.swift; sourceTree = "<group>"; };
 		A0000000000000000000020F /* WorkspaceSessionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceSessionManager.swift; sourceTree = "<group>"; };
 		A00000000000000000000212 /* SidebarFolderWatcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidebarFolderWatcher.swift; sourceTree = "<group>"; };
+		A00000000000000000000213 /* AppPerformanceProfiler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppPerformanceProfiler.swift; sourceTree = "<group>"; };
 		A00000000000000000000182 /* vminiTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = vminiTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		A0000000000000000000018F /* SyntaxLanguage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyntaxLanguage.swift; sourceTree = "<group>"; };
 		A00000000000000000000008 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -318,12 +320,13 @@
 			path = Controls;
 			sourceTree = "<group>";
 		};
-		A000000000000000000001E0 /* Core */ = {
-			isa = PBXGroup;
-			children = (
-				A000000000000000000001FB /* ObservationToken.swift */,
-				A00000000000000000000208 /* Persistence */,
-				A000000000000000000001E1 /* Settings */,
+			A000000000000000000001E0 /* Core */ = {
+				isa = PBXGroup;
+				children = (
+					A00000000000000000000213 /* AppPerformanceProfiler.swift */,
+					A000000000000000000001FB /* ObservationToken.swift */,
+					A00000000000000000000208 /* Persistence */,
+					A000000000000000000001E1 /* Settings */,
 				A00000000000000000000155 /* Theme */,
 			);
 			path = Core;
@@ -754,8 +757,9 @@
 				A00000000000000000000129 /* OpenFoldersSidebar.swift in Sources */,
 				A00000000000000000000207 /* OpenFoldersSidebarOutlineController.swift in Sources */,
 				A00000000000000000000128 /* OpenFoldersStore.swift in Sources */,
-				A00000000000000000000211 /* SidebarFolderWatcher.swift in Sources */,
-			);
+					A00000000000000000000211 /* SidebarFolderWatcher.swift in Sources */,
+					A00000000000000000000214 /* AppPerformanceProfiler.swift in Sources */,
+				);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		A00000000000000000000188 /* Sources */ = {

@@ -21,12 +21,16 @@ final class EditorTabBarController {
     private var tabViewsByDocumentIdentifier: [ObjectIdentifier: DocumentTabView] = [:]
     private var currentTabDrag: TabDragState?
     private var activeTabView: NSView?
+    private var lastDocumentIdentifiers: [ObjectIdentifier] = []
+    private var lastActiveDocumentIdentifier: ObjectIdentifier?
 
     init() {
         configureView()
     }
 
     func update(documents: [Document], activeDocument: Document?) {
+        let nextDocumentIdentifiers = documents.map(ObjectIdentifier.init)
+        let nextActiveDocumentIdentifier = activeDocument.map(ObjectIdentifier.init)
         let liveIdentifiers = Set(documents.map(ObjectIdentifier.init))
 
         for (identifier, tabView) in tabViewsByDocumentIdentifier where !liveIdentifiers.contains(identifier) {
@@ -38,6 +42,9 @@ final class EditorTabBarController {
         }
 
         let dragChangedOrder = currentTabDrag != nil
+        let documentOrderChanged = nextDocumentIdentifiers != lastDocumentIdentifiers
+        let activeDocumentChanged = nextActiveDocumentIdentifier != lastActiveDocumentIdentifier
+
         for document in documents {
             let identifier = ObjectIdentifier(document)
             let tabView = tabViewsByDocumentIdentifier[identifier] ?? makeTabView(for: document)
@@ -48,7 +55,14 @@ final class EditorTabBarController {
             }
         }
 
-        layoutTabViews(documents: documents, activeDocument: activeDocument, animated: dragChangedOrder)
+        layoutTabViews(
+            documents: documents,
+            activeDocument: activeDocument,
+            animated: dragChangedOrder,
+            shouldScrollActiveTab: documentOrderChanged || activeDocumentChanged
+        )
+        lastDocumentIdentifiers = nextDocumentIdentifiers
+        lastActiveDocumentIdentifier = nextActiveDocumentIdentifier
     }
 
     func refreshTheme() {
@@ -127,7 +141,12 @@ final class EditorTabBarController {
         return tabView
     }
 
-    private func layoutTabViews(documents: [Document], activeDocument: Document?, animated: Bool) {
+    private func layoutTabViews(
+        documents: [Document],
+        activeDocument: Document?,
+        animated: Bool,
+        shouldScrollActiveTab: Bool
+    ) {
         var nextMinX = EditorTabBarLayout.tabBarHorizontalInset
         var resolvedActiveTabView: NSView?
 
@@ -162,7 +181,7 @@ final class EditorTabBarController {
         )
 
         activeTabView = resolvedActiveTabView
-        if let resolvedActiveTabView {
+        if shouldScrollActiveTab, let resolvedActiveTabView {
             scrollTabViewToVisible(resolvedActiveTabView)
         }
     }

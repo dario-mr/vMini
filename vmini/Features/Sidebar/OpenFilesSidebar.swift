@@ -123,16 +123,6 @@ final class OpenFilesSidebarViewController: NSViewController {
             self?.applyTheme()
         }
 
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(windowDidBecomeMain(_:)),
-            name: NSWindow.didBecomeMainNotification,
-            object: nil
-        )
-    }
-
-    deinit {
-        NotificationCenter.default.removeObserver(self)
     }
 
     private func configureHeader() {
@@ -193,15 +183,6 @@ final class OpenFilesSidebarViewController: NSViewController {
         foldersTopConstraint?.constant = hasFolders ? 8 : 0
         foldersBottomConstraint?.isActive = hasFolders
         foldersHiddenHeightConstraint?.isActive = !hasFolders
-    }
-
-    @objc
-    private func windowDidBecomeMain(_ notification: Notification) {
-        guard let window = notification.object as? NSWindow, window === view.window else {
-            return
-        }
-
-        tableController.reload()
     }
 
     private func applyTheme() {

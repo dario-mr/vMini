@@ -1,16 +1,18 @@
 import Darwin
 import Foundation
 
-final class SidebarFolderWatcher {
+final class SidebarFolderWatcher: @unchecked Sendable {
+    private let eventQueue = DispatchQueue(label: "vmini.sidebar-folder-watcher", qos: .utility)
     private var watchersByPath: [String: DispatchSourceFileSystemObject] = [:]
     private var pendingRefresh: DispatchWorkItem?
-    private var onChange: (() -> Void)?
+    private var pendingChangedDirectoryPaths: Set<String> = []
+    private var onChange: (([URL]) -> Void)?
 
     deinit {
         stop()
     }
 
-    func watch(directoryURLs: [URL], onChange: @escaping () -> Void) {
+    func watch(directoryURLs: [URL], onChange: @escaping ([URL]) -> Void) {
         self.onChange = onChange
 
         var uniqueURLs: [String: URL] = [:]
@@ -33,6 +35,7 @@ final class SidebarFolderWatcher {
     func stop() {
         pendingRefresh?.cancel()
         pendingRefresh = nil
+        pendingChangedDirectoryPaths.removeAll()
 
         for watcher in watchersByPath.values {
             watcher.cancel()
@@ -48,10 +51,10 @@ final class SidebarFolderWatcher {
         let watcher = DispatchSource.makeFileSystemObjectSource(
             fileDescriptor: fileDescriptor,
             eventMask: [.write, .delete, .rename],
-            queue: .main
+            queue: eventQueue
         )
         watcher.setEventHandler { [weak self] in
-            self?.scheduleRefresh()
+            self?.scheduleRefresh(for: directoryURL)
         }
         watcher.setCancelHandler { [fileDescriptor] in
             Darwin.close(fileDescriptor)
@@ -59,12 +62,20 @@ final class SidebarFolderWatcher {
         return watcher
     }
 
-    private func scheduleRefresh() {
+    private func scheduleRefresh(for directoryURL: URL) {
+        pendingChangedDirectoryPaths.insert(directoryURL.standardizedFileURL.path)
         pendingRefresh?.cancel()
         let workItem = DispatchWorkItem { [weak self] in
-            self?.onChange?()
+            guard let self else { return }
+            let changedURLs = self.pendingChangedDirectoryPaths.map {
+                URL(fileURLWithPath: $0, isDirectory: true)
+            }
+            self.pendingChangedDirectoryPaths.removeAll()
+            DispatchQueue.main.async {
+                self.onChange?(changedURLs)
+            }
         }
         pendingRefresh = workItem
-        DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(150), execute: workItem)
+        eventQueue.asyncAfter(deadline: .now() + .milliseconds(350), execute: workItem)
     }
 }

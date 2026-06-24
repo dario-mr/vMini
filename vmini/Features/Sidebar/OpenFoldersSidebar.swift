@@ -19,6 +19,7 @@ final class OpenFoldersSidebarViewController: NSViewController {
     private let folderStore: OpenFoldersStore
     private let outlineController: OpenFoldersSidebarOutlineController
     private let folderWatcher = SidebarFolderWatcher()
+    private var watchedDirectoryPaths: Set<String> = []
     private var expandedLayoutConstraints: [NSLayoutConstraint] = []
     private var foldersObservation: ObservationToken?
     private var themeObservation: ObservationToken?
@@ -121,11 +122,14 @@ final class OpenFoldersSidebarViewController: NSViewController {
     }
 
     private func updateFolderWatcher(for state: OpenFoldersStore.State) {
-        let watchedURLs = state.folderURLs + state.expandedFolderPaths.map {
-            URL(fileURLWithPath: $0, isDirectory: true)
-        }
-        folderWatcher.watch(directoryURLs: watchedURLs) { [weak self] in
-            self?.folderStore.refreshContents()
+        let watchedPaths = Set(state.folderURLs.map(\.standardizedFileURL.path))
+            .union(state.expandedFolderPaths)
+        guard watchedPaths != watchedDirectoryPaths else { return }
+
+        watchedDirectoryPaths = watchedPaths
+        let watchedURLs = watchedPaths.map { URL(fileURLWithPath: $0, isDirectory: true) }
+        folderWatcher.watch(directoryURLs: watchedURLs) { [weak self] changedURLs in
+            self?.folderStore.refreshContents(at: changedURLs)
         }
     }
 

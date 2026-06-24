@@ -4,16 +4,17 @@ import AppKit
 final class AppCommandDispatcher: NSObject, NSMenuItemValidation {
     private let workspaceResolver: ActiveWorkspaceResolver
     private let documentRouter: WorkspaceDocumentRouting
-    private let goToLineWindowController: GoToLineWindowController
+    private let makeGoToLineWindowController: () -> GoToLineWindowController
+    private lazy var goToLineWindowController = makeGoToLineWindowController()
 
     init(
         workspaceResolver: ActiveWorkspaceResolver,
         documentRouter: WorkspaceDocumentRouting,
-        goToLineWindowController: GoToLineWindowController
+        makeGoToLineWindowController: @escaping () -> GoToLineWindowController
     ) {
         self.workspaceResolver = workspaceResolver
         self.documentRouter = documentRouter
-        self.goToLineWindowController = goToLineWindowController
+        self.makeGoToLineWindowController = makeGoToLineWindowController
         super.init()
     }
 
@@ -21,7 +22,7 @@ final class AppCommandDispatcher: NSObject, NSMenuItemValidation {
         self.init(
             workspaceResolver: ActiveWorkspaceResolver(),
             documentRouter: WorkspaceDocumentCoordinator.shared,
-            goToLineWindowController: GoToLineWindowController()
+            makeGoToLineWindowController: { GoToLineWindowController() }
         )
     }
 

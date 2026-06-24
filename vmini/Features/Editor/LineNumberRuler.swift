@@ -16,6 +16,12 @@ final class LineNumberRulerView: NSView {
         return style
     }()
     private var themeObservation: ObservationToken?
+    private var cachedLineNumberFont: NSFont?
+    private var cachedLineNumberFontPointSize: CGFloat = 0
+    private var cachedDigitWidth: CGFloat = 0
+    private var cachedSelectedAttributes: [NSAttributedString.Key: Any]?
+    private var cachedUnselectedAttributes: [NSAttributedString.Key: Any]?
+    private var lastSelectedLineStart = 0
 
     init(textView: NSTextView) {
         self.textView = textView
@@ -45,6 +51,7 @@ final class LineNumberRulerView: NSView {
     func invalidateLineNumbers() {
         rebuildLineCache()
         synchronizeRuleThickness()
+        lastSelectedLineStart = selectedLineStart()
         needsDisplay = true
     }
 
@@ -55,6 +62,7 @@ final class LineNumberRulerView: NSView {
             changeInLength: changeInLength
         )
         synchronizeRuleThickness()
+        lastSelectedLineStart = selectedLineStart()
         needsDisplay = true
     }
 
@@ -122,11 +130,7 @@ final class LineNumberRulerView: NSView {
             NSRect(x: 0, y: y, width: bounds.width, height: lineHeight).fill()
         }
 
-        let attributes: [NSAttributedString.Key: Any] = [
-            .font: lineNumberFont(),
-            .foregroundColor: isSelected ? AppColors.sidebarHeaderText : AppColors.lineNumberText,
-            .paragraphStyle: paragraphStyle,
-        ]
+        let attributes = lineNumberAttributes(isSelected: isSelected)
         let string = "\(lineNumber)" as NSString
         let size = string.size(withAttributes: attributes)
         let drawRect = NSRect(
@@ -150,7 +154,17 @@ final class LineNumberRulerView: NSView {
 
     private func lineNumberFont() -> NSFont {
         let pointSize = textView?.font?.pointSize ?? 13
-        return NSFont.monospacedDigitSystemFont(ofSize: pointSize, weight: .light)
+        if let cachedLineNumberFont, abs(pointSize - cachedLineNumberFontPointSize) < 0.5 {
+            return cachedLineNumberFont
+        }
+
+        let font = NSFont.monospacedDigitSystemFont(ofSize: pointSize, weight: .light)
+        cachedLineNumberFont = font
+        cachedLineNumberFontPointSize = pointSize
+        cachedDigitWidth = "0".size(withAttributes: [.font: font]).width
+        cachedSelectedAttributes = nil
+        cachedUnselectedAttributes = nil
+        return font
     }
 
     private func drawTrailingLineNumberIfNeeded(
@@ -256,12 +270,13 @@ final class LineNumberRulerView: NSView {
     }
 
     private func synchronizeRuleThickness() {
+        _ = lineNumberFont()
         let lineCount = max(1, lineStarts.count)
         let digitCount = "\(lineCount)".count
-        let digitWidth = "0".size(withAttributes: [
-            .font: lineNumberFont(),
-        ]).width
-        let requiredThickness = max(Constants.minThickness, ceil(CGFloat(digitCount) * digitWidth + Constants.horizontalPadding * 2))
+        let requiredThickness = max(
+            Constants.minThickness,
+            ceil(CGFloat(digitCount) * cachedDigitWidth + Constants.horizontalPadding * 2)
+        )
         if abs(ruleThickness - requiredThickness) > 0.5 {
             ruleThickness = requiredThickness
             onRuleThicknessChanged?(requiredThickness)
@@ -343,10 +358,46 @@ final class LineNumberRulerView: NSView {
 
     private func handleThemeDidChange() {
         applyTheme()
+        cachedSelectedAttributes = nil
+        cachedUnselectedAttributes = nil
         needsDisplay = true
     }
 
     private func applyTheme() {
         layer?.backgroundColor = AppColors.editorBackground.cgColor
+    }
+
+    func handleSelectionDidChange() {
+        let nextSelectedLineStart = selectedLineStart()
+        guard nextSelectedLineStart != lastSelectedLineStart else {
+            return
+        }
+
+        lastSelectedLineStart = nextSelectedLineStart
+        needsDisplay = true
+    }
+
+    private func lineNumberAttributes(isSelected: Bool) -> [NSAttributedString.Key: Any] {
+        if isSelected, let cachedSelectedAttributes {
+            return cachedSelectedAttributes
+        }
+
+        if !isSelected, let cachedUnselectedAttributes {
+            return cachedUnselectedAttributes
+        }
+
+        let attributes: [NSAttributedString.Key: Any] = [
+            .font: lineNumberFont(),
+            .foregroundColor: isSelected ? AppColors.sidebarHeaderText : AppColors.lineNumberText,
+            .paragraphStyle: paragraphStyle,
+        ]
+
+        if isSelected {
+            cachedSelectedAttributes = attributes
+        } else {
+            cachedUnselectedAttributes = attributes
+        }
+
+        return attributes
     }
 }

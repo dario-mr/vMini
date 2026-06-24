@@ -1,7 +1,14 @@
 import AppKit
+import UniformTypeIdentifiers
 
 @MainActor
 final class WorkspaceDocumentOpener {
+    private struct OpenDocumentPayload: Sendable {
+        let url: URL
+        let typeName: String
+        let data: Data
+    }
+
     private let documentController: NSDocumentController
     private let openDocumentsStore: OpenDocumentsStore
 
@@ -31,6 +38,42 @@ final class WorkspaceDocumentOpener {
                 presentDocument: presentDocument,
                 noDocumentFallback: noDocumentFallback
             )
+        }
+    }
+
+    func openInBackground(
+        _ urls: [URL],
+        activate activeURL: URL?,
+        fallbackDocument: Document?,
+        presentDocument: @escaping (Document) -> Void,
+        noDocumentFallback: @escaping () -> Void
+    ) async {
+        let standardized = urls.map(\.standardizedFileURL)
+
+        for url in standardized {
+            do {
+                _ = try await openDocumentInBackground(at: url)
+            } catch {
+                NSLog("Could not open file %@: %@", url.path as NSString, error.localizedDescription)
+            }
+        }
+
+        if
+            let activeURL = activeURL?.standardizedFileURL,
+            let document = documentController.document(for: activeURL) as? Document
+        {
+            presentDocument(document)
+        } else if activeURL == nil, let lastDocument = openDocumentsStore.documents.last {
+            presentDocument(lastDocument)
+        } else if
+            let fallbackDocument,
+            openDocumentsStore.contains(fallbackDocument)
+        {
+            presentDocument(fallbackDocument)
+        } else if let firstDocument = openDocumentsStore.documents.first {
+            presentDocument(firstDocument)
+        } else {
+            noDocumentFallback()
         }
     }
 
@@ -155,11 +198,81 @@ final class WorkspaceDocumentOpener {
         return document
     }
 
-    private func inferredTypeForDocument(at url: URL) throws -> String {
-        if let controller = documentController as? DocumentController {
-            return try controller.typeForContents(of: url)
+    private func openDocumentInBackground(at url: URL, trackRecentDocument: Bool = true) async throws -> Document {
+        let standardizedURL = url.standardizedFileURL
+
+        if trackRecentDocument {
+            documentController.noteNewRecentDocumentURL(standardizedURL)
         }
 
-        return try DocumentController().typeForContents(of: url)
+        if let existing = documentController.document(for: standardizedURL) as? Document {
+            return existing
+        }
+
+        let payload = try await Task.detached(priority: .userInitiated) {
+            try OpenDocumentPayload(
+                url: standardizedURL,
+                typeName: Self.inferredTypeForDocument(at: standardizedURL),
+                data: Data(contentsOf: standardizedURL, options: [.mappedIfSafe])
+            )
+        }.value
+
+        if let existing = documentController.document(for: standardizedURL) as? Document {
+            return existing
+        }
+
+        let document = Document()
+        try document.read(from: payload.data, ofType: payload.typeName)
+        document.fileType = payload.typeName
+        document.fileURL = payload.url
+        document.updateChangeCount(.changeCleared)
+        document.undoManager?.removeAllActions()
+        documentController.addDocument(document)
+        openDocumentsStore.register(document)
+        return document
+    }
+
+    private nonisolated static func inferredTypeForDocument(at url: URL) throws -> String {
+        if
+            let contentType = try? url.resourceValues(forKeys: [.contentTypeKey]).contentType,
+            Document.supportedTypes.contains(where: { contentType.conforms(to: $0) })
+        {
+            return contentType.identifier
+        }
+
+        if
+            let inferredType = UTType(filenameExtension: url.pathExtension),
+            Document.supportedTypes.contains(where: { inferredType.conforms(to: $0) })
+        {
+            return inferredType.identifier
+        }
+
+        if looksLikeTextFile(at: url) {
+            return UTType.plainText.identifier
+        }
+
+        return UTType.plainText.identifier
+    }
+
+    private func inferredTypeForDocument(at url: URL) throws -> String {
+        try Self.inferredTypeForDocument(at: url)
+    }
+
+    private nonisolated static func looksLikeTextFile(at url: URL) -> Bool {
+        guard let handle = try? FileHandle(forReadingFrom: url) else {
+            return false
+        }
+        defer { try? handle.close() }
+
+        guard let data = try? handle.read(upToCount: 4096) else {
+            return false
+        }
+
+        if data.contains(0) {
+            return false
+        }
+
+        let encodings: [String.Encoding] = [.utf8, .utf16, .utf16LittleEndian, .utf16BigEndian, .ascii]
+        return encodings.contains { String(data: data, encoding: $0) != nil }
     }
 }

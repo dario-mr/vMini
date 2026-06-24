@@ -29,6 +29,7 @@ final class DocumentTabView: NSView {
     private var trackingArea: NSTrackingArea?
     private var isHovered = false
     private var isActive = false
+    private var displayedTitle = ""
     private var dragStartLocationInWindow: NSPoint?
     private var isDraggingTab = false
     private let hoverFadeDuration: CFTimeInterval = 0.16
@@ -158,8 +159,20 @@ final class DocumentTabView: NSView {
 
     func configure(document: Document, isActive: Bool) {
         self.document = document
+        let nextTitle = document.shortDisplayTitle
+        let didChangeTitle = displayedTitle != nextTitle
+        let didChangeActiveState = self.isActive != isActive
+
         self.isActive = isActive
-        titleLabel.stringValue = document.shortDisplayTitle
+        if didChangeTitle {
+            displayedTitle = nextTitle
+            titleLabel.stringValue = nextTitle
+        }
+
+        guard didChangeTitle || didChangeActiveState else {
+            return
+        }
+
         applyAppearance()
     }
 

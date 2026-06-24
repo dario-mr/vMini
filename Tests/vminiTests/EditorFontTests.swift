@@ -73,7 +73,7 @@ final class EditorFontTests: XCTestCase {
         XCTAssertEqual(textView.textContainer?.widthTracksTextView, EditorSettings.isWordWrapEnabled())
     }
 
-    func testFontSizeChangePreservesSyntaxHighlighting() throws {
+    func testFontSizeChangePreservesSyntaxHighlighting() async throws {
         let viewController = EditorViewController()
         viewController.loadViewIfNeeded()
         viewController.syntaxLanguage = .markdown
@@ -81,6 +81,13 @@ final class EditorFontTests: XCTestCase {
 
         let storage = try XCTUnwrap(viewController.textStorage)
         let location = (viewController.text as NSString).range(of: "#").location
+        try await waitForCondition {
+            let highlightedColor = storage.attribute(.foregroundColor, at: location, effectiveRange: nil) as? NSColor
+            let highlightedFont = storage.attribute(.font, at: location, effectiveRange: nil) as? NSFont
+            return highlightedColor?.isEqual(ThemeManager.shared.syntaxTheme.headingMarker) == true
+                && highlightedFont?.fontDescriptor.symbolicTraits.contains(.bold) == true
+        }
+
         let highlightedColor = storage.attribute(.foregroundColor, at: location, effectiveRange: nil) as? NSColor
         let highlightedFont = storage.attribute(.font, at: location, effectiveRange: nil) as? NSFont
         XCTAssertTrue(highlightedColor?.isEqual(ThemeManager.shared.syntaxTheme.headingMarker) == true)
@@ -88,13 +95,20 @@ final class EditorFontTests: XCTestCase {
 
         EditorSettings.increaseFontSize()
 
+        try await waitForCondition {
+            let updatedColor = storage.attribute(.foregroundColor, at: location, effectiveRange: nil) as? NSColor
+            let updatedFont = storage.attribute(.font, at: location, effectiveRange: nil) as? NSFont
+            return updatedColor?.isEqual(ThemeManager.shared.syntaxTheme.headingMarker) == true
+                && updatedFont?.fontDescriptor.symbolicTraits.contains(.bold) == true
+        }
+
         let updatedColor = storage.attribute(.foregroundColor, at: location, effectiveRange: nil) as? NSColor
         let updatedFont = storage.attribute(.font, at: location, effectiveRange: nil) as? NSFont
         XCTAssertTrue(updatedColor?.isEqual(ThemeManager.shared.syntaxTheme.headingMarker) == true)
         XCTAssertTrue(updatedFont?.fontDescriptor.symbolicTraits.contains(.bold) == true)
     }
 
-    func testFontChangeKeepsMarkdownHeadingsBoldAndBodyTextRegular() throws {
+    func testFontChangeKeepsMarkdownHeadingsBoldAndBodyTextRegular() async throws {
         let initialFont = try XCTUnwrap(EditorFontResolver.availableFontIDs().first)
         let alternateFont = EditorFontResolver.availableFontIDs().first(where: { $0 != initialFont }) ?? .fallback
         EditorSettings.setFontID(initialFont)
@@ -109,12 +123,30 @@ final class EditorFontTests: XCTestCase {
         let headingLocation = nsText.range(of: "#").location
         let bodyLocation = nsText.range(of: "body").location
 
+        try await waitForCondition {
+            let initialHeadingFont = storage.attribute(.font, at: headingLocation, effectiveRange: nil) as? NSFont
+            let initialBodyFont = storage.attribute(.font, at: bodyLocation, effectiveRange: nil) as? NSFont
+            return initialHeadingFont?.fontDescriptor.symbolicTraits.contains(.bold) == true
+                && initialBodyFont?.fontDescriptor.symbolicTraits.contains(.bold) != true
+        }
+
         let initialHeadingFont = storage.attribute(.font, at: headingLocation, effectiveRange: nil) as? NSFont
         let initialBodyFont = storage.attribute(.font, at: bodyLocation, effectiveRange: nil) as? NSFont
         XCTAssertTrue(initialHeadingFont?.fontDescriptor.symbolicTraits.contains(.bold) == true)
         XCTAssertFalse(initialBodyFont?.fontDescriptor.symbolicTraits.contains(.bold) == true)
 
         EditorSettings.setFontID(alternateFont)
+
+        try await waitForCondition {
+            let updatedHeadingFont = storage.attribute(.font, at: headingLocation, effectiveRange: nil) as? NSFont
+            let updatedBodyFont = storage.attribute(.font, at: bodyLocation, effectiveRange: nil) as? NSFont
+            return updatedHeadingFont?.fontDescriptor.symbolicTraits.contains(.bold) == true
+                && updatedBodyFont?.fontDescriptor.symbolicTraits.contains(.bold) != true
+                && updatedBodyFont?.fontName == EditorFontResolver.font(
+                    for: alternateFont,
+                    size: EditorSettings.currentFontSize()
+                ).fontName
+        }
 
         let updatedHeadingFont = storage.attribute(.font, at: headingLocation, effectiveRange: nil) as? NSFont
         let updatedBodyFont = storage.attribute(.font, at: bodyLocation, effectiveRange: nil) as? NSFont
@@ -174,5 +206,21 @@ final class EditorFontTests: XCTestCase {
         let userDefaults = UserDefaults(suiteName: suiteName)!
         userDefaults.removePersistentDomain(forName: suiteName)
         return userDefaults
+    }
+
+    private func waitForCondition(
+        timeoutNanoseconds: UInt64 = 1_000_000_000,
+        pollNanoseconds: UInt64 = 25_000_000,
+        condition: @escaping @MainActor () -> Bool
+    ) async throws {
+        let deadline = DispatchTime.now().uptimeNanoseconds + timeoutNanoseconds
+        while DispatchTime.now().uptimeNanoseconds < deadline {
+            if condition() {
+                return
+            }
+            try await Task.sleep(nanoseconds: pollNanoseconds)
+        }
+
+        XCTFail("Timed out waiting for condition")
     }
 }
