@@ -10,6 +10,39 @@ final class EditorTextEditingTests: XCTestCase {
         XCTAssertEqual(cursor.column, 3)
     }
 
+    @MainActor
+    func testLineNumberRulerCursorPositionUsesCachedLineStarts() {
+        let textView = NSTextView()
+        textView.string = "alpha\nbeta\ngamma"
+        let ruler = LineNumberRulerView(textView: textView)
+        ruler.invalidateLineNumbers()
+
+        textView.setSelectedRange(NSRange(location: 8, length: 0))
+        let cursor = ruler.currentCursorPosition()
+
+        XCTAssertEqual(cursor.line, 2)
+        XCTAssertEqual(cursor.column, 3)
+    }
+
+    @MainActor
+    func testLineNumberRulerUpdatesCacheAfterDeletingLine() {
+        let textView = NSTextView()
+        textView.string = "one\ntwo\nthree"
+        let ruler = LineNumberRulerView(textView: textView)
+        ruler.invalidateLineNumbers()
+
+        let storage = textView.textStorage!
+        storage.replaceCharacters(in: NSRange(location: 4, length: 4), with: "")
+        ruler.noteTextStorageDidEdit(
+            storage,
+            editedRange: NSRange(location: 4, length: 0),
+            changeInLength: -4
+        )
+        textView.setSelectedRange(NSRange(location: 4, length: 0))
+
+        XCTAssertEqual(ruler.currentCursorPosition().line, 2)
+    }
+
     func testCharacterLocationForLineNumberClampsToDocumentEnd() {
         let text = "alpha\nbeta" as NSString
 

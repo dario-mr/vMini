@@ -31,7 +31,8 @@ final class EditorSyntaxHighlightController {
     func handleProcessedEditing(
         editedMask: NSTextStorageEditActions,
         editedRange: NSRange,
-        language: SyntaxLanguage
+        language: SyntaxLanguage,
+        editContext: SyntaxHighlightEditContext? = nil
     ) {
         guard editedMask.contains(.editedCharacters), !isApplyingHighlighting else {
             return
@@ -40,6 +41,7 @@ final class EditorSyntaxHighlightController {
         scheduleHighlightingRefresh(
             around: editedRange,
             language: language,
+            editContext: editContext,
             debounceNanoseconds: 75_000_000
         )
     }
@@ -47,10 +49,14 @@ final class EditorSyntaxHighlightController {
     private func scheduleHighlightingRefresh(
         around editedRange: NSRange?,
         language: SyntaxLanguage,
+        editContext: SyntaxHighlightEditContext? = nil,
         debounceNanoseconds: UInt64
     ) {
         pendingLanguage = language
-        pendingHighlightRange = mergedRange(existing: pendingHighlightRange, incoming: editedRange)
+        pendingHighlightRange = mergedRange(
+            existing: pendingHighlightRange,
+            incoming: editedRange.map { expandedHighlightRange(for: $0, language: language, editContext: editContext) }
+        )
         pendingRefreshTask?.cancel()
         pendingRefreshTask = Task { @MainActor [weak self] in
             guard let self else { return }
@@ -67,22 +73,16 @@ final class EditorSyntaxHighlightController {
             let targetLanguage = self.pendingLanguage
             self.pendingHighlightRange = nil
             self.pendingRefreshTask = nil
-            self.applyHighlighting(around: targetRange, language: targetLanguage)
+            self.applyHighlighting(in: targetRange, language: targetLanguage)
         }
     }
 
-    private func applyHighlighting(around editedRange: NSRange?, language: SyntaxLanguage) {
+    private func applyHighlighting(in highlightRange: NSRange?, language: SyntaxLanguage) {
         guard let textStorage = textStorageProvider() else { return }
 
         let highlighter = highlighterRegistry.highlighter(for: language)
-        let text = textStorage.string as NSString
         let fullRange = NSRange(location: 0, length: textStorage.length)
-        let targetRange: NSRange
-        if let editedRange {
-            targetRange = highlighter.expandedHighlightRange(for: editedRange, in: text).clamped(toLength: text.length)
-        } else {
-            targetRange = fullRange
-        }
+        let targetRange = (highlightRange ?? fullRange).clamped(toLength: textStorage.length)
 
         guard targetRange.length > 0 else { return }
 
@@ -102,6 +102,24 @@ final class EditorSyntaxHighlightController {
         )
         textStorage.endEditing()
         isApplyingHighlighting = false
+    }
+
+    private func expandedHighlightRange(
+        for editedRange: NSRange,
+        language: SyntaxLanguage,
+        editContext: SyntaxHighlightEditContext?
+    ) -> NSRange {
+        guard let textStorage = textStorageProvider() else {
+            return editedRange
+        }
+
+        let text = textStorage.string as NSString
+        let highlighter = highlighterRegistry.highlighter(for: language)
+        return highlighter.expandedHighlightRange(
+            for: editedRange,
+            editContext: editContext,
+            in: text
+        ).clamped(toLength: text.length)
     }
 
     private func mergedRange(existing: NSRange?, incoming: NSRange?) -> NSRange? {
