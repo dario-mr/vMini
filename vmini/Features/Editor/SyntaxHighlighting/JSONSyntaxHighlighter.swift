@@ -9,7 +9,11 @@ final class JSONSyntaxHighlighter: SyntaxHighlighter {
 
     let language: SyntaxLanguage = .json
 
-    func expandedHighlightRange(for editedRange: NSRange, in text: NSString) -> NSRange {
+    func expandedHighlightRange(
+        for editedRange: NSRange,
+        editContext: SyntaxHighlightEditContext?,
+        in text: NSString
+    ) -> NSRange {
         text.lineRange(for: editedRange.clamped(toLength: text.length))
     }
 
@@ -28,13 +32,12 @@ final class JSONSyntaxHighlighter: SyntaxHighlighter {
             return
         }
 
-        for token in tokenize(fullText) {
-            let visibleRange = NSIntersectionRange(token.range, targetRange)
-            guard visibleRange.length > 0 else {
-                continue
-            }
-
-            textStorage.applyForegroundColor(theme.color(for: token.role), range: visibleRange)
+        let localText = nsText.substring(with: targetRange)
+        for token in tokenize(localText) {
+            textStorage.applyForegroundColor(
+                theme.color(for: token.role),
+                range: token.range.offsetBy(targetRange.location)
+            )
         }
     }
 
@@ -213,4 +216,10 @@ final class JSONSyntaxHighlighter: SyntaxHighlighter {
 
     private static let keywordLiterals = ["true", "false", "null"]
     private static let operatorCharacters: Set<Character> = ["{", "}", "[", "]", ":", ","]
+}
+
+private extension NSRange {
+    func offsetBy(_ offset: Int) -> NSRange {
+        NSRange(location: location + offset, length: length)
+    }
 }

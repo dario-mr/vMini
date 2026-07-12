@@ -30,7 +30,11 @@ final class BashSyntaxHighlighter: SyntaxHighlighter {
 
     let language: SyntaxLanguage = .bash
 
-    func expandedHighlightRange(for editedRange: NSRange, in text: NSString) -> NSRange {
+    func expandedHighlightRange(
+        for editedRange: NSRange,
+        editContext: SyntaxHighlightEditContext?,
+        in text: NSString
+    ) -> NSRange {
         let lineRange = text.lineRange(for: editedRange.clamped(toLength: text.length))
         let fullText = text as String
 
@@ -59,12 +63,13 @@ final class BashSyntaxHighlighter: SyntaxHighlighter {
             return
         }
 
-        for token in tokenize(fullText) {
-            let visibleRange = NSIntersectionRange(token.range, targetRange)
-            guard visibleRange.length > 0 else {
-                continue
-            }
+        let nsText = fullText as NSString
+        let localScanRange = nsText.lineRange(for: targetRange)
+        let localText = nsText.substring(with: localScanRange)
 
+        for token in tokenize(localText) {
+            let visibleRange = NSIntersectionRange(token.range.offsetBy(localScanRange.location), targetRange)
+            guard visibleRange.length > 0 else { continue }
             textStorage.applyForegroundColor(theme.color(for: token.role), range: visibleRange)
         }
     }
@@ -421,5 +426,9 @@ private extension Character {
 private extension NSRange {
     func swiftRange(in text: String) -> Range<String.Index> {
         Range(self, in: text) ?? text.startIndex..<text.startIndex
+    }
+
+    func offsetBy(_ offset: Int) -> NSRange {
+        NSRange(location: location + offset, length: length)
     }
 }

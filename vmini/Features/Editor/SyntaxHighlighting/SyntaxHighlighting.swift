@@ -215,7 +215,11 @@ struct SyntaxTheme {
 protocol SyntaxHighlighter {
     var language: SyntaxLanguage { get }
 
-    func expandedHighlightRange(for editedRange: NSRange, in text: NSString) -> NSRange
+    func expandedHighlightRange(
+        for editedRange: NSRange,
+        editContext: SyntaxHighlightEditContext?,
+        in text: NSString
+    ) -> NSRange
     func highlight(
         textStorage: NSTextStorage,
         in range: NSRange?,
@@ -223,6 +227,12 @@ protocol SyntaxHighlighter {
         theme: SyntaxTheme,
         registry: HighlighterRegistry
     )
+}
+
+struct SyntaxHighlightEditContext {
+    let replacementRange: NSRange
+    let replacementString: String
+    let replacedText: String
 }
 
 @MainActor

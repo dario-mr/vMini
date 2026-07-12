@@ -4,7 +4,11 @@ import AppKit
 final class PlainTextSyntaxHighlighter: SyntaxHighlighter {
     let language: SyntaxLanguage = .plaintext
 
-    func expandedHighlightRange(for editedRange: NSRange, in text: NSString) -> NSRange {
+    func expandedHighlightRange(
+        for editedRange: NSRange,
+        editContext: SyntaxHighlightEditContext?,
+        in text: NSString
+    ) -> NSRange {
         text.lineRange(for: editedRange.clamped(toLength: text.length))
     }
 

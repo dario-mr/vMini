@@ -16,11 +16,22 @@ final class MarkdownSyntaxHighlighter: SyntaxHighlighter {
 
     let language: SyntaxLanguage = .markdown
 
-    func expandedHighlightRange(for editedRange: NSRange, in text: NSString) -> NSRange {
-        // Fenced code blocks are stateful: opening or closing a fence can change
-        // how every following line should be classified. Re-highlight the full
-        // document to avoid stale code-block background and nested syntax.
-        NSRange(location: 0, length: text.length)
+    func expandedHighlightRange(
+        for editedRange: NSRange,
+        editContext: SyntaxHighlightEditContext?,
+        in text: NSString
+    ) -> NSRange {
+        let fullRange = NSRange(location: 0, length: text.length)
+
+        guard let editContext else {
+            return fullRange
+        }
+
+        if isFenceSensitiveEdit(editedRange: editedRange, editContext: editContext, in: text) {
+            return fullRange
+        }
+
+        return surroundingLineRange(around: editedRange, in: text)
     }
 
     func highlight(
@@ -100,13 +111,22 @@ final class MarkdownSyntaxHighlighter: SyntaxHighlighter {
         theme: SyntaxTheme
     ) {
         let headingFont = EditorFontResolver.boldVariant(of: baseFont)
-        var location = 0
-        while location < text.length {
+        let lineScanRange = text.lineRange(for: targetRange.clamped(toLength: text.length))
+        var location = lineScanRange.location
+        let scanEnd = lineScanRange.upperBound
+        var fenceIndex = firstFenceIndex(intersectingOrAfter: location, fences: fences)
+
+        while location < scanEnd, location < text.length {
             let lineRange = text.lineRange(for: NSRange(location: location, length: 0))
             let contentRange = visibleLineContentsRange(for: lineRange, text: text) ?? lineRange
 
             if contentRange.intersects(targetRange) {
-                let classification = classify(lineRange: lineRange, contentRange: contentRange, in: text, fences: fences)
+                let classification = fenceClassification(
+                    lineRange: lineRange,
+                    contentRange: contentRange,
+                    fences: fences,
+                    fenceIndex: &fenceIndex
+                ) ?? classify(lineRange: lineRange, contentRange: contentRange, in: text)
                 switch classification {
                 case .fence, .fenceContent:
                     break
@@ -207,6 +227,58 @@ final class MarkdownSyntaxHighlighter: SyntaxHighlighter {
         }
     }
 
+    private func isFenceSensitiveEdit(
+        editedRange: NSRange,
+        editContext: SyntaxHighlightEditContext,
+        in text: NSString
+    ) -> Bool {
+        if containsFenceMarkerCharacter(editContext.replacedText)
+            || containsFenceMarkerCharacter(editContext.replacementString) {
+            return true
+        }
+
+        let scanRange = surroundingLineRange(around: editedRange, in: text)
+        if editContext.replacedText.contains("\n"),
+           containsFenceMarkerCharacter(text.substring(with: scanRange)) {
+            return true
+        }
+
+        var location = scanRange.location
+        while location < scanRange.upperBound, location < text.length {
+            let lineRange = text.lineRange(for: NSRange(location: location, length: 0))
+            let contentRange = visibleLineContentsRange(for: lineRange, text: text) ?? lineRange
+            let line = text.substring(with: contentRange)
+            let indent = min(leadingWhitespaceCount(in: line), 3)
+            let trimmed = String(line.dropFirst(indent))
+            if parseFence(in: trimmed) != nil {
+                return true
+            }
+            location = lineRange.upperBound
+        }
+
+        return false
+    }
+
+    private func surroundingLineRange(around range: NSRange, in text: NSString) -> NSRange {
+        let baseLineRange = text.lineRange(for: range.clamped(toLength: text.length))
+        var start = baseLineRange.location
+        var end = baseLineRange.upperBound
+
+        if start > 0 {
+            start = text.lineRange(for: NSRange(location: start - 1, length: 0)).location
+        }
+
+        if end < text.length {
+            end = text.lineRange(for: NSRange(location: end, length: 0)).upperBound
+        }
+
+        return NSRange(location: start, length: max(end - start, 0))
+    }
+
+    private func containsFenceMarkerCharacter(_ text: String) -> Bool {
+        text.contains("`") || text.contains("~")
+    }
+
     private enum LineClassification {
         case plainText
         case heading(level: Int, markerRange: NSRange, textRange: NSRange)
@@ -218,15 +290,7 @@ final class MarkdownSyntaxHighlighter: SyntaxHighlighter {
         case fenceContent
     }
 
-    private func classify(lineRange: NSRange, contentRange: NSRange, in text: NSString, fences: [FenceBlock]) -> LineClassification {
-        if fences.contains(where: { $0.openingLineRange == lineRange || $0.closingLineRange == lineRange }) {
-            return .fence
-        }
-
-        if fences.contains(where: { $0.contentRange.intersects(contentRange) }) {
-            return .fenceContent
-        }
-
+    private func classify(lineRange: NSRange, contentRange: NSRange, in text: NSString) -> LineClassification {
         let line = text.substring(with: contentRange)
         let indent = min(leadingWhitespaceCount(in: line), 3)
         let trimmed = String(line.dropFirst(indent))
@@ -261,6 +325,46 @@ final class MarkdownSyntaxHighlighter: SyntaxHighlighter {
         }
 
         return .plainText
+    }
+
+    private func fenceClassification(
+        lineRange: NSRange,
+        contentRange: NSRange,
+        fences: [FenceBlock],
+        fenceIndex: inout Int
+    ) -> LineClassification? {
+        while fenceIndex < fences.count, fences[fenceIndex].totalRange.upperBound <= lineRange.location {
+            fenceIndex += 1
+        }
+
+        guard fenceIndex < fences.count else {
+            return nil
+        }
+
+        let fence = fences[fenceIndex]
+        if fence.openingLineRange == lineRange || fence.closingLineRange == lineRange {
+            return .fence
+        }
+
+        if fence.contentRange.intersects(contentRange) {
+            return .fenceContent
+        }
+
+        return nil
+    }
+
+    private func firstFenceIndex(intersectingOrAfter location: Int, fences: [FenceBlock]) -> Int {
+        var low = 0
+        var high = fences.count
+        while low < high {
+            let mid = (low + high) / 2
+            if fences[mid].totalRange.upperBound <= location {
+                low = mid + 1
+            } else {
+                high = mid
+            }
+        }
+        return low
     }
 
     private func headingMarkerRange(in line: String, baseLocation: Int) -> NSRange? {

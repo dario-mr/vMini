@@ -143,6 +143,43 @@ final class SyntaxHighlightingTests: XCTestCase {
         assertColor(theme.listMarker, at: nsText.range(of: "3.").location, in: storage)
     }
 
+    func testMarkdownHighlighterUsesLocalRangeForPlainTextEdits() {
+        let text = "one\ntwo\nthree\nfour\nfive\n" as NSString
+        let editedRange = text.range(of: "three")
+        let editContext = SyntaxHighlightEditContext(
+            replacementRange: editedRange,
+            replacementString: "THREE",
+            replacedText: "three"
+        )
+
+        let range = MarkdownSyntaxHighlighter().expandedHighlightRange(
+            for: editedRange,
+            editContext: editContext,
+            in: text
+        )
+
+        XCTAssertLessThan(range.length, text.length)
+        XCTAssertTrue(range.intersects(editedRange))
+    }
+
+    func testMarkdownHighlighterUsesFullRangeForFenceEdits() {
+        let text = "one\ntwo\n```sh\necho hi\n```\nfive\n" as NSString
+        let editedRange = text.range(of: "```sh")
+        let editContext = SyntaxHighlightEditContext(
+            replacementRange: editedRange,
+            replacementString: "```bash",
+            replacedText: "```sh"
+        )
+
+        let range = MarkdownSyntaxHighlighter().expandedHighlightRange(
+            for: editedRange,
+            editContext: editContext,
+            in: text
+        )
+
+        XCTAssertEqual(range, NSRange(location: 0, length: text.length))
+    }
+
     func testMarkdownIncrementalHighlightingClearsBackgroundAfterClosingFence() {
         let initialText = """
         ```sh

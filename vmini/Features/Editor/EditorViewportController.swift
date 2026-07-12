@@ -72,6 +72,10 @@ final class EditorViewportController {
         lineNumberRulerView.needsDisplay = true
     }
 
+    func currentCursorPosition() -> EditorCursorPosition {
+        lineNumberRulerView.currentCursorPosition()
+    }
+
     func resetInitialViewportIfNeeded() {
         guard !hasCompletedInitialViewportReset else {
             return

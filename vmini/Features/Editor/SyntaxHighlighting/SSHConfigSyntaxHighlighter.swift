@@ -9,7 +9,11 @@ final class SSHConfigSyntaxHighlighter: SyntaxHighlighter {
 
     let language: SyntaxLanguage = .sshconfig
 
-    func expandedHighlightRange(for editedRange: NSRange, in text: NSString) -> NSRange {
+    func expandedHighlightRange(
+        for editedRange: NSRange,
+        editContext: SyntaxHighlightEditContext?,
+        in text: NSString
+    ) -> NSRange {
         text.lineRange(for: editedRange.clamped(toLength: text.length))
     }
 
@@ -33,9 +37,11 @@ final class SSHConfigSyntaxHighlighter: SyntaxHighlighter {
 
     private func tokens(in text: NSString, targetRange: NSRange) -> [Token] {
         var tokens: [Token] = []
-        var location = 0
+        let lineScanRange = text.lineRange(for: targetRange.clamped(toLength: text.length))
+        var location = lineScanRange.location
+        let scanEnd = lineScanRange.upperBound
 
-        while location < text.length {
+        while location < scanEnd, location < text.length {
             let lineRange = text.lineRange(for: NSRange(location: location, length: 0))
             let contentRange = visibleLineContentsRange(for: lineRange, text: text) ?? lineRange
 

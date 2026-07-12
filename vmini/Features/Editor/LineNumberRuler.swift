@@ -66,6 +66,20 @@ final class LineNumberRulerView: NSView {
         needsDisplay = true
     }
 
+    func currentCursorPosition() -> EditorCursorPosition {
+        guard let textView else {
+            return EditorCursorPosition(line: 1, column: 1)
+        }
+
+        let text = textView.string as NSString
+        let selectedLocation = min(textView.selectedRange().location, text.length)
+        let lineIndex = lineIndex(containing: selectedLocation)
+        let lineStart = lineStarts.indices.contains(lineIndex) ? lineStarts[lineIndex] : 0
+        let prefixRange = NSRange(location: lineStart, length: max(selectedLocation - lineStart, 0))
+        let column = text.substring(with: prefixRange).count + 1
+        return EditorCursorPosition(line: lineIndex + 1, column: column)
+    }
+
     override func draw(_ dirtyRect: NSRect) {
         guard
             let textView,
@@ -234,21 +248,21 @@ final class LineNumberRulerView: NSView {
             return
         }
 
-        guard changeInLength >= 0, editedRange.length == changeInLength else {
-            lineStarts = Self.allLineStarts(in: text)
-            return
-        }
+        let oldTextLength = max(text.length - changeInLength, 0)
+        let oldRangeLength = max(editedRange.length - changeInLength, 0)
+        let oldEditStart = min(max(editedRange.location, 0), oldTextLength)
+        let oldEditEnd = min(oldEditStart + oldRangeLength, oldTextLength)
 
-        let lineIndex = lineIndex(containing: editedRange.location)
+        let lineIndex = lineIndex(containing: oldEditStart)
         let preservedPrefix = Array(lineStarts.prefix(lineIndex + 1))
+        let scanStart = preservedPrefix.last ?? 0
 
-        let oldNextLineIndex = firstLineIndex(startingAfter: editedRange.location)
-        let oldNextLineStart = oldNextLineIndex < lineStarts.count ? lineStarts[oldNextLineIndex] : nil
-
-        let newNextLineStart = oldNextLineStart.map { $0 + changeInLength } ?? text.length
+        let oldNextLineIndex = firstLineIndex(startingAfter: oldEditEnd)
+        let oldScanEnd = oldNextLineIndex < lineStarts.count ? lineStarts[oldNextLineIndex] : oldTextLength
+        let newScanEnd = min(max(oldScanEnd + changeInLength, scanStart), text.length)
         let scannedRange = NSRange(
-            location: editedRange.location,
-            length: max(newNextLineStart - editedRange.location, 0)
+            location: scanStart,
+            length: max(newScanEnd - scanStart, 0)
         )
 
         var replacementStarts = Self.lineStarts(in: text, range: scannedRange)
@@ -258,7 +272,9 @@ final class LineNumberRulerView: NSView {
 
         let shiftedSuffix: [Int]
         if oldNextLineIndex < lineStarts.count {
-            shiftedSuffix = lineStarts[oldNextLineIndex...].map { $0 + changeInLength }
+            shiftedSuffix = lineStarts[oldNextLineIndex...]
+                .map { $0 + changeInLength }
+                .filter { $0 <= text.length }
         } else {
             shiftedSuffix = []
         }
@@ -285,20 +301,6 @@ final class LineNumberRulerView: NSView {
 
     private func lineIndex(containing location: Int) -> Int {
         max(lineNumber(forCharacterAt: location) - 1, 0)
-    }
-
-    private func firstLineIndex(startingAtOrAfter location: Int) -> Int {
-        var low = 0
-        var high = lineStarts.count
-        while low < high {
-            let mid = (low + high) / 2
-            if lineStarts[mid] < location {
-                low = mid + 1
-            } else {
-                high = mid
-            }
-        }
-        return low
     }
 
     private func firstLineIndex(startingAfter location: Int) -> Int {

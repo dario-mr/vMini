@@ -70,6 +70,7 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
         notifyCursorPositionChanged: { [weak self] in self?.notifyCursorPositionChanged() }
     )
     private var settingsObserver: EditorSettingsObserver?
+    private var pendingSyntaxHighlightEditContext: SyntaxHighlightEditContext?
     var formattingErrorMessage: String? {
         formattingErrorPresenter.message
     }
@@ -174,6 +175,21 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
         notifyCursorPositionChanged()
     }
 
+    func textView(
+        _ textView: NSTextView,
+        shouldChangeTextIn affectedCharRange: NSRange,
+        replacementString: String?
+    ) -> Bool {
+        let text = textView.string as NSString
+        let replacementRange = affectedCharRange.clamped(toLength: text.length)
+        pendingSyntaxHighlightEditContext = SyntaxHighlightEditContext(
+            replacementRange: replacementRange,
+            replacementString: replacementString ?? "",
+            replacedText: text.substring(with: replacementRange)
+        )
+        return true
+    }
+
     func textStorage(
         _ textStorage: NSTextStorage,
         didProcessEditing editedMask: NSTextStorageEditActions,
@@ -183,13 +199,15 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
         syntaxHighlightController.handleProcessedEditing(
             editedMask: editedMask,
             editedRange: editedRange,
-            language: syntaxLanguage
+            language: syntaxLanguage,
+            editContext: pendingSyntaxHighlightEditContext
         )
 
         guard editedMask.contains(.editedCharacters) else {
             return
         }
 
+        pendingSyntaxHighlightEditContext = nil
         viewportController.handleTextStorageDidEdit(
             textStorage,
             editedRange: editedRange,
@@ -242,11 +260,11 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
     }
 
     func currentLineNumber() -> Int {
-        commandController.currentLineNumber()
+        currentCursorPosition().line
     }
 
     func currentCursorPosition() -> EditorCursorPosition {
-        commandController.currentCursorPosition()
+        viewportController.currentCursorPosition()
     }
 
     @discardableResult
