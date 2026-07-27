@@ -38,6 +38,7 @@ final class EditorSyntaxHighlightController {
             return
         }
 
+        applyTypingAttributes(for: editContext)
         scheduleHighlightingRefresh(
             around: editedRange,
             language: language,
@@ -100,6 +101,45 @@ final class EditorSyntaxHighlightController {
             theme: syntaxTheme,
             registry: highlighterRegistry
         )
+        textStorage.endEditing()
+        isApplyingHighlighting = false
+    }
+
+    private func applyTypingAttributes(for editContext: SyntaxHighlightEditContext?) {
+        guard let editContext,
+              editContext.replacedText.isEmpty,
+              editContext.replacementString.count == 1,
+              let textStorage = textStorageProvider() else {
+            return
+        }
+
+        let insertedRange = NSRange(
+            location: editContext.replacementRange.location,
+            length: (editContext.replacementString as NSString).length
+        ).clamped(toLength: textStorage.length)
+        guard insertedRange.length > 0 else {
+            return
+        }
+
+        let adjacentLocation: Int
+        if insertedRange.location > 0 {
+            adjacentLocation = insertedRange.location - 1
+        } else if insertedRange.upperBound < textStorage.length {
+            adjacentLocation = insertedRange.upperBound
+        } else {
+            return
+        }
+
+        let attributes = textStorage.attributes(at: adjacentLocation, effectiveRange: nil)
+        isApplyingHighlighting = true
+        textStorage.beginEditing()
+        for key: NSAttributedString.Key in [.foregroundColor, .font, .backgroundColor] {
+            if let value = attributes[key] {
+                textStorage.addAttribute(key, value: value, range: insertedRange)
+            } else {
+                textStorage.removeAttribute(key, range: insertedRange)
+            }
+        }
         textStorage.endEditing()
         isApplyingHighlighting = false
     }
