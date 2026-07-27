@@ -180,6 +180,37 @@ final class SyntaxHighlightingTests: XCTestCase {
         XCTAssertEqual(range, NSRange(location: 0, length: text.length))
     }
 
+    func testTypingInMarkdownHeadingUsesAdjacentSyntaxAttributesImmediately() {
+        let text = "## Title"
+        let storage = makeHighlightedStorage(text, language: .markdown)
+        let theme = ThemeCatalog.palette(for: .default).syntaxTheme
+        let baseFont = EditorFontResolver.font(for: .fallback, size: 13)
+        let controller = EditorSyntaxHighlightController(
+            highlighterRegistry: .shared,
+            textStorageProvider: { storage },
+            syntaxThemeProvider: { theme },
+            baseFontProvider: { baseFont }
+        )
+        let insertionLocation = storage.length
+        let insertedRange = NSRange(location: insertionLocation, length: 1)
+
+        storage.replaceCharacters(in: NSRange(location: insertionLocation, length: 0), with: "a")
+        storage.applyForegroundColor(theme.plainText, range: insertedRange)
+        controller.handleProcessedEditing(
+            editedMask: [.editedCharacters],
+            editedRange: insertedRange,
+            language: .markdown,
+            editContext: SyntaxHighlightEditContext(
+                replacementRange: NSRange(location: insertionLocation, length: 0),
+                replacementString: "a",
+                replacedText: ""
+            )
+        )
+
+        let expectedColor = theme.headingText.blended(withFraction: 0.5, of: theme.headingMarker) ?? theme.headingText
+        assertColor(expectedColor, at: insertionLocation, in: storage)
+    }
+
     func testMarkdownIncrementalHighlightingClearsBackgroundAfterClosingFence() {
         let initialText = """
         ```sh
