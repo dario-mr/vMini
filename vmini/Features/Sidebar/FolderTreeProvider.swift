@@ -45,18 +45,19 @@ final class FolderTreeProvider: FolderTreeProviding {
             }
     }
 
-    func invalidateContents(at urls: [URL]) {
+    @discardableResult
+    func invalidateContents(at urls: [URL]) -> Set<String> {
         let invalidatedPaths = Set(urls.map(\.standardizedFileURL.path))
-        guard !invalidatedPaths.isEmpty else { return }
+        guard !invalidatedPaths.isEmpty else { return [] }
 
-        for path in invalidatedPaths {
+        let affectedPaths = reachablePaths(from: invalidatedPaths)
+        for path in affectedPaths {
+            nodesByPath.removeValue(forKey: path)?.invalidateChildren()
             childURLsByPath.removeValue(forKey: path)
-            nodesByPath[path]?.invalidateChildren()
+            metadataByPath.removeValue(forKey: path)
         }
 
-        let descendantPaths = reachablePaths(from: invalidatedPaths).subtracting(invalidatedPaths)
-        nodesByPath = nodesByPath.filter { !descendantPaths.contains($0.key) }
-        metadataByPath = metadataByPath.filter { !descendantPaths.contains($0.key) }
+        return affectedPaths
     }
 
     private func loadChildURLs(for url: URL) -> [URL] {
