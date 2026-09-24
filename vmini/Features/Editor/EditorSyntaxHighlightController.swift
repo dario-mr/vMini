@@ -11,6 +11,8 @@ final class EditorSyntaxHighlightController {
     private var pendingRefreshTask: Task<Void, Never>?
     private var pendingHighlightRange: NSRange?
     private var pendingLanguage: SyntaxLanguage = .plaintext
+    private var bashMultilineTokenRanges: [NSRange]?
+    private var bashCacheTextLength: Int?
 
     init(
         highlighterRegistry: HighlighterRegistry,
@@ -54,6 +56,10 @@ final class EditorSyntaxHighlightController {
         debounceNanoseconds: UInt64
     ) {
         pendingLanguage = language
+        if language != .bash {
+            bashMultilineTokenRanges = nil
+            bashCacheTextLength = nil
+        }
         pendingHighlightRange = mergedRange(
             existing: pendingHighlightRange,
             incoming: editedRange.map { expandedHighlightRange(for: $0, language: language, editContext: editContext) }
@@ -94,13 +100,27 @@ final class EditorSyntaxHighlightController {
         textStorage.applyFont(baseFont, range: targetRange)
         textStorage.applyForegroundColor(syntaxTheme.plainText, range: targetRange)
         textStorage.applyBackgroundColor(nil, range: targetRange)
-        highlighter.highlight(
-            textStorage: textStorage,
-            in: targetRange,
-            baseFont: baseFont,
-            theme: syntaxTheme,
-            registry: highlighterRegistry
-        )
+        if let bashHighlighter = highlighter as? BashSyntaxHighlighter {
+            bashHighlighter.highlight(
+                textStorage: textStorage,
+                in: targetRange,
+                baseFont: baseFont,
+                theme: syntaxTheme,
+                registry: highlighterRegistry,
+                onFullTextScan: { [weak self] ranges in
+                    self?.bashMultilineTokenRanges = ranges
+                    self?.bashCacheTextLength = textStorage.length
+                }
+            )
+        } else {
+            highlighter.highlight(
+                textStorage: textStorage,
+                in: targetRange,
+                baseFont: baseFont,
+                theme: syntaxTheme,
+                registry: highlighterRegistry
+            )
+        }
         textStorage.endEditing()
         isApplyingHighlighting = false
     }
@@ -155,6 +175,28 @@ final class EditorSyntaxHighlightController {
 
         let text = textStorage.string as NSString
         let highlighter = highlighterRegistry.highlighter(for: language)
+        if let bashHighlighter = highlighter as? BashSyntaxHighlighter {
+            if let editContext,
+               let cachedRanges = bashMultilineTokenRanges,
+               let cachedTextLength = bashCacheTextLength,
+               let updatedRanges = bashHighlighter.updatedMultilineTokenRanges(
+                   cachedRanges,
+                   cachedTextLength: cachedTextLength,
+                   editContext: editContext,
+                   in: text
+                ) {
+                bashMultilineTokenRanges = updatedRanges
+            } else {
+                bashMultilineTokenRanges = bashHighlighter.multilineTokenRanges(in: text as String)
+            }
+            bashCacheTextLength = text.length
+            return bashHighlighter.expandedHighlightRange(
+                for: editedRange,
+                cachedMultilineTokenRanges: bashMultilineTokenRanges ?? [],
+                in: text
+            ).clamped(toLength: text.length)
+        }
+
         return highlighter.expandedHighlightRange(
             for: editedRange,
             editContext: editContext,

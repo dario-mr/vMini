@@ -42,7 +42,8 @@ final class JSONSyntaxHighlighter: SyntaxHighlighter {
     }
 
     private func tokenize(_ text: String) -> [Token] {
-        let characters = Array(text)
+        let characterIndex = SyntaxCharacterIndex(text)
+        let characters = characterIndex.characters
         var tokens: [Token] = []
         var index = 0
 
@@ -52,25 +53,25 @@ final class JSONSyntaxHighlighter: SyntaxHighlighter {
             if character == "\"" {
                 let end = indexAfterString(in: characters, from: index)
                 let role: SyntaxColorRole = isObjectKey(in: characters, stringEnd: end) ? .propertyKey : .string
-                tokens.append(Token(range: nsRange(start: index, end: end, in: text), role: role))
+                tokens.append(Token(range: characterIndex.nsRange(start: index, end: end), role: role))
                 index = end
                 continue
             }
 
             if let end = numberTokenEnd(in: characters, from: index) {
-                tokens.append(Token(range: nsRange(start: index, end: end, in: text), role: .variable))
+                tokens.append(Token(range: characterIndex.nsRange(start: index, end: end), role: .variable))
                 index = end
                 continue
             }
 
-            if let literal = literalToken(in: characters, from: index, text: text) {
+            if let literal = literalToken(in: characters, from: index, characterIndex: characterIndex) {
                 tokens.append(literal.token)
                 index = literal.end
                 continue
             }
 
             if Self.operatorCharacters.contains(character) {
-                tokens.append(Token(range: nsRange(start: index, end: index + 1, in: text), role: .operator))
+                tokens.append(Token(range: characterIndex.nsRange(start: index, end: index + 1), role: .operator))
                 index += 1
                 continue
             }
@@ -171,14 +172,18 @@ final class JSONSyntaxHighlighter: SyntaxHighlighter {
         return current > start ? current : nil
     }
 
-    private func literalToken(in characters: [Character], from start: Int, text: String) -> (token: Token, end: Int)? {
+    private func literalToken(
+        in characters: [Character],
+        from start: Int,
+        characterIndex: SyntaxCharacterIndex
+    ) -> (token: Token, end: Int)? {
         for literal in Self.keywordLiterals {
             guard matches(literal, in: characters, at: start) else {
                 continue
             }
 
             let end = start + literal.count
-            return (Token(range: nsRange(start: start, end: end, in: text), role: .keyword), end)
+            return (Token(range: characterIndex.nsRange(start: start, end: end), role: .keyword), end)
         }
 
         return nil
@@ -206,12 +211,6 @@ final class JSONSyntaxHighlighter: SyntaxHighlighter {
         }
 
         return character.isLetter || character.isNumber || character == "_"
-    }
-
-    private func nsRange(start: Int, end: Int, in text: String) -> NSRange {
-        let startIndex = text.index(text.startIndex, offsetBy: start)
-        let endIndex = text.index(text.startIndex, offsetBy: end)
-        return NSRange(startIndex..<endIndex, in: text)
     }
 
     private static let keywordLiterals = ["true", "false", "null"]

@@ -229,6 +229,29 @@ protocol SyntaxHighlighter {
     )
 }
 
+struct SyntaxCharacterIndex {
+    let characters: [Character]
+    private let utf16Offsets: [Int]
+
+    init(_ text: String) {
+        var characters: [Character] = []
+        var utf16Offsets = [0]
+        var utf16Offset = 0
+        for character in text {
+            characters.append(character)
+            utf16Offset += String(character).utf16.count
+            utf16Offsets.append(utf16Offset)
+        }
+        self.characters = characters
+        self.utf16Offsets = utf16Offsets
+    }
+
+    func nsRange(start: Int, end: Int) -> NSRange {
+        let location = utf16Offsets[start]
+        return NSRange(location: location, length: utf16Offsets[end] - location)
+    }
+}
+
 struct SyntaxHighlightEditContext {
     let replacementRange: NSRange
     let replacementString: String
