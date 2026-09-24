@@ -23,6 +23,9 @@ final class WorkspaceDocumentCoordinator: WorkspaceDocumentRouting {
     private let openDocumentsStore: OpenDocumentsStore
     private let closedDocumentHistory: ClosedDocumentHistory
     private let documentController: NSDocumentController
+    private var documentsBeingReviewedForClose = Set<ObjectIdentifier>()
+    private var closeReviewCompletions: [ObjectIdentifier: (Bool) -> Void] = [:]
+    private var isReviewingBulkClose = false
 
     init(
         documentOpener: WorkspaceDocumentOpener,
@@ -101,17 +104,65 @@ final class WorkspaceDocumentCoordinator: WorkspaceDocumentRouting {
     }
 
     func close(document: Document) {
-        document.close()
+        guard !isReviewingBulkClose else { return }
+        reviewAndClose(document)
+    }
 
-        guard !openDocumentsStore.contains(document) else {
+    func close(documents: [Document]) {
+        guard !isReviewingBulkClose else { return }
+        isReviewingBulkClose = true
+        reviewNextDocument(in: documents, at: 0)
+    }
+
+    private func reviewNextDocument(in documents: [Document], at index: Int) {
+        guard index < documents.count else {
+            isReviewingBulkClose = false
             return
         }
 
-        closedDocumentHistory.record(document: document)
-
-        if openDocumentsStore.documents.isEmpty {
-            onNeedsWindowStateRefresh?()
+        reviewAndClose(documents[index]) { [weak self] didClose in
+            guard let self else { return }
+            guard didClose else {
+                isReviewingBulkClose = false
+                return
+            }
+            Task { @MainActor [weak self] in
+                self?.reviewNextDocument(in: documents, at: index + 1)
+            }
         }
+    }
+
+    private func reviewAndClose(_ document: Document, completion: ((Bool) -> Void)? = nil) {
+        let identifier = ObjectIdentifier(document)
+        guard openDocumentsStore.contains(document), documentsBeingReviewedForClose.insert(identifier).inserted else {
+            completion?(false)
+            return
+        }
+
+        if let completion {
+            closeReviewCompletions[identifier] = completion
+        }
+        document.canClose(withDelegate: self, shouldClose: #selector(document(_:shouldClose:contextInfo:)), contextInfo: nil)
+    }
+
+    @objc
+    private func document(_ document: NSDocument, shouldClose shouldCloseDocument: Bool, contextInfo: UnsafeMutableRawPointer?) {
+        let identifier = ObjectIdentifier(document)
+        documentsBeingReviewedForClose.remove(identifier)
+        let completion = closeReviewCompletions.removeValue(forKey: identifier)
+
+        var didClose = false
+        if shouldCloseDocument, let document = document as? Document {
+            document.close()
+            if !openDocumentsStore.contains(document) {
+                didClose = true
+                closedDocumentHistory.record(document: document)
+                if openDocumentsStore.documents.isEmpty {
+                    onNeedsWindowStateRefresh?()
+                }
+            }
+        }
+        completion?(didClose)
     }
 
     func reopenMostRecentClosedDocument() {
