@@ -292,6 +292,82 @@ final class SyntaxHighlightingTests: XCTestCase {
         assertColor(theme.option, at: nsText.range(of: "--apple-use-keychain").location, in: storage)
     }
 
+    func testBashMultilineRangeCacheTracksOrdinaryUnicodeEdits() throws {
+        let highlighter = BashSyntaxHighlighter()
+        let original = "echo done\nprintf \"first\nmiddle\nlast\"\necho end"
+        let originalNSString = original as NSString
+        var ranges = highlighter.multilineTokenRanges(in: original)
+        XCTAssertEqual(ranges, [originalNSString.range(of: "\"first\nmiddle\nlast\"")])
+
+        let prefixEdit = SyntaxHighlightEditContext(
+            replacementRange: NSRange(location: 0, length: 0),
+            replacementString: "🌟 ",
+            replacedText: ""
+        )
+        var updatedText = "🌟 \(original)"
+        ranges = try XCTUnwrap(highlighter.updatedMultilineTokenRanges(
+            ranges,
+            cachedTextLength: originalNSString.length,
+            editContext: prefixEdit,
+            in: updatedText as NSString
+        ))
+
+        let middleRange = (updatedText as NSString).range(of: "middle")
+        let lineEdit = SyntaxHighlightEditContext(
+            replacementRange: middleRange,
+            replacementString: "middle expanded",
+            replacedText: "middle"
+        )
+        updatedText = (updatedText as NSString).replacingCharacters(in: middleRange, with: lineEdit.replacementString)
+        ranges = try XCTUnwrap(highlighter.updatedMultilineTokenRanges(
+            ranges,
+            cachedTextLength: ("🌟 \(original)" as NSString).length,
+            editContext: lineEdit,
+            in: updatedText as NSString
+        ))
+
+        let expected = (updatedText as NSString).range(of: "\"first\nmiddle expanded\nlast\"")
+        XCTAssertEqual(ranges, [expected])
+        XCTAssertEqual(
+            highlighter.expandedHighlightRange(
+                for: (updatedText as NSString).range(of: "middle expanded"),
+                cachedMultilineTokenRanges: ranges,
+                in: updatedText as NSString
+            ),
+            expected
+        )
+
+        let structuralRange = (updatedText as NSString).range(of: "middle expanded")
+        let structuralEdit = SyntaxHighlightEditContext(
+            replacementRange: structuralRange,
+            replacementString: "'",
+            replacedText: "middle expanded"
+        )
+        let structurallyUpdatedText = (updatedText as NSString).replacingCharacters(in: structuralRange, with: "'")
+        XCTAssertNil(highlighter.updatedMultilineTokenRanges(
+            ranges,
+            cachedTextLength: (updatedText as NSString).length,
+            editContext: structuralEdit,
+            in: structurallyUpdatedText as NSString
+        ))
+    }
+
+    func testBashAndJSONTokenRangesUseUTF16OffsetsWithUnicode() {
+        let bashText = "echo \"👨‍👩‍👧‍👦\"\nexport NAME=🌈\necho $HOME"
+        let bashStorage = makeHighlightedStorage(bashText, language: .bash)
+        let theme = ThemeCatalog.palette(for: .default).syntaxTheme
+        let bashNSString = bashText as NSString
+        assertColor(theme.string, at: bashNSString.range(of: "👨‍👩‍👧‍👦").location, in: bashStorage)
+        assertColor(theme.variable, at: bashNSString.range(of: "$HOME").location, in: bashStorage)
+
+        let jsonText = "{\"👨‍👩‍👧‍👦\": \"🌈\", \"count\": 42}"
+        let jsonStorage = makeHighlightedStorage(jsonText, language: .json)
+        let jsonNSString = jsonText as NSString
+        assertColor(theme.propertyKey, at: jsonNSString.range(of: "\"👨‍👩‍👧‍👦\"").location, in: jsonStorage)
+        assertColor(theme.string, at: jsonNSString.range(of: "\"🌈\"").location + 1, in: jsonStorage)
+        assertColor(theme.variable, at: jsonNSString.range(of: "42").location, in: jsonStorage)
+    }
+
     func testSSHConfigHighlighterStylesKeywordsValuesAndComments() {
         let text = """
         Include ~/.colima/ssh_config
