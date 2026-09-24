@@ -120,7 +120,7 @@ enum SyntaxLanguageResolver {
     }
 }
 
-enum SyntaxColorRole {
+enum SyntaxColorRole: Sendable {
     case plainText
     case headingMarker
     case headingText

@@ -73,6 +73,9 @@
 		A0000000000000000000015C /* JSONPrettifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000015D /* JSONPrettifier.swift */; };
 		A0000000000000000000013E /* SyntaxHighlighting.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000013F /* SyntaxHighlighting.swift */; };
 		A00000000000000000000140 /* MarkdownSyntaxHighlighter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000141 /* MarkdownSyntaxHighlighter.swift */; };
+		A00000000000000000000220 /* MarkdownSyntaxHighlighter+AttributeStyling.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000223 /* MarkdownSyntaxHighlighter+AttributeStyling.swift */; };
+		A00000000000000000000221 /* MarkdownSyntaxHighlighter+FenceCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000224 /* MarkdownSyntaxHighlighter+FenceCache.swift */; };
+		A00000000000000000000222 /* MarkdownSyntaxHighlighter+LineStyles.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000225 /* MarkdownSyntaxHighlighter+LineStyles.swift */; };
 		A00000000000000000000143 /* PlainTextSyntaxHighlighter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000144 /* PlainTextSyntaxHighlighter.swift */; };
 		A00000000000000000000156 /* BashSyntaxHighlighter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000157 /* BashSyntaxHighlighter.swift */; };
 		A00000000000000000000158 /* SSHConfigSyntaxHighlighter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000159 /* SSHConfigSyntaxHighlighter.swift */; };
@@ -205,6 +208,9 @@
 		A0000000000000000000015D /* JSONPrettifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JSONPrettifier.swift; sourceTree = "<group>"; };
 		A0000000000000000000013F /* SyntaxHighlighting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyntaxHighlighting.swift; sourceTree = "<group>"; };
 		A00000000000000000000141 /* MarkdownSyntaxHighlighter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownSyntaxHighlighter.swift; sourceTree = "<group>"; };
+		A00000000000000000000223 /* MarkdownSyntaxHighlighter+AttributeStyling.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MarkdownSyntaxHighlighter+AttributeStyling.swift"; sourceTree = "<group>"; };
+		A00000000000000000000224 /* MarkdownSyntaxHighlighter+FenceCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MarkdownSyntaxHighlighter+FenceCache.swift"; sourceTree = "<group>"; };
+		A00000000000000000000225 /* MarkdownSyntaxHighlighter+LineStyles.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MarkdownSyntaxHighlighter+LineStyles.swift"; sourceTree = "<group>"; };
 		A00000000000000000000144 /* PlainTextSyntaxHighlighter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlainTextSyntaxHighlighter.swift; sourceTree = "<group>"; };
 		A00000000000000000000157 /* BashSyntaxHighlighter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BashSyntaxHighlighter.swift; sourceTree = "<group>"; };
 		A00000000000000000000159 /* SSHConfigSyntaxHighlighter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SSHConfigSyntaxHighlighter.swift; sourceTree = "<group>"; };
@@ -470,8 +476,19 @@
 				A0000000000000000000015B /* JSONSyntaxHighlighter.swift */,
 				A000000000000000000001A1 /* YAMLSyntaxHighlighter.swift */,
 				A00000000000000000000141 /* MarkdownSyntaxHighlighter.swift */,
+				A00000000000000000000226 /* Markdown */,
 			);
 			path = SyntaxHighlighting;
+			sourceTree = "<group>";
+		};
+		A00000000000000000000226 /* Markdown */ = {
+			isa = PBXGroup;
+			children = (
+				A00000000000000000000223 /* MarkdownSyntaxHighlighter+AttributeStyling.swift */,
+				A00000000000000000000224 /* MarkdownSyntaxHighlighter+FenceCache.swift */,
+				A00000000000000000000225 /* MarkdownSyntaxHighlighter+LineStyles.swift */,
+			);
+			path = Markdown;
 			sourceTree = "<group>";
 		};
 		A00000000000000000000134 /* Sidebar */ = {
@@ -731,6 +748,9 @@
 				A0000000000000000000015A /* JSONSyntaxHighlighter.swift in Sources */,
 				A000000000000000000001A0 /* YAMLSyntaxHighlighter.swift in Sources */,
 				A00000000000000000000140 /* MarkdownSyntaxHighlighter.swift in Sources */,
+				A00000000000000000000220 /* MarkdownSyntaxHighlighter+AttributeStyling.swift in Sources */,
+				A00000000000000000000221 /* MarkdownSyntaxHighlighter+FenceCache.swift in Sources */,
+				A00000000000000000000222 /* MarkdownSyntaxHighlighter+LineStyles.swift in Sources */,
 				A000000000000000000001D0 /* FolderSidebarExpansionController.swift in Sources */,
 				A000000000000000000001D2 /* FolderSidebarSelectionController.swift in Sources */,
 				A000000000000000000001D4 /* FolderTreeNode.swift in Sources */,

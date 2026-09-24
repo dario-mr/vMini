@@ -3,6 +3,34 @@ import UniformTypeIdentifiers
 import XCTest
 @testable import vmini
 
+@MainActor
+private final class RecordingSyntaxHighlighter: SyntaxHighlighter {
+    let language: SyntaxLanguage = .plaintext
+    private(set) var ranges: [NSRange] = []
+
+    func clear() {
+        ranges.removeAll()
+    }
+
+    func expandedHighlightRange(
+        for editedRange: NSRange,
+        editContext: SyntaxHighlightEditContext?,
+        in text: NSString
+    ) -> NSRange {
+        editedRange
+    }
+
+    func highlight(
+        textStorage: NSTextStorage,
+        in range: NSRange?,
+        baseFont: NSFont,
+        theme: SyntaxTheme,
+        registry: HighlighterRegistry
+    ) {
+        ranges.append(range ?? NSRange(location: 0, length: textStorage.length))
+    }
+}
+
 @available(macOS 14.0, *)
 @MainActor
 final class SyntaxHighlightingTests: XCTestCase {
@@ -180,6 +208,128 @@ final class SyntaxHighlightingTests: XCTestCase {
         XCTAssertEqual(range, NSRange(location: 0, length: text.length))
     }
 
+    func testMarkdownFenceCacheKeepsPlainEditsLocalAndShiftsUnicodeRanges() throws {
+        let highlighter = MarkdownSyntaxHighlighter()
+        let source = (0..<2_000).map { "paragraph \($0)" }.joined(separator: "\n")
+            + "\n```sh\necho hi\n```\n"
+        let originalText = source as NSString
+        let cache = highlighter.makeFenceCache(in: originalText)
+        let replacedRange = originalText.range(of: "paragraph 1000")
+        let replacement = "paragraph 😀 changed"
+        let editContext = SyntaxHighlightEditContext(
+            replacementRange: replacedRange,
+            replacementString: replacement,
+            replacedText: originalText.substring(with: replacedRange)
+        )
+        let updatedText = originalText.replacingCharacters(in: replacedRange, with: replacement) as NSString
+
+        let update = try XCTUnwrap(highlighter.updateFenceCache(cache, editContext: editContext, in: updatedText))
+
+        XCTAssertEqual(update.rescannedLineCount, 0)
+        XCTAssertLessThan(update.highlightRange.length, 100)
+        XCTAssertEqual(update.cache.blocks, highlighter.makeFenceCache(in: updatedText).blocks)
+    }
+
+    func testMarkdownFenceCacheRescansUntilFenceStateMatchesAndReusesSuffix() throws {
+        let highlighter = MarkdownSyntaxHighlighter()
+        let source = (0..<1_000).map { "paragraph \($0)" }.joined(separator: "\n")
+            + "\nplaceholder\n"
+            + (1_000..<2_000).map { "paragraph \($0)" }.joined(separator: "\n")
+            + "\n```json\n{\"kept\": true}\n```\n"
+        let originalText = source as NSString
+        let cache = highlighter.makeFenceCache(in: originalText)
+        let replacedRange = originalText.range(of: "placeholder")
+        let replacement = "```sh\necho hi\n```"
+        let editContext = SyntaxHighlightEditContext(
+            replacementRange: replacedRange,
+            replacementString: replacement,
+            replacedText: "placeholder"
+        )
+        let updatedText = originalText.replacingCharacters(in: replacedRange, with: replacement) as NSString
+
+        let update = try XCTUnwrap(highlighter.updateFenceCache(cache, editContext: editContext, in: updatedText))
+
+        XCTAssertGreaterThan(update.rescannedLineCount, 0)
+        XCTAssertLessThan(update.rescannedLineCount, 10)
+        XCTAssertLessThan(update.highlightRange.length, 100)
+        XCTAssertEqual(update.cache.blocks, highlighter.makeFenceCache(in: updatedText).blocks)
+    }
+
+    func testFullHighlightRequestSurvivesEditsAndPendingRangesTrackOffsets() async throws {
+        let highlighter = RecordingSyntaxHighlighter()
+        let storage = NSTextStorage(string: "abcdefghij")
+        let theme = ThemeCatalog.palette(for: .default).syntaxTheme
+        let baseFont = EditorFontResolver.font(for: .fallback, size: 13)
+        let controller = EditorSyntaxHighlightController(
+            highlighterRegistry: HighlighterRegistry(highlighters: [highlighter]),
+            textStorageProvider: { storage },
+            syntaxThemeProvider: { theme },
+            baseFontProvider: { baseFont }
+        )
+
+        controller.refresh(language: .plaintext)
+        applyEdit("X", at: 9, in: storage, controller: controller, language: .plaintext)
+        try await waitForCondition { highlighter.ranges.count == 1 }
+        XCTAssertEqual(highlighter.ranges[0], NSRange(location: 0, length: storage.length))
+
+        highlighter.clear()
+        applyEdit("Y", at: 9, in: storage, controller: controller, language: .plaintext)
+        applyEdit("Z", at: 1, in: storage, controller: controller, language: .plaintext)
+        try await waitForCondition { highlighter.ranges.count == 1 }
+        XCTAssertEqual(highlighter.ranges[0], NSRange(location: 1, length: 10))
+
+        highlighter.clear()
+        applyEdit("Q", at: 11, in: storage, controller: controller, language: .plaintext)
+        applyEdit(
+            "",
+            replacing: NSRange(location: 1, length: 3),
+            in: storage,
+            controller: controller,
+            language: .plaintext
+        )
+        try await waitForCondition { highlighter.ranges.count == 1 }
+        XCTAssertEqual(highlighter.ranges[0], NSRange(location: 1, length: 8))
+    }
+
+    func testMarkdownIncrementalStylesMatchFreshHighlightAfterRapidEditsAndUndo() async throws {
+        let initialText = "Before\n# Heading\n```sh\necho old\n```\nAfter **strong**\n"
+        let storage = unhighlightedStorage(initialText)
+        let theme = ThemeCatalog.palette(for: .default).syntaxTheme
+        let baseFont = EditorFontResolver.font(for: .fallback, size: 13)
+        let controller = EditorSyntaxHighlightController(
+            highlighterRegistry: .shared,
+            textStorageProvider: { storage },
+            syntaxThemeProvider: { theme },
+            baseFontProvider: { baseFont }
+        )
+        controller.refresh(language: .markdown)
+        try await waitForCondition { self.highlightingMatchesFresh(storage, language: .markdown) }
+
+        let before = storage.string as NSString
+        applyEdit("Prior 😀", replacing: before.range(of: "Before"), in: storage, controller: controller)
+        let withPrefix = storage.string as NSString
+        applyEdit("> ", at: withPrefix.range(of: "After").location, in: storage, controller: controller)
+        try await waitForCondition { self.highlightingMatchesFresh(storage, language: .markdown) }
+
+        let withQuote = storage.string as NSString
+        let quoteRange = withQuote.range(of: "> After")
+        applyEdit("", replacing: NSRange(location: quoteRange.location, length: 2), in: storage, controller: controller)
+        try await waitForCondition { self.highlightingMatchesFresh(storage, language: .markdown) }
+
+        let beforeCodeEdit = storage.string as NSString
+        applyEdit("new", replacing: beforeCodeEdit.range(of: "old"), in: storage, controller: controller)
+        let withoutClose = storage.string as NSString
+        applyEdit("", replacing: withoutClose.range(of: "```", options: .backwards), in: storage, controller: controller)
+        let openFenceText = storage.string as NSString
+        applyEdit("```\n", replacing: openFenceText.range(of: "After"), in: storage, controller: controller)
+
+        try await waitForCondition { self.highlightingMatchesFresh(storage, language: .markdown) }
+
+        let editedText = storage.string as NSString
+        applyEdit("Before", replacing: editedText.range(of: "Prior 😀"), in: storage, controller: controller)
+        try await waitForCondition { self.highlightingMatchesFresh(storage, language: .markdown) }
+    }
+
     func testTypingInMarkdownHeadingUsesAdjacentSyntaxAttributesImmediately() {
         let text = "## Title"
         let storage = makeHighlightedStorage(text, language: .markdown)
@@ -211,7 +361,7 @@ final class SyntaxHighlightingTests: XCTestCase {
         assertColor(expectedColor, at: insertionLocation, in: storage)
     }
 
-    func testMarkdownIncrementalHighlightingClearsBackgroundAfterClosingFence() {
+    func testMarkdownIncrementalHighlightingClearsBackgroundAfterClosingFence() async throws {
         let initialText = """
         ```sh
         export hello
@@ -243,20 +393,25 @@ final class SyntaxHighlightingTests: XCTestCase {
         )
 
         controller.refresh(language: .markdown)
+        let initialNSString = initialText as NSString
+        let jsonInInitialText = initialNSString.range(of: "{\"name\": \"adl-fusion\"}").location
+        try await waitForCondition {
+            (storage.attribute(.backgroundColor, at: jsonInInitialText, effectiveRange: nil) as? NSColor)?
+                .isEqual(theme.codeBlockBackground) == true
+        }
 
-        let updatedNSString = updatedText as NSString
-        let closingFenceRange = updatedNSString.range(of: "```")
-        storage.replaceCharacters(in: NSRange(location: 0, length: storage.length), with: updatedText)
+        let insertionLocation = (storage.string as NSString).range(of: "\n\n{").location + 1
+        applyEdit("```\n", at: insertionLocation, in: storage, controller: controller)
+        XCTAssertEqual(storage.string, updatedText)
 
-        controller.handleProcessedEditing(
-            editedMask: [.editedCharacters],
-            editedRange: closingFenceRange,
-            language: .markdown
-        )
+        let jsonLocation = (storage.string as NSString).range(of: "{\"name\": \"adl-fusion\"}").location
+        try await waitForCondition {
+            storage.attribute(.backgroundColor, at: jsonLocation, effectiveRange: nil) == nil
+                && self.highlightingMatchesFresh(storage, language: .markdown)
+        }
 
-        let jsonLocation = updatedNSString.range(of: "{\"name\": \"adl-fusion\"}").location
         XCTAssertNil(storage.attribute(.backgroundColor, at: jsonLocation, effectiveRange: nil))
-        assertColor(theme.plainText, at: updatedNSString.range(of: "aaa").location, in: storage)
+        assertColor(theme.plainText, at: (storage.string as NSString).range(of: "aaa").location, in: storage)
     }
 
     func testBashHighlighterStylesCoreShellTokens() {
@@ -614,6 +769,74 @@ final class SyntaxHighlightingTests: XCTestCase {
             registry: HighlighterRegistry.shared
         )
         return storage
+    }
+
+    private func unhighlightedStorage(_ text: String) -> NSTextStorage {
+        let storage = NSTextStorage(string: text)
+        let fullRange = NSRange(location: 0, length: storage.length)
+        storage.addAttribute(.font, value: EditorFontResolver.font(for: .fallback, size: 13), range: fullRange)
+        storage.addAttribute(.foregroundColor, value: ThemeCatalog.palette(for: .default).syntaxTheme.plainText, range: fullRange)
+        return storage
+    }
+
+    private func applyEdit(
+        _ replacement: String,
+        at location: Int,
+        in storage: NSTextStorage,
+        controller: EditorSyntaxHighlightController,
+        language: SyntaxLanguage = .markdown
+    ) {
+        applyEdit(
+            replacement,
+            replacing: NSRange(location: location, length: 0),
+            in: storage,
+            controller: controller,
+            language: language
+        )
+    }
+
+    private func applyEdit(
+        _ replacement: String,
+        replacing range: NSRange,
+        in storage: NSTextStorage,
+        controller: EditorSyntaxHighlightController,
+        language: SyntaxLanguage = .markdown
+    ) {
+        let oldText = storage.string as NSString
+        let editContext = SyntaxHighlightEditContext(
+            replacementRange: range,
+            replacementString: replacement,
+            replacedText: oldText.substring(with: range)
+        )
+        storage.replaceCharacters(in: range, with: replacement)
+        controller.handleProcessedEditing(
+            editedMask: [.editedCharacters],
+            editedRange: NSRange(location: range.location, length: (replacement as NSString).length),
+            language: language,
+            editContext: editContext
+        )
+    }
+
+    private func highlightingMatchesFresh(_ storage: NSTextStorage, language: SyntaxLanguage) -> Bool {
+        let fresh = makeHighlightedStorage(storage.string, language: language)
+        guard storage.length == fresh.length else { return false }
+
+        for index in 0..<storage.length {
+            for key in [NSAttributedString.Key.foregroundColor, .backgroundColor, .font] {
+                let actual = storage.attribute(key, at: index, effectiveRange: nil)
+                let expected = fresh.attribute(key, at: index, effectiveRange: nil)
+                if actual == nil || expected == nil {
+                    if actual != nil || expected != nil { return false }
+                } else if let actual = actual as? NSObject,
+                          let expected = expected as? NSObject,
+                          !actual.isEqual(expected) {
+                    return false
+                } else if !(actual is NSObject), !(expected is NSObject) {
+                    return false
+                }
+            }
+        }
+        return true
     }
 
     private func findTextView(in view: NSView) -> NSTextView? {

@@ -2,7 +2,7 @@ import AppKit
 
 @MainActor
 final class MarkdownSyntaxHighlighter: SyntaxHighlighter {
-    struct FenceBlock {
+    struct FenceBlock: Equatable, Sendable {
         let openingLineRange: NSRange
         let contentRange: NSRange
         let closingLineRange: NSRange?
@@ -12,6 +12,33 @@ final class MarkdownSyntaxHighlighter: SyntaxHighlighter {
             let end = closingLineRange?.upperBound ?? contentRange.upperBound
             return NSRange(location: openingLineRange.location, length: max(end - openingLineRange.location, 0))
         }
+    }
+
+    struct FenceCache: Sendable {
+        let textLength: Int
+        let blocks: [FenceBlock]
+    }
+
+    struct FenceCacheUpdate {
+        let cache: FenceCache
+        let highlightRange: NSRange
+        let rescannedLineCount: Int
+    }
+
+    struct HighlightWork: Sendable {
+        let fenceCache: FenceCache
+        let lineStyles: [LineStyle]
+    }
+
+    struct LineStyle: Sendable {
+        enum Kind: Sendable {
+            case color(SyntaxColorRole)
+            case headingText(level: Int)
+            case boldFont
+        }
+
+        let kind: Kind
+        let range: NSRange
     }
 
     let language: SyntaxLanguage = .markdown
@@ -27,11 +54,11 @@ final class MarkdownSyntaxHighlighter: SyntaxHighlighter {
             return fullRange
         }
 
-        if isFenceSensitiveEdit(editedRange: editedRange, editContext: editContext, in: text) {
+        if MarkdownFenceCache.isFenceSensitiveEdit(editedRange: editedRange, editContext: editContext, in: text) {
             return fullRange
         }
 
-        return surroundingLineRange(around: editedRange, in: text)
+        return MarkdownFenceCache.surroundingLineRange(around: editedRange, in: text)
     }
 
     func highlight(
@@ -47,604 +74,96 @@ final class MarkdownSyntaxHighlighter: SyntaxHighlighter {
             return
         }
 
-        let fences = fenceBlocks(in: text)
-        applyFenceStyling(textStorage: textStorage, text: text, fences: fences, targetRange: targetRange, baseFont: baseFont, theme: theme, registry: registry)
-        applyLineStyling(textStorage: textStorage, text: text, fences: fences, targetRange: targetRange, baseFont: baseFont, theme: theme)
+        highlight(
+            textStorage: textStorage,
+            in: targetRange,
+            baseFont: baseFont,
+            theme: theme,
+            registry: registry,
+            fenceCache: makeFenceCache(in: text)
+        )
     }
 
-    private func applyFenceStyling(
+    func highlight(
         textStorage: NSTextStorage,
-        text: NSString,
-        fences: [FenceBlock],
-        targetRange: NSRange,
+        in range: NSRange,
         baseFont: NSFont,
         theme: SyntaxTheme,
-        registry: HighlighterRegistry
+        registry: HighlighterRegistry,
+        fenceCache: FenceCache
     ) {
-        for fence in fences {
-            if fence.contentRange.length > 0 {
-                let backgroundRange = NSIntersectionRange(fence.contentRange, targetRange)
-                if backgroundRange.length > 0 {
-                    textStorage.applyBackgroundColor(theme.color(for: .codeBlockBackground), range: backgroundRange)
-                }
-            }
+        let text = textStorage.string as NSString
+        let targetRange = range.clamped(toLength: text.length)
+        guard text.length > 0, targetRange.length > 0 else { return }
 
-            if let openingRange = visibleLineContentsRange(for: fence.openingLineRange, text: text),
-               openingRange.intersects(targetRange) {
-                textStorage.applyForegroundColor(theme.color(for: .codeFence), range: openingRange)
-            }
-
-            if let closingLineRange = fence.closingLineRange,
-               let closingRange = visibleLineContentsRange(for: closingLineRange, text: text),
-               closingRange.intersects(targetRange) {
-                textStorage.applyForegroundColor(theme.color(for: .codeFence), range: closingRange)
-            }
-
-            guard let infoString = fence.infoString,
-                  !infoString.isEmpty,
-                  let nestedHighlighter = registry.highlighter(forFenceInfoString: infoString),
-                  nestedHighlighter.language != language else {
-                continue
-            }
-
-            let nestedRange = NSIntersectionRange(fence.contentRange, targetRange)
-            guard nestedRange.length > 0 else {
-                continue
-            }
-
-            nestedHighlighter.highlight(
-                textStorage: textStorage,
-                in: nestedRange,
-                baseFont: baseFont,
-                theme: theme,
-                registry: registry
-            )
-        }
+        highlight(
+            textStorage: textStorage,
+            in: targetRange,
+            baseFont: baseFont,
+            theme: theme,
+            registry: registry,
+            fenceCache: fenceCache,
+            lineStyles: lineStylePlan(in: textStorage.string, targetRange: targetRange, fences: fenceCache.blocks)
+        )
     }
 
-    private func applyLineStyling(
+    func highlight(
         textStorage: NSTextStorage,
-        text: NSString,
-        fences: [FenceBlock],
-        targetRange: NSRange,
+        in range: NSRange,
         baseFont: NSFont,
-        theme: SyntaxTheme
-    ) {
-        let headingFont = EditorFontResolver.boldVariant(of: baseFont)
-        let lineScanRange = text.lineRange(for: targetRange.clamped(toLength: text.length))
-        var location = lineScanRange.location
-        let scanEnd = lineScanRange.upperBound
-        var fenceIndex = firstFenceIndex(intersectingOrAfter: location, fences: fences)
-
-        while location < scanEnd, location < text.length {
-            let lineRange = text.lineRange(for: NSRange(location: location, length: 0))
-            let contentRange = visibleLineContentsRange(for: lineRange, text: text) ?? lineRange
-
-            if contentRange.intersects(targetRange) {
-                let classification = fenceClassification(
-                    lineRange: lineRange,
-                    contentRange: contentRange,
-                    fences: fences,
-                    fenceIndex: &fenceIndex
-                ) ?? classify(lineRange: lineRange, contentRange: contentRange, in: text)
-                switch classification {
-                case .fence, .fenceContent:
-                    break
-                case let .heading(level, markerRange, textRange):
-                    let fullHeadingRange = NSUnionRange(markerRange, textRange)
-                    textStorage.applyFont(headingFont, range: NSIntersectionRange(fullHeadingRange, targetRange))
-                    applyHeadingStyling(
-                        textStorage: textStorage,
-                        level: level,
-                        markerRange: markerRange,
-                        textRange: textRange,
-                        targetRange: targetRange,
-                        theme: theme
-                    )
-                    applyInlineStyling(textStorage: textStorage, lineRange: contentRange, text: text, theme: theme, targetRange: targetRange)
-                case let .blockquote(markerRange):
-                    applyIfIntersecting(textStorage: textStorage, theme: theme, role: .blockquoteMarker, range: markerRange, targetRange: targetRange)
-                    applyInlineStyling(textStorage: textStorage, lineRange: contentRange, text: text, theme: theme, targetRange: targetRange)
-                case let .unorderedList(markerRange):
-                    applyIfIntersecting(textStorage: textStorage, theme: theme, role: .listMarker, range: markerRange, targetRange: targetRange)
-                    applyInlineStyling(textStorage: textStorage, lineRange: contentRange, text: text, theme: theme, targetRange: targetRange)
-                case let .orderedList(markerRange):
-                    applyIfIntersecting(textStorage: textStorage, theme: theme, role: .listMarker, range: markerRange, targetRange: targetRange)
-                    applyInlineStyling(textStorage: textStorage, lineRange: contentRange, text: text, theme: theme, targetRange: targetRange)
-                case let .thematicBreak(breakRange):
-                    applyIfIntersecting(textStorage: textStorage, theme: theme, role: .thematicBreak, range: breakRange, targetRange: targetRange)
-                case .plainText:
-                    applyInlineStyling(textStorage: textStorage, lineRange: contentRange, text: text, theme: theme, targetRange: targetRange)
-                }
-            }
-
-            location = lineRange.upperBound
-        }
-    }
-
-    private func applyInlineStyling(
-        textStorage: NSTextStorage,
-        lineRange: NSRange,
-        text: NSString,
         theme: SyntaxTheme,
-        targetRange: NSRange
+        registry: HighlighterRegistry,
+        fenceCache: FenceCache,
+        lineStyles: [LineStyle]
     ) {
-        let line = text.substring(with: lineRange)
-        let markersToSkip = inlineCodeRanges(in: line, offset: lineRange.location)
+        let text = textStorage.string as NSString
+        let targetRange = range.clamped(toLength: text.length)
+        guard text.length > 0, targetRange.length > 0 else { return }
 
-        for range in markersToSkip where range.intersects(targetRange) {
-            textStorage.applyForegroundColor(theme.color(for: .inlineCode), range: range)
-        }
-
-        for token in linkTokens(in: line, offset: lineRange.location) {
-            applyIfIntersecting(textStorage: textStorage, theme: theme, role: .linkText, range: token.textRange, targetRange: targetRange)
-            applyIfIntersecting(textStorage: textStorage, theme: theme, role: .linkURL, range: token.urlRange, targetRange: targetRange)
-        }
-
-        for markerRange in emphasisMarkerRanges(in: line, offset: lineRange.location) where !overlapsAny(markerRange, with: markersToSkip) {
-            applyIfIntersecting(textStorage: textStorage, theme: theme, role: .emphasisMarker, range: markerRange, targetRange: targetRange)
-        }
+        MarkdownAttributeStyler.applyFenceStyling(
+            textStorage: textStorage,
+            text: text,
+            fences: fenceCache.blocks,
+            targetRange: targetRange,
+            baseFont: baseFont,
+            theme: theme,
+            registry: registry
+        )
+        MarkdownAttributeStyler.applyLineStyles(lineStyles, textStorage: textStorage, baseFont: baseFont, theme: theme)
     }
 
-    private func applyIfIntersecting(
-        textStorage: NSTextStorage,
-        theme: SyntaxTheme,
-        role: SyntaxColorRole,
-        range: NSRange,
-        targetRange: NSRange
-    ) {
-        let visibleRange = NSIntersectionRange(range, targetRange)
-        guard visibleRange.length > 0 else { return }
-        textStorage.applyForegroundColor(theme.color(for: role), range: visibleRange)
+    nonisolated func makeFenceCache(in text: NSString) -> FenceCache {
+        MarkdownFenceCache.makeFenceCache(in: text)
     }
 
-    private func applyHeadingStyling(
-        textStorage: NSTextStorage,
-        level: Int,
-        markerRange: NSRange,
-        textRange: NSRange,
-        targetRange: NSRange,
-        theme: SyntaxTheme
-    ) {
-        let visibleMarkerRange = NSIntersectionRange(markerRange, targetRange)
-        if visibleMarkerRange.length > 0 {
-            textStorage.applyForegroundColor(theme.color(for: .headingMarker), range: visibleMarkerRange)
-        }
-
-        let visibleTextRange = NSIntersectionRange(textRange, targetRange)
-        guard visibleTextRange.length > 0 else { return }
-        textStorage.applyForegroundColor(headingTextColor(for: level, theme: theme), range: visibleTextRange)
+    nonisolated func makeFenceCache(in text: NSString, isCancelled: @Sendable () -> Bool) -> FenceCache? {
+        MarkdownFenceCache.makeFenceCache(in: text, isCancelled: isCancelled)
     }
 
-    private func headingTextColor(for level: Int, theme: SyntaxTheme) -> NSColor {
-        switch level {
-        case 1:
-            theme.headingMarker
-        case 2:
-            theme.headingText.blended(withFraction: 0.5, of: theme.headingMarker) ?? theme.headingText
-        default:
-            theme.headingText
-        }
-    }
-
-    private func isFenceSensitiveEdit(
-        editedRange: NSRange,
+    func updateFenceCache(
+        _ cache: FenceCache,
         editContext: SyntaxHighlightEditContext,
         in text: NSString
-    ) -> Bool {
-        if containsFenceMarkerCharacter(editContext.replacedText)
-            || containsFenceMarkerCharacter(editContext.replacementString) {
-            return true
-        }
-
-        let scanRange = surroundingLineRange(around: editedRange, in: text)
-        if editContext.replacedText.contains("\n"),
-           containsFenceMarkerCharacter(text.substring(with: scanRange)) {
-            return true
-        }
-
-        var location = scanRange.location
-        while location < scanRange.upperBound, location < text.length {
-            let lineRange = text.lineRange(for: NSRange(location: location, length: 0))
-            let contentRange = visibleLineContentsRange(for: lineRange, text: text) ?? lineRange
-            let line = text.substring(with: contentRange)
-            let indent = min(leadingWhitespaceCount(in: line), 3)
-            let trimmed = String(line.dropFirst(indent))
-            if parseFence(in: trimmed) != nil {
-                return true
-            }
-            location = lineRange.upperBound
-        }
-
-        return false
+    ) -> FenceCacheUpdate? {
+        MarkdownFenceCache.updateFenceCache(cache, editContext: editContext, in: text)
     }
 
-    private func surroundingLineRange(around range: NSRange, in text: NSString) -> NSRange {
-        let baseLineRange = text.lineRange(for: range.clamped(toLength: text.length))
-        var start = baseLineRange.location
-        var end = baseLineRange.upperBound
-
-        if start > 0 {
-            start = text.lineRange(for: NSRange(location: start - 1, length: 0)).location
-        }
-
-        if end < text.length {
-            end = text.lineRange(for: NSRange(location: end, length: 0)).upperBound
-        }
-
-        return NSRange(location: start, length: max(end - start, 0))
+    nonisolated func lineStylePlan(in source: String, targetRange: NSRange, fences: [FenceBlock]) -> [LineStyle] {
+        MarkdownLineStylePlanner.lineStylePlan(in: source, targetRange: targetRange, fences: fences)
     }
 
-    private func containsFenceMarkerCharacter(_ text: String) -> Bool {
-        text.contains("`") || text.contains("~")
-    }
-
-    private enum LineClassification {
-        case plainText
-        case heading(level: Int, markerRange: NSRange, textRange: NSRange)
-        case blockquote(markerRange: NSRange)
-        case unorderedList(markerRange: NSRange)
-        case orderedList(markerRange: NSRange)
-        case thematicBreak(range: NSRange)
-        case fence
-        case fenceContent
-    }
-
-    private func classify(lineRange: NSRange, contentRange: NSRange, in text: NSString) -> LineClassification {
-        let line = text.substring(with: contentRange)
-        let indent = min(leadingWhitespaceCount(in: line), 3)
-        let trimmed = String(line.dropFirst(indent))
-        let trimmedNSString = trimmed as NSString
-        let baseLocation = contentRange.location + indent
-
-        if let headingRange = headingMarkerRange(in: trimmed, baseLocation: baseLocation) {
-            let markerLength = headingRange.length
-            let textStart = baseLocation + markerLength
-            let remainingLength = max(contentRange.upperBound - textStart, 0)
-            return .heading(
-                level: markerLength,
-                markerRange: headingRange,
-                textRange: NSRange(location: textStart, length: remainingLength)
-            )
-        }
-
-        if trimmed.hasPrefix(">") {
-            return .blockquote(markerRange: NSRange(location: baseLocation, length: 1))
-        }
-
-        if let unorderedMarker = unorderedListMarkerRange(in: trimmedNSString, baseLocation: baseLocation) {
-            return .unorderedList(markerRange: unorderedMarker)
-        }
-
-        if let orderedMarker = orderedListMarkerRange(in: trimmedNSString, baseLocation: baseLocation) {
-            return .orderedList(markerRange: orderedMarker)
-        }
-
-        if isThematicBreak(trimmed) {
-            return .thematicBreak(range: contentRange)
-        }
-
-        return .plainText
-    }
-
-    private func fenceClassification(
-        lineRange: NSRange,
-        contentRange: NSRange,
+    nonisolated func lineStylePlan(
+        in source: String,
+        targetRange: NSRange,
         fences: [FenceBlock],
-        fenceIndex: inout Int
-    ) -> LineClassification? {
-        while fenceIndex < fences.count, fences[fenceIndex].totalRange.upperBound <= lineRange.location {
-            fenceIndex += 1
-        }
-
-        guard fenceIndex < fences.count else {
-            return nil
-        }
-
-        let fence = fences[fenceIndex]
-        if fence.openingLineRange == lineRange || fence.closingLineRange == lineRange {
-            return .fence
-        }
-
-        if fence.contentRange.intersects(contentRange) {
-            return .fenceContent
-        }
-
-        return nil
+        isCancelled: @Sendable () -> Bool
+    ) -> [LineStyle]? {
+        MarkdownLineStylePlanner.lineStylePlan(
+            in: source,
+            targetRange: targetRange,
+            fences: fences,
+            isCancelled: isCancelled
+        )
     }
 
-    private func firstFenceIndex(intersectingOrAfter location: Int, fences: [FenceBlock]) -> Int {
-        var low = 0
-        var high = fences.count
-        while low < high {
-            let mid = (low + high) / 2
-            if fences[mid].totalRange.upperBound <= location {
-                low = mid + 1
-            } else {
-                high = mid
-            }
-        }
-        return low
-    }
-
-    private func headingMarkerRange(in line: String, baseLocation: Int) -> NSRange? {
-        var count = 0
-        for character in line {
-            if character == "#" {
-                count += 1
-            } else {
-                break
-            }
-        }
-
-        guard count > 0, count <= 6 else {
-            return nil
-        }
-
-        let nextIndex = line.index(line.startIndex, offsetBy: count)
-        guard nextIndex == line.endIndex || line[nextIndex].isWhitespace else {
-            return nil
-        }
-
-        return NSRange(location: baseLocation, length: count)
-    }
-
-    private func unorderedListMarkerRange(in line: NSString, baseLocation: Int) -> NSRange? {
-        guard line.length >= 2 else { return nil }
-        let marker = line.substring(with: NSRange(location: 0, length: 1))
-        guard ["-", "*", "+"].contains(marker),
-              line.substring(with: NSRange(location: 1, length: 1)) == " " else {
-            return nil
-        }
-
-        return NSRange(location: baseLocation, length: 1)
-    }
-
-    private func orderedListMarkerRange(in line: NSString, baseLocation: Int) -> NSRange? {
-        var digitCount = 0
-        while digitCount < line.length {
-            let character = line.character(at: digitCount)
-            guard CharacterSet.decimalDigits.contains(UnicodeScalar(character)!) else {
-                break
-            }
-            digitCount += 1
-        }
-
-        guard digitCount > 0, digitCount < line.length else {
-            return nil
-        }
-
-        let separator = line.substring(with: NSRange(location: digitCount, length: 1))
-        guard [".", ")"].contains(separator) else {
-            return nil
-        }
-
-        let markerEnd = digitCount + 1
-        if markerEnd < line.length {
-            let following = line.substring(with: NSRange(location: markerEnd, length: 1))
-            guard following == " " || following == "\t" else {
-                return nil
-            }
-        }
-
-        return NSRange(location: baseLocation, length: digitCount + 1)
-    }
-
-    private func isThematicBreak(_ line: String) -> Bool {
-        let compact = line.filter { !$0.isWhitespace }
-        guard compact.count >= 3, let first = compact.first, ["-", "*", "_"].contains(first) else {
-            return false
-        }
-
-        return compact.allSatisfy { $0 == first }
-    }
-
-    private func fenceBlocks(in text: NSString) -> [FenceBlock] {
-        var blocks: [FenceBlock] = []
-        var location = 0
-        var openFence: (lineRange: NSRange, marker: Character, markerCount: Int, infoString: String?)?
-
-        while location < text.length {
-            let lineRange = text.lineRange(for: NSRange(location: location, length: 0))
-            let contentRange = visibleLineContentsRange(for: lineRange, text: text) ?? lineRange
-            let line = text.substring(with: contentRange)
-            let indent = min(leadingWhitespaceCount(in: line), 3)
-            let trimmed = String(line.dropFirst(indent))
-
-            if let fence = parseFence(in: trimmed) {
-                if let currentFence = openFence,
-                   currentFence.marker == fence.marker,
-                   fence.markerCount >= currentFence.markerCount {
-                    let contentStart = currentFence.lineRange.upperBound
-                    let contentLength = max(lineRange.location - contentStart, 0)
-                    blocks.append(FenceBlock(
-                        openingLineRange: currentFence.lineRange,
-                        contentRange: NSRange(location: contentStart, length: contentLength),
-                        closingLineRange: lineRange,
-                        infoString: currentFence.infoString
-                    ))
-                    openFence = nil
-                } else if openFence == nil {
-                    openFence = (lineRange, fence.marker, fence.markerCount, fence.infoString)
-                }
-            }
-
-            location = lineRange.upperBound
-        }
-
-        if let openFence {
-            let contentStart = openFence.lineRange.upperBound
-            blocks.append(FenceBlock(
-                openingLineRange: openFence.lineRange,
-                contentRange: NSRange(location: contentStart, length: max(text.length - contentStart, 0)),
-                closingLineRange: nil,
-                infoString: openFence.infoString
-            ))
-        }
-
-        return blocks
-    }
-
-    private func parseFence(in line: String) -> (marker: Character, markerCount: Int, infoString: String?)? {
-        guard let marker = line.first, marker == "`" || marker == "~" else {
-            return nil
-        }
-
-        let markerCount = line.prefix { $0 == marker }.count
-        guard markerCount >= 3 else {
-            return nil
-        }
-
-        let suffix = line.dropFirst(markerCount)
-        let infoString = suffix.trimmingCharacters(in: .whitespaces)
-        return (marker, markerCount, infoString.isEmpty ? nil : infoString)
-    }
-
-    private func inlineCodeRanges(in line: String, offset: Int) -> [NSRange] {
-        let characters = Array(line)
-        var ranges: [NSRange] = []
-        var index = 0
-
-        while index < characters.count {
-            guard characters[index] == "`" else {
-                index += 1
-                continue
-            }
-
-            let start = index
-            index += 1
-
-            while index < characters.count, characters[index] != "`" {
-                index += 1
-            }
-
-            guard index < characters.count else {
-                break
-            }
-
-            let length = index - start + 1
-            ranges.append(NSRange(location: offset + start, length: length))
-            index += 1
-        }
-
-        return ranges
-    }
-
-    private struct LinkToken {
-        let textRange: NSRange
-        let urlRange: NSRange
-    }
-
-    private func linkTokens(in line: String, offset: Int) -> [LinkToken] {
-        let characters = Array(line)
-        var tokens: [LinkToken] = []
-        var index = 0
-
-        while index < characters.count {
-            guard characters[index] == "[" else {
-                index += 1
-                continue
-            }
-
-            guard let textEnd = characters[(index + 1)...].firstIndex(of: "]"),
-                  textEnd + 1 < characters.count,
-                  characters[textEnd + 1] == "(",
-                  let urlEnd = characters[(textEnd + 2)...].firstIndex(of: ")") else {
-                index += 1
-                continue
-            }
-
-            tokens.append(LinkToken(
-                textRange: NSRange(location: offset + index, length: textEnd - index + 1),
-                urlRange: NSRange(location: offset + textEnd + 1, length: urlEnd - textEnd)
-            ))
-            index = urlEnd + 1
-        }
-
-        return tokens
-    }
-
-    private func emphasisMarkerRanges(in line: String, offset: Int) -> [NSRange] {
-        let characters = Array(line)
-        var ranges: [NSRange] = []
-        var index = 0
-
-        while index < characters.count {
-            let character = characters[index]
-            guard character == "*" || character == "_" else {
-                index += 1
-                continue
-            }
-
-            let markerLength = (index + 1 < characters.count && characters[index + 1] == character) ? 2 : 1
-            let contentStart = index + markerLength
-            guard contentStart < characters.count else {
-                index += markerLength
-                continue
-            }
-
-            if let closeIndex = closingMarkerIndex(
-                in: characters,
-                marker: character,
-                markerLength: markerLength,
-                searchStart: contentStart
-            ) {
-                ranges.append(NSRange(location: offset + index, length: markerLength))
-                ranges.append(NSRange(location: offset + closeIndex, length: markerLength))
-                index = closeIndex + markerLength
-            } else {
-                index += markerLength
-            }
-        }
-
-        return ranges
-    }
-
-    private func closingMarkerIndex(
-        in characters: [Character],
-        marker: Character,
-        markerLength: Int,
-        searchStart: Int
-    ) -> Int? {
-        var index = searchStart
-        while index + markerLength - 1 < characters.count {
-            if markerLength == 2 {
-                if characters[index] == marker && characters[index + 1] == marker {
-                    return index
-                }
-            } else if characters[index] == marker {
-                return index
-            }
-
-            index += 1
-        }
-
-        return nil
-    }
-
-    private func leadingWhitespaceCount(in line: String) -> Int {
-        line.prefix { $0 == " " || $0 == "\t" }.count
-    }
-
-    private func visibleLineContentsRange(for lineRange: NSRange, text: NSString) -> NSRange? {
-        guard lineRange.length > 0 else {
-            return nil
-        }
-
-        var length = lineRange.length
-        while length > 0 {
-            let character = text.character(at: lineRange.location + length - 1)
-            if character == 10 || character == 13 {
-                length -= 1
-            } else {
-                break
-            }
-        }
-
-        return NSRange(location: lineRange.location, length: length)
-    }
-
-    private func overlapsAny(_ range: NSRange, with ranges: [NSRange]) -> Bool {
-        ranges.contains(where: { $0.intersects(range) })
-    }
 }
