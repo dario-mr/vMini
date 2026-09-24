@@ -12,6 +12,7 @@ final class Document: NSDocument {
     private let openDocumentsStore: OpenDocumentsStore
     private let fileLifecycleController: DocumentFileLifecycleController
     private var syntaxHighlightingObservers: [UUID: (Document) -> Void] = [:]
+    private var isPresentingExternalChangeAlert = false
 
     var sidebarTitle: String {
         fileURL?.lastPathComponent ?? displayName
@@ -103,7 +104,12 @@ final class Document: NSDocument {
                 )
 
                 if Self.didMoveToTrash(from: oldValue, to: fileURL) {
-                    close()
+                    if isDocumentEdited {
+                        fileLifecycleController.stopWatching()
+                        presentExternalChangeAlert(fileIsMissing: true)
+                    } else {
+                        close()
+                    }
                 }
             }
         }
@@ -149,9 +155,15 @@ final class Document: NSDocument {
     }
 
     private func reloadFromDiskAfterExternalChange(restartWatcher: Bool) {
+        reloadFromDiskAfterExternalChange(restartWatcher: restartWatcher, reloadEvenIfEdited: false)
+    }
+
+    private func reloadFromDiskAfterExternalChange(restartWatcher: Bool, reloadEvenIfEdited: Bool) {
         fileLifecycleController.reloadFromDiskAfterExternalChange(
             fileURL: fileURL,
             restartWatcher: restartWatcher,
+            isDocumentEdited: isDocumentEdited,
+            reloadEvenIfEdited: reloadEvenIfEdited,
             readFromData: { [weak self] data, typeName in
                 try self?.read(from: data, ofType: typeName)
             },
@@ -165,11 +177,58 @@ final class Document: NSDocument {
             onMissingFile: { [weak self] in
                 self?.close()
             },
+            onMissingFileWithUnsavedChanges: { [weak self] in
+                self?.presentExternalChangeAlert(fileIsMissing: true)
+            },
+            onExternalChangeWithUnsavedChanges: { [weak self] _ in
+                self?.presentExternalChangeAlert(fileIsMissing: false)
+            },
             onExternalChangeReload: { [weak self] restartWatcher in
                 guard restartWatcher else { return }
                 self?.reloadFromDiskAfterExternalChange(restartWatcher: true)
             }
         )
+    }
+
+    private func presentExternalChangeAlert(fileIsMissing: Bool) {
+        guard !isPresentingExternalChangeAlert else { return }
+        isPresentingExternalChangeAlert = true
+
+        let alert = NSAlert()
+        if fileIsMissing {
+            alert.messageText = "The file was deleted or moved to the Trash."
+            alert.informativeText = "Your unsaved changes are still open. Save them to a new location?"
+            alert.addButton(withTitle: "Save As…")
+            alert.addButton(withTitle: "Keep Open")
+        } else {
+            alert.messageText = "This file changed on disk."
+            alert.informativeText = "Keep your unsaved changes or reload the file from disk? Reloading replaces your local edits."
+            alert.addButton(withTitle: "Keep My Changes")
+            alert.addButton(withTitle: "Reload from Disk")
+        }
+
+        let handleResponse: (NSApplication.ModalResponse) -> Void = { [weak self] response in
+            guard let self else { return }
+            isPresentingExternalChangeAlert = false
+            if response == .alertFirstButtonReturn {
+                if fileIsMissing {
+                    saveAs(nil)
+                } else if let fileURL, !FileManager.default.fileExists(atPath: fileURL.path) {
+                    reloadFromDiskAfterExternalChange(restartWatcher: false)
+                }
+                return
+            }
+
+            if response == .alertSecondButtonReturn && !fileIsMissing {
+                reloadFromDiskAfterExternalChange(restartWatcher: false, reloadEvenIfEdited: true)
+            }
+        }
+
+        if let window = WorkspaceWindowController.shared.window {
+            alert.beginSheetModal(for: window, completionHandler: handleResponse)
+        } else {
+            handleResponse(alert.runModal())
+        }
     }
 
     override func write(to url: URL, ofType typeName: String) throws {

@@ -247,9 +247,7 @@ final class EditorContentViewController: NSViewController {
     }
 
     private func close(_ documents: [Document]) {
-        for document in documents {
-            WorkspaceDocumentCoordinator.shared.close(document: document)
-        }
+        WorkspaceDocumentCoordinator.shared.close(documents: documents)
     }
 
     private func displayActiveDocumentIfNeeded() {

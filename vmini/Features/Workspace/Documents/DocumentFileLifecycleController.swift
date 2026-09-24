@@ -52,21 +52,42 @@ final class DocumentFileLifecycleController {
     }
 
     func handleClose() {
+        stopWatching()
+    }
+
+    func stopWatching() {
         externalChangeCoordinator.stop()
     }
 
     func reloadFromDiskAfterExternalChange(
         fileURL: URL?,
         restartWatcher: Bool,
+        isDocumentEdited: Bool,
+        reloadEvenIfEdited: Bool,
         readFromData: (Data, String) throws -> Void,
         updateResolvedFileType: (String) -> Void,
         onReload: () -> Void,
         onMissingFile: () -> Void,
+        onMissingFileWithUnsavedChanges: () -> Void,
+        onExternalChangeWithUnsavedChanges: (Bool) -> Void,
         onExternalChangeReload: @escaping @MainActor (Bool) -> Void
     ) {
         guard let fileURL else { return }
         guard FileManager.default.fileExists(atPath: fileURL.path) else {
-            onMissingFile()
+            externalChangeCoordinator.stop()
+            if isDocumentEdited {
+                onMissingFileWithUnsavedChanges()
+            } else {
+                onMissingFile()
+            }
+            return
+        }
+
+        if isDocumentEdited && !reloadEvenIfEdited {
+            onExternalChangeWithUnsavedChanges(restartWatcher)
+            if restartWatcher {
+                restartWatching(fileURL: fileURL, onExternalChangeReload: onExternalChangeReload)
+            }
             return
         }
 
