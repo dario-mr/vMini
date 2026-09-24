@@ -43,6 +43,9 @@ final class OpenFoldersSidebarOutlineController: NSObject, NSOutlineViewDataSour
         observedState = state
 
         if previousState?.folderURLs != state.folderURLs {
+            let previousPaths = Set(previousState?.folderURLs.map(\.standardizedFileURL.path) ?? [])
+            let currentPaths = Set(state.folderURLs.map(\.standardizedFileURL.path))
+            invalidateTreeAndIcons(at: previousPaths.subtracting(currentPaths))
             reloadFolders()
             return
         }
@@ -164,7 +167,6 @@ final class OpenFoldersSidebarOutlineController: NSObject, NSOutlineViewDataSour
     private func reloadFolders() {
         guard let outlineView else { return }
 
-        iconsByPath = iconsByPath.filter { FileManager.default.fileExists(atPath: $0.key) }
         rootNodes = treeProvider.rootNodes(for: folderStore.folderURLs)
         outlineView.reloadData()
         applyExpansionState()
@@ -172,15 +174,13 @@ final class OpenFoldersSidebarOutlineController: NSObject, NSOutlineViewDataSour
     }
 
     private func refreshFolders(changedPaths: Set<String>) {
-        guard let outlineView, !changedPaths.isEmpty else {
+        guard !changedPaths.isEmpty else {
             reloadFolders()
             return
         }
 
-        iconsByPath = iconsByPath.filter { FileManager.default.fileExists(atPath: $0.key) }
-        treeProvider.invalidateContents(
-            at: changedPaths.map { URL(fileURLWithPath: $0, isDirectory: true) }
-        )
+        invalidateTreeAndIcons(at: changedPaths)
+        guard let outlineView else { return }
 
         var didReloadAnyItem = false
         for path in changedPaths.sorted(by: { $0.count > $1.count }) {
@@ -255,6 +255,16 @@ final class OpenFoldersSidebarOutlineController: NSObject, NSOutlineViewDataSour
         icon.size = NSSize(width: 16, height: 16)
         iconsByPath[path] = icon
         return icon
+    }
+
+    private func invalidateTreeAndIcons(at paths: Set<String>) {
+        guard !paths.isEmpty else { return }
+        let invalidatedPaths = treeProvider.invalidateContents(
+            at: paths.map { URL(fileURLWithPath: $0, isDirectory: true) }
+        )
+        for path in invalidatedPaths {
+            iconsByPath.removeValue(forKey: path)
+        }
     }
 
     private func node(for item: Any?) -> FolderTreeNode? {

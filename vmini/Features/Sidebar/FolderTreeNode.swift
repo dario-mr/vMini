@@ -6,7 +6,7 @@ final class FolderTreeNode {
     let isDirectory: Bool
 
     private var loadedChildren: [FolderTreeNode]?
-    private let provider: FolderTreeProviding
+    private weak var provider: FolderTreeProviding?
 
     init(url: URL, title: String, isDirectory: Bool, provider: FolderTreeProviding) {
         self.url = url
@@ -20,6 +20,7 @@ final class FolderTreeNode {
             return loadedChildren
         }
 
+        guard let provider else { return [] }
         let nodes = provider.childNodes(for: url)
         loadedChildren = nodes
         return nodes
