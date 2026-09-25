@@ -42,6 +42,37 @@ final class SidebarAndPersistenceTests: XCTestCase {
         }
     }
 
+    func testFolderOutlineKeepsChildrenVisibleDuringUnchangedRefresh() async throws {
+        let rootURL = try makeTemporaryDirectory(name: "unchanged-refresh")
+        try "file".write(to: rootURL.appendingPathComponent("file.txt"), atomically: true, encoding: .utf8)
+
+        let store = OpenFoldersStore(persistence: WorkspacePersistence(
+            userDefaults: makeUserDefaults(prefix: "SidebarAndPersistenceTests.UnchangedRefresh")
+        ))
+        let provider = FolderTreeProvider()
+        let outline = NSOutlineView()
+        outline.addTableColumn(NSTableColumn(identifier: NSUserInterfaceItemIdentifier("test")))
+        let controller = OpenFoldersSidebarOutlineController(folderStore: store, treeProvider: provider)
+        controller.attach(to: outline)
+        store.add([rootURL])
+        controller.apply(state: OpenFoldersStore.State(
+            folderURLs: [rootURL], selectedURL: nil, expandedFolderPaths: [rootURL.path],
+            contentVersion: 0, refreshedFolderPaths: []
+        ))
+        await provider.loadChildren(for: rootURL)
+
+        let root = try XCTUnwrap(controller.outlineView(outline, child: 0, ofItem: nil) as? FolderTreeNode)
+        let child = try XCTUnwrap(root.children.first)
+
+        controller.apply(state: OpenFoldersStore.State(
+            folderURLs: [rootURL], selectedURL: nil, expandedFolderPaths: [rootURL.path],
+            contentVersion: 1, refreshedFolderPaths: [rootURL.path]
+        ))
+
+        XCTAssertEqual(root.children.map(\.title), ["file.txt"])
+        XCTAssertTrue(root.children.first === child)
+    }
+
     func testFolderTreeProviderSortsDirectoriesBeforeFilesAndFiltersDSStore() async throws {
         let rootURL = try makeTemporaryDirectory(name: "tree-root")
         let visibleDirectory = rootURL.appendingPathComponent("Beta", isDirectory: true)
