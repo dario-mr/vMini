@@ -117,13 +117,17 @@ final class EditorSyntaxHighlightController {
             self.pendingHighlight = .none
             self.pendingTextLength = nil
             self.pendingRefreshTask = nil
+            let highlightRange: NSRange?
             switch target {
             case .none:
                 return
             case .range(let range):
-                await self.applyHighlighting(in: range, language: targetLanguage, revision: scheduledRevision)
+                highlightRange = range
             case .full:
-                await self.applyHighlighting(in: nil, language: targetLanguage, revision: scheduledRevision)
+                highlightRange = nil
+            }
+            await AppPerformanceProfiler.measure("SyntaxHighlight") {
+                await self.applyHighlighting(in: highlightRange, language: targetLanguage, revision: scheduledRevision)
             }
         }
     }

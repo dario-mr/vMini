@@ -146,6 +146,7 @@
 		A0000000000000000000020F /* WorkspaceSessionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceSessionManager.swift; sourceTree = "<group>"; };
 		A00000000000000000000212 /* SidebarFolderWatcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidebarFolderWatcher.swift; sourceTree = "<group>"; };
 		A00000000000000000000213 /* AppPerformanceProfiler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppPerformanceProfiler.swift; sourceTree = "<group>"; };
+		A00000000000000000000215 /* PerformanceCorpus */ = {isa = PBXFileReference; lastKnownFileType = folder; path = PerformanceCorpus; sourceTree = "<group>"; };
 		A00000000000000000000182 /* vminiTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = vminiTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		A0000000000000000000018F /* SyntaxLanguage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyntaxLanguage.swift; sourceTree = "<group>"; };
 		A00000000000000000000008 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -589,6 +590,7 @@
 				A00000000000000000000209 /* WorkspaceStateTests.swift */,
 				A0000000000000000000020B /* SessionWorkflowTests.swift */,
 				A0000000000000000000020D /* SidebarAndPersistenceTests.swift */,
+				A00000000000000000000215 /* PerformanceCorpus */,
 			);
 			path = vminiTests;
 			sourceTree = "<group>";

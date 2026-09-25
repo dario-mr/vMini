@@ -175,10 +175,12 @@ final class OpenFoldersSidebarOutlineController: NSObject, NSOutlineViewDataSour
     private func reloadFolders() {
         guard let outlineView else { return }
 
-        rootNodes = treeProvider.rootNodes(for: folderStore.folderURLs)
-        outlineView.reloadData()
-        applyExpansionState()
-        applySelection()
+        AppPerformanceProfiler.measure("SidebarRootReload") {
+            rootNodes = treeProvider.rootNodes(for: folderStore.folderURLs)
+            outlineView.reloadData()
+            applyExpansionState()
+            applySelection()
+        }
     }
 
     private func reloadChildren(at url: URL) {
@@ -191,28 +193,30 @@ final class OpenFoldersSidebarOutlineController: NSObject, NSOutlineViewDataSour
     }
 
     private func refreshFolders(changedPaths: Set<String>) {
-        guard !changedPaths.isEmpty else {
-            reloadFolders()
-            return
+        AppPerformanceProfiler.measure("SidebarRefresh") {
+            guard !changedPaths.isEmpty else {
+                reloadFolders()
+                return
+            }
+
+            invalidateTreeAndIcons(at: changedPaths)
+            guard let outlineView else { return }
+
+            var didReloadAnyItem = false
+            for path in changedPaths.sorted(by: { $0.count > $1.count }) {
+                guard let node = nodeMatchingPath(path, in: rootNodes) else { continue }
+                outlineView.reloadItem(node, reloadChildren: true)
+                didReloadAnyItem = true
+            }
+
+            if !didReloadAnyItem {
+                rootNodes = treeProvider.rootNodes(for: folderStore.folderURLs)
+                outlineView.reloadData()
+                applyExpansionState()
+            }
+
+            applySelection()
         }
-
-        invalidateTreeAndIcons(at: changedPaths)
-        guard let outlineView else { return }
-
-        var didReloadAnyItem = false
-        for path in changedPaths.sorted(by: { $0.count > $1.count }) {
-            guard let node = nodeMatchingPath(path, in: rootNodes) else { continue }
-            outlineView.reloadItem(node, reloadChildren: true)
-            didReloadAnyItem = true
-        }
-
-        if !didReloadAnyItem {
-            rootNodes = treeProvider.rootNodes(for: folderStore.folderURLs)
-            outlineView.reloadData()
-            applyExpansionState()
-        }
-
-        applySelection()
     }
 
     private func applyExpansionState() {

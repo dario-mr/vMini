@@ -8,6 +8,8 @@ DEFAULT_OUTPUT_ROOT="$ROOT_DIR/profiles"
 TIME_LIMIT="$DEFAULT_DURATION"
 OUTPUT_ROOT="$DEFAULT_OUTPUT_ROOT"
 SKIP_BUILD=0
+SKIP_QUIT=0
+ATTACH_PID=""
 
 usage() {
   cat <<'EOF'
@@ -20,6 +22,8 @@ Options:
   --output-dir <path>   Directory where the timestamped run folder is created.
                         Default: ./profiles
   --skip-build          Reuse the existing build instead of building first
+  --skip-quit           Keep an already-running vMini instance open
+  --attach-pid <pid>    Attach to an already-running vMini process
   --help                Show this help text
 
 Example:
@@ -41,6 +45,15 @@ while [[ $# -gt 0 ]]; do
       SKIP_BUILD=1
       shift
       ;;
+    --skip-quit)
+      SKIP_QUIT=1
+      shift
+      ;;
+    --attach-pid)
+      ATTACH_PID="$2"
+      SKIP_QUIT=1
+      shift 2
+      ;;
     --help)
       usage
       exit 0
@@ -52,6 +65,11 @@ while [[ $# -gt 0 ]]; do
       ;;
   esac
 done
+
+if [[ -n "$ATTACH_PID" && ! "$ATTACH_PID" =~ '^[0-9]+$' ]]; then
+  echo "Invalid process ID: $ATTACH_PID" >&2
+  exit 1
+fi
 
 mkdir -p "$OUTPUT_ROOT"
 
@@ -79,17 +97,19 @@ if [[ ! -x "$EXECUTABLE_PATH" ]]; then
   exit 1
 fi
 
-if [[ -n "$BUNDLE_ID" ]]; then
-  osascript -e "tell application id \"$BUNDLE_ID\" to quit" >/dev/null 2>&1 || true
-fi
+if [[ "$SKIP_QUIT" -ne 1 && -z "$ATTACH_PID" ]]; then
+  if [[ -n "$BUNDLE_ID" ]]; then
+    osascript -e "tell application id \"$BUNDLE_ID\" to quit" >/dev/null 2>&1 || true
+  fi
 
-if [[ -n "$EXECUTABLE_NAME" ]]; then
-  for _ in {1..50}; do
-    if ! pgrep -fx "$EXECUTABLE_PATH" >/dev/null 2>&1; then
-      break
-    fi
-    sleep 0.1
-  done
+  if [[ -n "$EXECUTABLE_NAME" ]]; then
+    for _ in {1..50}; do
+      if ! pgrep -fx "$EXECUTABLE_PATH" >/dev/null 2>&1; then
+        break
+      fi
+      sleep 0.1
+    done
+  fi
 fi
 
 TIMESTAMP="$(date +%Y%m%d-%H%M%S)"
@@ -113,20 +133,27 @@ Recording interaction trace to:
   $TRACE_PATH
 
 During the next $TIME_LIMIT, reproduce these actions:
-  1. Bring vMini to the foreground from the Dock while it is already open
-  2. Switch tabs a few times
-  3. Click files from the sidebar folders section
+  1. Open this folder in vMini's folder sidebar:
+       $ROOT_DIR/Tests/vminiTests/PerformanceCorpus
+  2. Expand ChangingTree, then open LargeMarkdown.md, TokenDense.json, and Multiline.sh
+  3. Edit an ordinary paragraph in LargeMarkdown.md and wait for syntax styling
+  4. Add or remove a file in the corpus folder to trigger a sidebar refresh
+  5. Switch among the open tabs and bring vMini back to the foreground
 
-The recording starts as soon as xctrace launches the app.
+The recording starts as soon as xctrace begins.
 EOF
 
 set +e
+XCTRACE_TARGET=(--launch -- "$EXECUTABLE_PATH")
+if [[ -n "$ATTACH_PID" ]]; then
+  XCTRACE_TARGET=(--attach "$ATTACH_PID")
+fi
 xcrun xctrace record \
   --template "Time Profiler" \
   --instrument "Points of Interest" \
   --time-limit "$TIME_LIMIT" \
   --output "$TRACE_PATH" \
-  --launch -- "$EXECUTABLE_PATH"
+  "${XCTRACE_TARGET[@]}"
 RECORD_EXIT_CODE=$?
 set -e
 

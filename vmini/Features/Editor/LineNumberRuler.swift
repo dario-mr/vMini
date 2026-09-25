@@ -62,11 +62,13 @@ final class LineNumberRulerView: NSView {
     }
 
     func noteTextStorageDidEdit(_ textStorage: NSTextStorage, editedRange: NSRange, changeInLength: Int) {
-        updateLineCache(
-            text: textStorage.string as NSString,
-            editedRange: editedRange,
-            changeInLength: changeInLength
-        )
+        AppPerformanceProfiler.measure("LineNumberCacheUpdate") {
+            updateLineCache(
+                text: textStorage.string as NSString,
+                editedRange: editedRange,
+                changeInLength: changeInLength
+            )
+        }
         synchronizeRuleThickness()
         lastSelectedLineStart = selectedLineStart()
         needsDisplay = true

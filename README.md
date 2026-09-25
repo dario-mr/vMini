@@ -41,34 +41,9 @@ If you have a real Apple team configured for distribution signing, pass it in:
 DEVELOPMENT_TEAM=YOURTEAMID ./scripts/package.sh
 ```
 
-## Profiler
+## Performance profiling
 
-Record a CLI trace for focus, tab switching, and sidebar file-open latency:
-
-```bash
-./scripts/profile-interactions.sh --duration 30s
-```
-
-The script builds the app, launches it under `xctrace`, and records `Time Profiler` plus the app's
-signpost intervals.
-
-While the trace is running, reproduce these interactions:
-
-- Bring `vMini` to the foreground from the Dock while it is already open
-- Switch tabs a few times
-- Click files from the sidebar folders section
-
-Artifacts are saved under `profiles/`:
-
-- `vmini.trace`: raw Instruments trace
-- `trace-toc.xml`: exported trace table-of-contents metadata
-- `run-info.txt`: basic run details
-
-Use `--skip-build` to reuse the current build:
-
-```bash
-./scripts/profile-interactions.sh --skip-build --duration 30s
-```
+See [profiling.md](docs/profiling.md) for interaction profiling and benchmark instructions.
 
 ## GitHub Release
 

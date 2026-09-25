@@ -114,6 +114,9 @@ final class EditorViewportController {
                 return
             }
 
+            let interval = AppPerformanceProfiler.beginInterval("InitialViewportLayout")
+            defer { AppPerformanceProfiler.endInterval("InitialViewportLayout", interval) }
+
             let initialSelection = NSRange(location: 0, length: 0)
             initialViewportResetSelection = initialSelection
             textView.setSelectedRange(initialSelection)

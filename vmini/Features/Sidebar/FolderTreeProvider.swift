@@ -132,6 +132,9 @@ final class FolderTreeProvider: FolderTreeProviding {
 
     private func apply(_ pending: PendingLoad, for url: URL) async {
         let path = url.standardizedFileURL.path
+        let interval = AppPerformanceProfiler.beginInterval("SidebarChildrenLoad")
+        defer { AppPerformanceProfiler.endInterval("SidebarChildrenLoad", interval) }
+
         let snapshot = await pending.task.value
         guard pendingChildLoads[path]?.id == pending.id else { return }
 
