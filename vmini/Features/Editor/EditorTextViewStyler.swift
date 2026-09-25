@@ -47,17 +47,30 @@ final class EditorTextViewStyler {
             textContainer.containerSize = NSSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude)
         }
 
-        applyAppearance()
-        applyWordWrap(EditorSettings.isWordWrapEnabled())
+        if let layoutManager = textView.layoutManager {
+            layoutManager.allowsNonContiguousLayout = true
+            layoutManager.backgroundLayoutEnabled = false
+        }
+
+        AppPerformanceProfiler.measure("EditorAppearance") {
+            applyAppearance()
+        }
+        AppPerformanceProfiler.measure("EditorWordWrap") {
+            applyWordWrap(EditorSettings.isWordWrapEnabled())
+        }
         applyInvisibleCharactersVisibility(EditorSettings.showsInvisibleCharacters())
     }
 
     func applyAppearance() {
         applyEditorFont()
-        applyParagraphStyle()
+        AppPerformanceProfiler.measure("EditorParagraphStyle") {
+            applyParagraphStyle()
+        }
         textView.textColor = AppColors.primaryText
         textView.backgroundColor = AppColors.editorBackground
-        synchronizeWordWrapLayout()
+        AppPerformanceProfiler.measure("EditorViewportSizing") {
+            synchronizeWordWrapLayout()
+        }
         invalidateLineNumbers()
     }
 
@@ -81,17 +94,15 @@ final class EditorTextViewStyler {
 
         if let textContainer = textView.textContainer {
             textContainer.widthTracksTextView = isEnabled
-            textContainer.containerSize = NSSize(
-                width: isEnabled ? wrappedContainerWidth() : CGFloat.greatestFiniteMagnitude,
-                height: CGFloat.greatestFiniteMagnitude
-            )
+            if !isEnabled {
+                textContainer.containerSize = NSSize(
+                    width: CGFloat.greatestFiniteMagnitude,
+                    height: CGFloat.greatestFiniteMagnitude
+                )
+            }
         }
 
         synchronizeWordWrapLayout()
-        textView.layoutManager?.invalidateLayout(
-            forCharacterRange: NSRange(location: 0, length: textView.string.utf16.count),
-            actualCharacterRange: nil
-        )
         invalidateLineNumbers()
     }
 
@@ -104,7 +115,9 @@ final class EditorTextViewStyler {
             return
         }
 
-        let viewportWidth = wrappedViewportWidth()
+        let viewportWidth = scrollView.contentSize.width
+        guard viewportWidth > 1 else { return }
+
         let containerWidth = wrappedContainerWidth()
         let currentContainerWidth = textView.textContainer?.containerSize.width ?? 0
         guard abs(textView.frame.size.width - viewportWidth) > 0.5 || abs(currentContainerWidth - containerWidth) > 0.5 else {

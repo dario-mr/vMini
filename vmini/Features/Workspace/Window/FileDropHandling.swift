@@ -182,14 +182,24 @@ final class FileDropTextView: NSTextView {
         let insertionLocation = min(currentSelection.location, textLength)
         let referenceLocation = max(0, min(insertionLocation, max(textLength - 1, 0)))
 
-        layoutManager.ensureLayout(for: textContainer)
+        let visibleContainerRect = visibleRect.offsetBy(
+            dx: -textContainerOrigin.x,
+            dy: -textContainerOrigin.y
+        )
+        let destinationRect = visibleContainerRect.offsetBy(
+            dx: 0,
+            dy: visibleContainerRect.height * direction
+        )
+        layoutManager.ensureLayout(
+            forBoundingRect: visibleContainerRect.union(destinationRect),
+            in: textContainer
+        )
 
         let glyphIndex: Int
-        if layoutManager.numberOfGlyphs == 0 {
+        if textLength == 0 {
             glyphIndex = 0
         } else {
-            let characterIndex = min(referenceLocation, layoutManager.numberOfGlyphs - 1)
-            glyphIndex = layoutManager.glyphIndexForCharacter(at: characterIndex)
+            glyphIndex = layoutManager.glyphIndexForCharacter(at: referenceLocation)
         }
 
         var lineRange = NSRange(location: 0, length: 0)

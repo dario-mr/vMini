@@ -9,6 +9,7 @@ final class EditorViewportController {
 
     private var lineNumberRulerWidthConstraint: NSLayoutConstraint?
     private var hasCompletedInitialViewportReset = false
+    private var initialViewportResetSelection: NSRange?
 
     init(
         textView: NSTextView,
@@ -36,6 +37,7 @@ final class EditorViewportController {
 
     func handleDocumentTextDidReset() {
         hasCompletedInitialViewportReset = false
+        initialViewportResetSelection = nil
         lineNumberRulerView.invalidateLineNumbers()
         resetInitialViewportIfNeeded()
     }
@@ -45,6 +47,11 @@ final class EditorViewportController {
     }
 
     func handleSelectionDidChange() {
+        if let initialViewportResetSelection,
+           textView.selectedRange() != initialViewportResetSelection {
+            hasCompletedInitialViewportReset = true
+            self.initialViewportResetSelection = nil
+        }
         lineNumberRulerView.handleSelectionDidChange()
     }
 
@@ -81,23 +88,42 @@ final class EditorViewportController {
             return
         }
 
-        enforceInitialViewportReset(remainingPasses: 3)
+        guard initialViewportResetSelection == nil else { return }
+
+        let selection = textView.selectedRange()
+        initialViewportResetSelection = selection
+        enforceInitialViewportReset(remainingPasses: 3, expectedSelection: selection)
     }
 
-    private func enforceInitialViewportReset(remainingPasses: Int) {
+    private func enforceInitialViewportReset(remainingPasses: Int, expectedSelection: NSRange) {
         guard remainingPasses > 0 else {
             hasCompletedInitialViewportReset = true
+            initialViewportResetSelection = nil
             return
         }
 
         DispatchQueue.main.async { [weak self] in
-            guard let self else { return }
+            guard let self,
+                  !hasCompletedInitialViewportReset,
+                  initialViewportResetSelection == expectedSelection
+            else { return }
 
-            textView.setSelectedRange(NSRange(location: 0, length: 0))
+            guard textView.selectedRange() == expectedSelection else {
+                hasCompletedInitialViewportReset = true
+                initialViewportResetSelection = nil
+                return
+            }
+
+            let initialSelection = NSRange(location: 0, length: 0)
+            initialViewportResetSelection = initialSelection
+            textView.setSelectedRange(initialSelection)
 
             if let textContainer = textView.textContainer,
                let layoutManager = textView.layoutManager {
-                layoutManager.ensureLayout(for: textContainer)
+                layoutManager.ensureLayout(
+                    forBoundingRect: NSRect(origin: .zero, size: textView.visibleRect.size),
+                    in: textContainer
+                )
             }
 
             scrollView.superview?.layoutSubtreeIfNeeded()
@@ -113,8 +139,12 @@ final class EditorViewportController {
 
             if abs(clipView.bounds.origin.x - targetOrigin.x) < 0.5 && textView.bounds.origin == .zero {
                 hasCompletedInitialViewportReset = true
+                initialViewportResetSelection = nil
             } else {
-                enforceInitialViewportReset(remainingPasses: remainingPasses - 1)
+                enforceInitialViewportReset(
+                    remainingPasses: remainingPasses - 1,
+                    expectedSelection: initialSelection
+                )
             }
         }
     }
