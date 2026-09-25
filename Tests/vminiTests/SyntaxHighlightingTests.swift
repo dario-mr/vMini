@@ -34,6 +34,41 @@ private final class RecordingSyntaxHighlighter: SyntaxHighlighter {
 @available(macOS 14.0, *)
 @MainActor
 final class SyntaxHighlightingTests: XCTestCase {
+    func testReleasePerformanceCorpus() throws {
+        guard ProcessInfo.processInfo.environment["VMINI_RUN_PERFORMANCE_BENCHMARK"] == "1" else {
+            throw XCTSkip("Run scripts/benchmark-performance.sh to measure the Release corpus")
+        }
+
+        let corpusDirectory = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .appendingPathComponent("PerformanceCorpus", isDirectory: true)
+        let cases: [(name: String, language: SyntaxLanguage, text: String)] = [
+            ("token-dense-json", .json, try String(contentsOf: corpusDirectory.appendingPathComponent("TokenDense.json"), encoding: .utf8)),
+            ("multiline-bash", .bash, try String(contentsOf: corpusDirectory.appendingPathComponent("Multiline.sh"), encoding: .utf8)),
+            ("large-markdown", .markdown, try String(contentsOf: corpusDirectory.appendingPathComponent("LargeMarkdown.md"), encoding: .utf8)),
+        ]
+
+        for sample in cases {
+            _ = highlightCorpusText(sample.text, language: sample.language)
+            var durations: [UInt64] = []
+            for _ in 0..<5 {
+                let start = DispatchTime.now().uptimeNanoseconds
+                let outputLength = highlightCorpusText(sample.text, language: sample.language)
+                durations.append(DispatchTime.now().uptimeNanoseconds - start)
+                XCTAssertEqual(outputLength, (sample.text as NSString).length)
+            }
+
+            let median = durations.sorted()[durations.count / 2]
+            print(String(
+                format: "PERF_CORPUS case=%@ utf16=%d median_ms=%.2f samples_ms=%@",
+                sample.name,
+                (sample.text as NSString).length,
+                Double(median) / 1_000_000,
+                durations.map { String(format: "%.2f", Double($0) / 1_000_000) }.joined(separator: ",")
+            ))
+        }
+    }
+
     func testLanguageResolverRecognizesMarkdownExtensions() {
         XCTAssertEqual(
             SyntaxLanguageResolver.resolve(fileURL: URL(fileURLWithPath: "/tmp/notes.md"), typeIdentifier: nil),
@@ -769,6 +804,27 @@ final class SyntaxHighlightingTests: XCTestCase {
             registry: HighlighterRegistry.shared
         )
         return storage
+    }
+
+    private func highlightCorpusText(_ text: String, language: SyntaxLanguage) -> Int {
+        let storage = NSTextStorage(string: text)
+        let theme = ThemeCatalog.palette(for: .default).syntaxTheme
+        let baseFont = EditorFontResolver.font(for: .fallback, size: 13)
+        let range = NSRange(location: 0, length: storage.length)
+
+        storage.beginEditing()
+        storage.addAttribute(.font, value: baseFont, range: range)
+        storage.addAttribute(.foregroundColor, value: theme.plainText, range: range)
+        storage.removeAttribute(.backgroundColor, range: range)
+        HighlighterRegistry.shared.highlighter(for: language).highlight(
+            textStorage: storage,
+            in: range,
+            baseFont: baseFont,
+            theme: theme,
+            registry: HighlighterRegistry.shared
+        )
+        storage.endEditing()
+        return storage.length
     }
 
     private func unhighlightedStorage(_ text: String) -> NSTextStorage {

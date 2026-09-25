@@ -54,14 +54,16 @@ final class WorkspaceDocumentCoordinator: WorkspaceDocumentRouting {
     }
 
     func present(document: Document) {
-        selectionIntent &+= 1
-        if !openDocumentsStore.contains(document) {
-            documentController.addDocument(document)
-            openDocumentsStore.register(document)
-        }
+        AppPerformanceProfiler.measure("DocumentPresent") {
+            selectionIntent &+= 1
+            if !openDocumentsStore.contains(document) {
+                documentController.addDocument(document)
+                openDocumentsStore.register(document)
+            }
 
-        openDocumentsStore.select(document)
-        onDocumentPresentationRequested?()
+            openDocumentsStore.select(document)
+            onDocumentPresentationRequested?()
+        }
     }
 
     func open(urls: [URL], activate activeURL: URL? = nil) {
@@ -78,7 +80,7 @@ final class WorkspaceDocumentCoordinator: WorkspaceDocumentRouting {
                 onDocumentOpeningStateChanged?(pendingFileOpenCount > 0)
             }
             let failures = await AppPerformanceProfiler.measure("WorkspaceOpen") {
-                await documentOpener.openInBackground(
+                await self.documentOpener.openInBackground(
                     urls,
                     activate: activeURL,
                     fallbackDocument: fallbackDocument,

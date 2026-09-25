@@ -19,7 +19,8 @@ let package = Package(
         .testTarget(
             name: "vminiTests",
             dependencies: ["vmini"],
-            path: "Tests/vminiTests"
+            path: "Tests/vminiTests",
+            exclude: ["PerformanceCorpus"]
         )
     ]
 )
