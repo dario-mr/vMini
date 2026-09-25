@@ -17,12 +17,16 @@ final class WorkspaceDocumentCoordinator: WorkspaceDocumentRouting {
     static let shared = WorkspaceDocumentCoordinator()
 
     var onDocumentPresentationRequested: (() -> Void)?
+    var onDocumentOpeningStateChanged: ((Bool) -> Void)? {
+        didSet { onDocumentOpeningStateChanged?(pendingFileOpenCount > 0) }
+    }
     var onNeedsWindowStateRefresh: (() -> Void)?
 
     private let documentOpener: WorkspaceDocumentOpener
     private let openDocumentsStore: OpenDocumentsStore
     private let closedDocumentHistory: ClosedDocumentHistory
     private let documentController: NSDocumentController
+    private var pendingFileOpenCount = 0
     private var documentsBeingReviewedForClose = Set<ObjectIdentifier>()
     private var closeReviewCompletions: [ObjectIdentifier: (Bool) -> Void] = [:]
     private var isReviewingBulkClose = false
@@ -61,10 +65,18 @@ final class WorkspaceDocumentCoordinator: WorkspaceDocumentRouting {
     }
 
     func open(urls: [URL], activate activeURL: URL? = nil) {
+        guard !urls.isEmpty else { return }
+
         let fallbackDocument = openDocumentsStore.activeDocument
         let requestIntent = beginSelectionIntent()
+        pendingFileOpenCount += 1
+        onDocumentOpeningStateChanged?(true)
         Task { @MainActor [weak self] in
             guard let self else { return }
+            defer {
+                pendingFileOpenCount -= 1
+                onDocumentOpeningStateChanged?(pendingFileOpenCount > 0)
+            }
             let failures = await AppPerformanceProfiler.measure("WorkspaceOpen") {
                 await documentOpener.openInBackground(
                     urls,

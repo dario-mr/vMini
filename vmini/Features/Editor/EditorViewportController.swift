@@ -32,13 +32,13 @@ final class EditorViewportController {
             self?.lineNumberRulerWidthConstraint?.constant = ruleThickness
             self?.synchronizeWordWrapLayout()
         }
-        lineNumberRulerView.invalidateLineNumbers()
+        lineNumberRulerView.resetLineCache()
     }
 
     func handleDocumentTextDidReset() {
         hasCompletedInitialViewportReset = false
         initialViewportResetSelection = nil
-        lineNumberRulerView.invalidateLineNumbers()
+        lineNumberRulerView.resetLineCache()
         resetInitialViewportIfNeeded()
     }
 

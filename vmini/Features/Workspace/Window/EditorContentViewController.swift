@@ -124,6 +124,10 @@ final class EditorContentViewController: NSViewController {
         activeEditorCoordinator?.focusEditor()
     }
 
+    func setDocumentOpening(_ isOpening: Bool) {
+        statusBarView.setDocumentOpening(isOpening)
+    }
+
     func toggleLineComment() {
         activeEditorCoordinator?.toggleLineComment()
     }
