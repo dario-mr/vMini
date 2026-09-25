@@ -326,6 +326,58 @@ final class SyntaxHighlightingTests: XCTestCase {
         XCTAssertEqual(highlighter.ranges[0], NSRange(location: 1, length: 8))
     }
 
+    func testCancelledMarkdownWorkRetainsAndRebasesItsDirtyRange() async throws {
+        let storage = unhighlightedStorage("# Initial\nfirst\nsecond\nthird\nordinary\nfifth\nsixth\n")
+        let theme = ThemeCatalog.palette(for: .default).syntaxTheme
+        let font = EditorFontResolver.font(for: .fallback, size: 13)
+        var holdWork = false
+        var workStarted = expectation(description: "first edit started")
+        var completions: [() -> Void] = []
+        var workRanges: [NSRange] = []
+        let controller = EditorSyntaxHighlightController(
+            highlighterRegistry: .shared,
+            textStorageProvider: { storage }, syntaxThemeProvider: { theme }, baseFontProvider: { font },
+            markdownWorkProvider: { highlighter, snapshot, range, cachedFenceCache in
+                let cache = cachedFenceCache ?? highlighter.makeFenceCache(in: snapshot as NSString)
+                let result = MarkdownSyntaxHighlighter.HighlightWork(
+                    fenceCache: cache,
+                    lineStyles: highlighter.lineStylePlan(in: snapshot, targetRange: range, fences: cache.blocks)
+                )
+                return Task { @MainActor in
+                    if holdWork {
+                        await withCheckedContinuation { continuation in
+                            completions.append { continuation.resume() }
+                            workRanges.append(range)
+                            workStarted.fulfill()
+                        }
+                    }
+                    return result
+                }
+            }
+        )
+        controller.refresh(language: .markdown)
+        try await waitForCondition { self.highlightingMatchesFresh(storage, language: .markdown) }
+
+        holdWork = true
+        applyEdit("# Heading", replacing: (storage.string as NSString).range(of: "ordinary"), in: storage, controller: controller)
+        await fulfillment(of: [workStarted], timeout: 2)
+        workStarted = expectation(description: "replacement work started")
+        applyEdit("😀 prefix\n", at: 0, in: storage, controller: controller)
+        await fulfillment(of: [workStarted], timeout: 2)
+
+        // Complete the newer work first, then deliver the cancelled result with stale offsets.
+        XCTAssertEqual(completions.count, 2)
+        guard completions.count == 2 else { return }
+        completions[1]()
+        try await waitForCondition { self.highlightingMatchesFresh(storage, language: .markdown) }
+        completions[0]()
+        await Task.yield()
+        XCTAssertTrue(highlightingMatchesFresh(storage, language: .markdown))
+        let heading = (storage.string as NSString).range(of: "Heading")
+        XCTAssertEqual(NSIntersectionRange(workRanges[1], heading), heading)
+        XCTAssertLessThan(workRanges[1].length, storage.length, "Retain incremental highlighting")
+    }
+
     func testMarkdownIncrementalStylesMatchFreshHighlightAfterRapidEditsAndUndo() async throws {
         let initialText = "Before\n# Heading\n```sh\necho old\n```\nAfter **strong**\n"
         let storage = unhighlightedStorage(initialText)

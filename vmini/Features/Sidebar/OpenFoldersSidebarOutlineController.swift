@@ -48,7 +48,7 @@ final class OpenFoldersSidebarOutlineController: NSObject, NSOutlineViewDataSour
         if previousState?.folderURLs != state.folderURLs {
             let previousPaths = Set(previousState?.folderURLs.map(\.standardizedFileURL.path) ?? [])
             let currentPaths = Set(state.folderURLs.map(\.standardizedFileURL.path))
-            invalidateTreeAndIcons(at: previousPaths.subtracting(currentPaths))
+            invalidateTreeAndIcons(at: previousPaths.subtracting(currentPaths), removingRoots: true)
             reloadFolders()
             return
         }
@@ -278,10 +278,11 @@ final class OpenFoldersSidebarOutlineController: NSObject, NSOutlineViewDataSour
         return icon
     }
 
-    private func invalidateTreeAndIcons(at paths: Set<String>) {
+    private func invalidateTreeAndIcons(at paths: Set<String>, removingRoots: Bool = false) {
         guard !paths.isEmpty else { return }
         let invalidatedPaths = treeProvider.invalidateContents(
-            at: paths.map { URL(fileURLWithPath: $0, isDirectory: true) }
+            at: paths.map { URL(fileURLWithPath: $0, isDirectory: true) },
+            removingRoots: removingRoots
         )
         for path in invalidatedPaths {
             iconsByPath.removeValue(forKey: path)

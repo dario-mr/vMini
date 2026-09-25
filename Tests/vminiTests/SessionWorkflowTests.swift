@@ -426,6 +426,65 @@ final class SessionWorkflowTests: XCTestCase {
         XCTAssertTrue(didPromptForConflict)
     }
 
+    func testExternalReloadOrderingAndLifecycleInvalidation() async throws {
+        let fileURL = try makeTemporaryFile(named: "overlapping-reloads.txt", contents: "disk")
+        for newestFinishesFirst in [false, true] {
+            let started = (0..<3).map { expectation(description: "reload \($0) started") }
+            var continuations: [CheckedContinuation<DocumentPayload, Error>] = []
+            var revision: UInt64 = 0
+            var installed = "original"
+            let lifecycle = DocumentFileLifecycleController(
+                externalChangeCoordinator: DocumentExternalChangeCoordinator(),
+                openDocumentsStore: OpenDocumentsStore(),
+                payloadLoader: { _ in
+                    try await withCheckedThrowingContinuation { continuation in
+                        continuations.append(continuation)
+                        started[continuations.count - 1].fulfill()
+                    }
+                }
+            )
+            func reload() async {
+                await lifecycle.reloadFromDiskAfterExternalChange(
+                    fileURL: fileURL, currentFileURL: { fileURL },
+                    contentRevision: { revision }, startingRevision: revision,
+                    restartWatcher: false, isDocumentEdited: false,
+                    isDocumentCurrentlyEdited: { false }, reloadEvenIfEdited: false,
+                    installPayload: { installed = $0.text; revision += 1 }, onReload: {},
+                    onMissingFile: { XCTFail("File exists") },
+                    onMissingFileWithUnsavedChanges: { XCTFail("File exists") },
+                    onExternalChangeWithUnsavedChanges: { _ in XCTFail("No local edits") },
+                    onExternalChangeReload: { _ in }
+                )
+            }
+            let first = Task { await reload() }
+            await fulfillment(of: [started[0]], timeout: 2)
+            let second = Task { await reload() }
+            await fulfillment(of: [started[1]], timeout: 2)
+            let tasks = [first, second]
+            for index in newestFinishesFirst ? [1, 0] : [0, 1] {
+                continuations[index].resume(returning: DocumentPayload(
+                    url: fileURL, typeName: "public.plain-text", text: "version \(index + 1)"
+                ))
+                await tasks[index].value
+            }
+            XCTAssertEqual(installed, "version 2")
+            XCTAssertEqual(revision, 1, "Only the latest request should install a payload")
+
+            let obsolete = Task { await reload() }
+            await fulfillment(of: [started[2]], timeout: 2)
+            if newestFinishesFirst {
+                lifecycle.handleClose()
+            } else {
+                lifecycle.prepareForSave()
+            }
+            continuations[2].resume(returning: DocumentPayload(
+                url: fileURL, typeName: "public.plain-text", text: "obsolete"
+            ))
+            await obsolete.value
+            XCTAssertEqual(installed, "version 2", "Closing or saving must invalidate pending reads")
+        }
+    }
+
     func testWorkspaceDocumentCoordinatorReopensMostRecentClosedUntitledDocument() {
         let history = ClosedDocumentHistory()
         let store = OpenDocumentsStore()

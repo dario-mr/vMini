@@ -2,10 +2,15 @@ import AppKit
 
 @MainActor
 final class EditorSyntaxHighlightController {
+    typealias MarkdownWorkProvider = (
+        MarkdownSyntaxHighlighter, String, NSRange, MarkdownSyntaxHighlighter.FenceCache?
+    ) -> Task<MarkdownSyntaxHighlighter.HighlightWork?, Never>
+
     private let highlighterRegistry: HighlighterRegistry
     private let textStorageProvider: () -> NSTextStorage?
     private let syntaxThemeProvider: () -> SyntaxTheme
     private let baseFontProvider: () -> NSFont
+    private let markdownWorkProvider: MarkdownWorkProvider
 
     private var isApplyingHighlighting = false
     private var pendingRefreshTask: Task<Void, Never>?
@@ -28,12 +33,14 @@ final class EditorSyntaxHighlightController {
         highlighterRegistry: HighlighterRegistry,
         textStorageProvider: @escaping () -> NSTextStorage?,
         syntaxThemeProvider: @escaping () -> SyntaxTheme,
-        baseFontProvider: @escaping () -> NSFont
+        baseFontProvider: @escaping () -> NSFont,
+        markdownWorkProvider: @escaping MarkdownWorkProvider = EditorSyntaxHighlightController.makeMarkdownHighlightWork
     ) {
         self.highlighterRegistry = highlighterRegistry
         self.textStorageProvider = textStorageProvider
         self.syntaxThemeProvider = syntaxThemeProvider
         self.baseFontProvider = baseFontProvider
+        self.markdownWorkProvider = markdownWorkProvider
     }
 
     func refresh(language: SyntaxLanguage) {
@@ -114,9 +121,6 @@ final class EditorSyntaxHighlightController {
 
             let target = self.pendingHighlight
             let targetLanguage = self.pendingLanguage
-            self.pendingHighlight = .none
-            self.pendingTextLength = nil
-            self.pendingRefreshTask = nil
             let highlightRange: NSRange?
             switch target {
             case .none:
@@ -129,6 +133,11 @@ final class EditorSyntaxHighlightController {
             await AppPerformanceProfiler.measure("SyntaxHighlight") {
                 await self.applyHighlighting(in: highlightRange, language: targetLanguage, revision: scheduledRevision)
             }
+            // Keep the dirty range available for rebasing if an edit cancels in-flight work.
+            guard scheduledRevision == self.textRevision, !Task.isCancelled else { return }
+            self.pendingHighlight = .none
+            self.pendingTextLength = nil
+            self.pendingRefreshTask = nil
         }
     }
 
@@ -148,29 +157,7 @@ final class EditorSyntaxHighlightController {
         if let markdownHighlighter = highlighter as? MarkdownSyntaxHighlighter {
             let snapshot = textStorage.string
             let cachedFenceCache = markdownFenceCache.flatMap { $0.textLength == textStorage.length ? $0 : nil }
-            let work = Task.detached(priority: .userInitiated) { () -> MarkdownSyntaxHighlighter.HighlightWork? in
-                let fenceCache: MarkdownSyntaxHighlighter.FenceCache
-                if let cachedFenceCache {
-                    fenceCache = cachedFenceCache
-                } else {
-                    guard let scannedCache = markdownHighlighter.makeFenceCache(
-                        in: snapshot as NSString,
-                        isCancelled: { Task.isCancelled }
-                    ) else {
-                        return nil
-                    }
-                    fenceCache = scannedCache
-                }
-                guard let lineStyles = markdownHighlighter.lineStylePlan(
-                    in: snapshot,
-                    targetRange: targetRange,
-                    fences: fenceCache.blocks,
-                    isCancelled: { Task.isCancelled }
-                ) else {
-                    return nil
-                }
-                return MarkdownSyntaxHighlighter.HighlightWork(fenceCache: fenceCache, lineStyles: lineStyles)
-            }
+            let work = markdownWorkProvider(markdownHighlighter, snapshot, targetRange, cachedFenceCache)
             markdownHighlightWorkTask = work
             guard let result = await work.value else { return }
             guard revision == textRevision, !Task.isCancelled else { return }
@@ -219,6 +206,26 @@ final class EditorSyntaxHighlightController {
         }
         textStorage.endEditing()
         isApplyingHighlighting = false
+    }
+
+    nonisolated private static func makeMarkdownHighlightWork(
+        highlighter: MarkdownSyntaxHighlighter,
+        snapshot: String,
+        targetRange: NSRange,
+        cachedFenceCache: MarkdownSyntaxHighlighter.FenceCache?
+    ) -> Task<MarkdownSyntaxHighlighter.HighlightWork?, Never> {
+        Task.detached(priority: .userInitiated) {
+            guard let fenceCache = cachedFenceCache ?? highlighter.makeFenceCache(
+                in: snapshot as NSString,
+                isCancelled: { Task.isCancelled }
+            ), let lineStyles = highlighter.lineStylePlan(
+                in: snapshot,
+                targetRange: targetRange,
+                fences: fenceCache.blocks,
+                isCancelled: { Task.isCancelled }
+            ) else { return nil }
+            return MarkdownSyntaxHighlighter.HighlightWork(fenceCache: fenceCache, lineStyles: lineStyles)
+        }
     }
 
     private func applyTypingAttributes(for editContext: SyntaxHighlightEditContext?) {
