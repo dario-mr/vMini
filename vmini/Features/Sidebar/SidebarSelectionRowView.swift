@@ -24,18 +24,18 @@ final class SidebarSelectionRowView: NSTableRowView {
     override func updateTrackingAreas() {
         super.updateTrackingAreas()
 
-        if let trackingArea {
-            removeTrackingArea(trackingArea)
+        if trackingArea == nil {
+            let trackingArea = NSTrackingArea(
+                rect: bounds,
+                options: [.activeInKeyWindow, .mouseEnteredAndExited, .inVisibleRect],
+                owner: self,
+                userInfo: nil
+            )
+            addTrackingArea(trackingArea)
+            self.trackingArea = trackingArea
         }
 
-        let trackingArea = NSTrackingArea(
-            rect: bounds,
-            options: [.activeInKeyWindow, .mouseEnteredAndExited, .inVisibleRect],
-            owner: self,
-            userInfo: nil
-        )
-        addTrackingArea(trackingArea)
-        self.trackingArea = trackingArea
+        updateHoverState()
     }
 
     override func mouseEntered(with event: NSEvent) {
@@ -71,6 +71,16 @@ final class SidebarSelectionRowView: NSTableRowView {
     override func prepareForReuse() {
         super.prepareForReuse()
         isHovered = false
+    }
+
+    private func updateHoverState() {
+        guard let window else {
+            isHovered = false
+            return
+        }
+
+        let mouseLocation = convert(window.mouseLocationOutsideOfEventStream, from: nil)
+        isHovered = visibleRect.contains(mouseLocation)
     }
 
     private var hoverRectPath: NSBezierPath {
