@@ -297,10 +297,11 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
 
         textView.textStorage?.delegate = self
         scrollView.documentView = textView
-        textViewStyler.configureTextView()
+        AppPerformanceProfiler.measure("EditorTextViewConfigure") {
+            textViewStyler.configureTextView()
+        }
         formattingErrorBannerView.applyTheme()
         refreshSyntaxHighlighting()
-        bracketHighlightController.refresh()
     }
 
     private func configureFormattingErrorBanner() {

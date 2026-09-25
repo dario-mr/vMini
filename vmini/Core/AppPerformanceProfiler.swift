@@ -4,7 +4,7 @@ import OSLog
 enum AppPerformanceProfiler {
     private static let logger = Logger(
         subsystem: Bundle.main.bundleIdentifier ?? "com.miniapp.vmini",
-        category: "Performance"
+        category: "PointsOfInterest"
     )
     private static let signposter = OSSignposter(logger: logger)
 

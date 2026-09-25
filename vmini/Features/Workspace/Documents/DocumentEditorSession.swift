@@ -16,7 +16,9 @@ final class DocumentEditorSession {
         }
 
         let editorViewController = EditorViewController()
-        editorViewController.text = text
+        AppPerformanceProfiler.measure("EditorInitialText") {
+            editorViewController.text = text
+        }
         editorViewController.syntaxLanguage = syntaxLanguage
         editorViewController.onTextChanged = { [weak editorViewController] in
             guard let editorViewController else { return }
