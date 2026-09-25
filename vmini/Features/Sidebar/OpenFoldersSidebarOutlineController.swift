@@ -187,6 +187,11 @@ final class OpenFoldersSidebarOutlineController: NSObject, NSOutlineViewDataSour
         guard let outlineView,
               let node = nodeMatchingPath(url.standardizedFileURL.path, in: rootNodes) else { return }
 
+        let directoryPath = url.standardizedFileURL.path
+        for path in iconsByPath.keys.filter({ $0 == directoryPath || $0.hasPrefix(directoryPath + "/") }) {
+            iconsByPath.removeValue(forKey: path)
+        }
+
         node.invalidateChildren()
         outlineView.reloadItem(node, reloadChildren: true)
         applyExpansionState()
@@ -199,23 +204,9 @@ final class OpenFoldersSidebarOutlineController: NSObject, NSOutlineViewDataSour
                 return
             }
 
-            invalidateTreeAndIcons(at: changedPaths)
-            guard let outlineView else { return }
-
-            var didReloadAnyItem = false
             for path in changedPaths.sorted(by: { $0.count > $1.count }) {
-                guard let node = nodeMatchingPath(path, in: rootNodes) else { continue }
-                outlineView.reloadItem(node, reloadChildren: true)
-                didReloadAnyItem = true
+                treeProvider.refreshChildren(for: URL(fileURLWithPath: path, isDirectory: true))
             }
-
-            if !didReloadAnyItem {
-                rootNodes = treeProvider.rootNodes(for: folderStore.folderURLs)
-                outlineView.reloadData()
-                applyExpansionState()
-            }
-
-            applySelection()
         }
     }
 

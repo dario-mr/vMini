@@ -81,6 +81,16 @@ final class FolderTreeProvider: FolderTreeProviding {
             }
     }
 
+    func refreshChildren(for url: URL) {
+        let path = url.standardizedFileURL.path
+        pendingChildLoads[path]?.task.cancel()
+        let pending = makePendingLoad(for: url)
+        pendingChildLoads[path] = pending
+        Task { [weak self] in
+            await self?.apply(pending, for: url)
+        }
+    }
+
     func loadChildren(for url: URL) async {
         let path = url.standardizedFileURL.path
         guard childURLsByPath[path] == nil else { return }
@@ -144,11 +154,21 @@ final class FolderTreeProvider: FolderTreeProviding {
 
         pendingChildLoads.removeValue(forKey: path)
         let children = snapshot.children
+
+        if let existingURLs = childURLsByPath[path],
+           Set(existingURLs) == Set(children.map(\.url)),
+           children.allSatisfy({ child in
+               guard let metadata = metadataByPath[child.url.path] else { return false }
+               return metadata.title == child.title && metadata.isDirectory == child.isDirectory
+           }) {
+            return
+        }
+
+        invalidateContents(at: [url])
         childURLsByPath[path] = children.map(\.url)
         for child in children {
             metadataByPath[child.url.path] = NodeMetadata(title: child.title, isDirectory: child.isDirectory)
         }
-        nodesByPath[path]?.invalidateChildren()
         onChildrenLoaded?(url.standardizedFileURL)
     }
 
