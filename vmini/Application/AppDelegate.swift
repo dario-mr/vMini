@@ -14,12 +14,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         _ = WorkspaceWindowController.shared
 
-        if !SessionRestorer.reopenLastFiles() {
-            WorkspaceDocumentCoordinator.shared.createUntitledDocument()
-        }
-
         documentsObservation = OpenDocumentsStore.shared.observe { [weak self] _ in
             self?.handleOpenDocumentsDidChange()
+        }
+
+        Task { @MainActor in
+            if await SessionRestorer.reopenLastFiles() == false {
+                WorkspaceDocumentCoordinator.shared.createUntitledDocument()
+            }
         }
     }
 

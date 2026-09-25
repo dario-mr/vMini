@@ -37,7 +37,8 @@ final class SessionWorkflowTests: XCTestCase {
             .file(path: fileURL.standardizedFileURL.path)
         )
 
-        XCTAssertTrue(sessionManager.reopenLastFiles())
+        let didRestore = await sessionManager.reopenLastFiles()
+        XCTAssertTrue(didRestore)
         XCTAssertEqual(
             router.restoredReferences,
             [
@@ -151,21 +152,25 @@ final class SessionWorkflowTests: XCTestCase {
         )
     }
 
-    func testWorkspaceDocumentOpenerSetsFileURLFileTypeAndTextForOpenedFiles() throws {
+    func testWorkspaceDocumentOpenerSetsFileURLFileTypeAndTextForOpenedFiles() async throws {
         let documentController = DocumentController()
         let store = OpenDocumentsStore()
         let opener = WorkspaceDocumentOpener(documentController: documentController, openDocumentsStore: store)
         let fileURL = try makeTemporaryFile(named: "open.txt", contents: "hello world")
         var presentedDocument: Document?
 
-        opener.open(
+        let failures = await opener.openInBackground(
             [fileURL],
             activate: fileURL,
             fallbackDocument: nil,
-            presentDocument: { presentedDocument = $0 },
+            presentDocument: {
+                presentedDocument = $0
+                store.select($0)
+            },
             noDocumentFallback: { XCTFail("Expected document to open") }
         )
 
+        XCTAssertTrue(failures.isEmpty)
         let document = try XCTUnwrap(presentedDocument)
         let editorViewController = document.editorViewController(onFileSystemURLsDropped: { _ in })
         XCTAssertEqual(document.fileURL?.standardizedFileURL, fileURL.standardizedFileURL)
@@ -200,6 +205,225 @@ final class SessionWorkflowTests: XCTestCase {
 
         XCTAssertEqual(store.documents.count, 1)
         XCTAssertEqual(store.activeDocument?.fileURL?.standardizedFileURL, fileURL.standardizedFileURL)
+    }
+
+    func testSlowEarlierOpenDoesNotOverrideNewerOpenSelection() async throws {
+        let slowURL = try makeTemporaryFile(named: "slow-open.txt", contents: "slow")
+        let fastURL = try makeTemporaryFile(named: "fast-open.txt", contents: "fast")
+        let history = ClosedDocumentHistory()
+        let store = OpenDocumentsStore()
+        let documentController = DocumentController()
+        let opener = WorkspaceDocumentOpener(
+            documentController: documentController,
+            openDocumentsStore: store,
+            payloadLoader: { url in
+                if url.standardizedFileURL == slowURL.standardizedFileURL {
+                    try await Task.sleep(for: .milliseconds(250))
+                }
+                return try await DocumentPayloadLoader.load(from: url)
+            }
+        )
+        let coordinator = WorkspaceDocumentCoordinator(
+            documentOpener: opener,
+            openDocumentsStore: store,
+            closedDocumentHistory: history,
+            documentController: documentController
+        )
+
+        coordinator.open(urls: [slowURL], activate: slowURL)
+        try await Task.sleep(for: .milliseconds(20))
+        coordinator.open(urls: [fastURL], activate: fastURL)
+
+        for _ in 0..<40 where store.documents.count < 2 {
+            try await Task.sleep(for: .milliseconds(25))
+        }
+
+        XCTAssertEqual(store.documents.count, 2)
+        XCTAssertEqual(store.activeDocument?.fileURL?.standardizedFileURL, fastURL.standardizedFileURL)
+    }
+
+    func testStaleOpenDoesNotSelectWhileNewerRequestIsStillLoading() async throws {
+        let earlierURL = try makeTemporaryFile(named: "earlier-open.txt", contents: "earlier")
+        let newerURL = try makeTemporaryFile(named: "newer-open.txt", contents: "newer")
+        let history = ClosedDocumentHistory()
+        let store = OpenDocumentsStore()
+        let documentController = DocumentController()
+        let opener = WorkspaceDocumentOpener(
+            documentController: documentController,
+            openDocumentsStore: store,
+            payloadLoader: { url in
+                let delay = url.standardizedFileURL == earlierURL.standardizedFileURL ? 60 : 400
+                try await Task.sleep(for: .milliseconds(delay))
+                return try await DocumentPayloadLoader.load(from: url)
+            }
+        )
+        let coordinator = WorkspaceDocumentCoordinator(
+            documentOpener: opener,
+            openDocumentsStore: store,
+            closedDocumentHistory: history,
+            documentController: documentController
+        )
+
+        coordinator.open(urls: [earlierURL], activate: earlierURL)
+        try await Task.sleep(for: .milliseconds(20))
+        coordinator.open(urls: [newerURL], activate: newerURL)
+
+        for _ in 0..<30 where !store.documents.contains(where: { $0.fileURL?.standardizedFileURL == earlierURL.standardizedFileURL }) {
+            try await Task.sleep(for: .milliseconds(15))
+        }
+
+        XCTAssertEqual(store.documents.count, 1)
+        XCTAssertNil(store.activeDocument)
+
+        for _ in 0..<40 where store.documents.count < 2 {
+            try await Task.sleep(for: .milliseconds(20))
+        }
+
+        XCTAssertEqual(store.documents.count, 2)
+        XCTAssertEqual(store.activeDocument?.fileURL?.standardizedFileURL, newerURL.standardizedFileURL)
+    }
+
+    func testSelectingAnAlreadyOpenTabInvalidatesPendingOpenSelection() async throws {
+        let existingURL = try makeTemporaryFile(named: "already-open.txt", contents: "existing")
+        let slowURL = try makeTemporaryFile(named: "select-during-open.txt", contents: "new")
+        let history = ClosedDocumentHistory()
+        let store = OpenDocumentsStore()
+        let documentController = DocumentController()
+        let opener = WorkspaceDocumentOpener(
+            documentController: documentController,
+            openDocumentsStore: store,
+            payloadLoader: { url in
+                try await Task.sleep(for: .milliseconds(150))
+                return try await DocumentPayloadLoader.load(from: url)
+            }
+        )
+        let coordinator = WorkspaceDocumentCoordinator(
+            documentOpener: opener,
+            openDocumentsStore: store,
+            closedDocumentHistory: history,
+            documentController: documentController
+        )
+        let existingDocument = Document()
+        existingDocument.fileURL = existingURL
+        store.register(existingDocument, makeActive: true)
+
+        coordinator.open(urls: [slowURL], activate: slowURL)
+        try await Task.sleep(for: .milliseconds(20))
+        coordinator.present(document: existingDocument)
+
+        for _ in 0..<30 where store.documents.count < 2 {
+            try await Task.sleep(for: .milliseconds(25))
+        }
+
+        XCTAssertEqual(store.documents.count, 2)
+        XCTAssertTrue(store.activeDocument === existingDocument)
+    }
+
+    func testWorkspaceDocumentOpenerRestoresActiveFileFirstAndKeepsSavedOrder() async throws {
+        let firstURL = try makeTemporaryFile(named: "restore-first.txt", contents: "first")
+        let activeURL = try makeTemporaryFile(named: "restore-active.txt", contents: "active")
+        let lastURL = try makeTemporaryFile(named: "restore-last.txt", contents: "last")
+        let references: [RestorableDocumentReference] = [
+            .file(path: firstURL.path),
+            .file(path: activeURL.path),
+            .file(path: lastURL.path)
+        ]
+        let store = OpenDocumentsStore()
+        let opener = WorkspaceDocumentOpener(
+            documentController: DocumentController(),
+            openDocumentsStore: store,
+            payloadLoader: { url in
+                if url.standardizedFileURL != activeURL.standardizedFileURL {
+                    try await Task.sleep(for: .milliseconds(50))
+                }
+                return try await DocumentPayloadLoader.load(from: url)
+            }
+        )
+        var presentedDocuments: [Document] = []
+        var documentCountWhenActivePresented: Int?
+
+        let result = await opener.restoreSession(
+            references,
+            activate: activeURL.path,
+            presentDocument: { document in
+                if presentedDocuments.isEmpty {
+                    documentCountWhenActivePresented = store.documents.count
+                }
+                presentedDocuments.append(document)
+                store.select(document)
+            },
+            noDocumentFallback: { XCTFail("Expected restored documents") }
+        )
+
+        XCTAssertTrue(result.didRestore)
+        XCTAssertTrue(result.failures.isEmpty)
+        XCTAssertEqual(documentCountWhenActivePresented, 1)
+        XCTAssertEqual(store.documents.compactMap { $0.fileURL?.standardizedFileURL }, [
+            firstURL.standardizedFileURL,
+            activeURL.standardizedFileURL,
+            lastURL.standardizedFileURL
+        ])
+        XCTAssertEqual(store.activeDocument?.fileURL?.standardizedFileURL, activeURL.standardizedFileURL)
+        XCTAssertEqual(presentedDocuments.first?.fileURL?.standardizedFileURL, activeURL.standardizedFileURL)
+    }
+
+    func testWorkspaceDocumentOpenerReturnsFailuresForMissingFiles() async throws {
+        let missingURL = URL(fileURLWithPath: "/tmp/vmini-missing-\(UUID().uuidString).txt")
+        let opener = WorkspaceDocumentOpener(documentController: DocumentController(), openDocumentsStore: OpenDocumentsStore())
+        var didUseFallback = false
+
+        let failures = await opener.openInBackground(
+            [missingURL],
+            activate: missingURL,
+            fallbackDocument: nil,
+            presentDocument: { _ in XCTFail("Expected open failure") },
+            noDocumentFallback: { didUseFallback = true }
+        )
+
+        XCTAssertTrue(didUseFallback)
+        XCTAssertEqual(failures.map(\.url), [missingURL.standardizedFileURL])
+        XCTAssertFalse(failures.first?.message.isEmpty ?? true)
+    }
+
+    func testExternalReloadDiscardsPayloadWhenDocumentRevisionChanges() async throws {
+        let fileURL = try makeTemporaryFile(named: "revision-check.txt", contents: "disk")
+        let store = OpenDocumentsStore()
+        let lifecycle = DocumentFileLifecycleController(
+            externalChangeCoordinator: DocumentExternalChangeCoordinator(),
+            openDocumentsStore: store,
+            payloadLoader: { url in
+                try await Task.sleep(for: .milliseconds(100))
+                return DocumentPayload(url: url, typeName: "public.plain-text", text: "disk version")
+            }
+        )
+        var revision: UInt64 = 1
+        var didInstallPayload = false
+        var didPromptForConflict = false
+        let reload = Task {
+            await lifecycle.reloadFromDiskAfterExternalChange(
+                fileURL: fileURL,
+                currentFileURL: { fileURL },
+                contentRevision: { revision },
+                startingRevision: revision,
+                restartWatcher: false,
+                isDocumentEdited: false,
+                isDocumentCurrentlyEdited: { true },
+                reloadEvenIfEdited: false,
+                installPayload: { _ in didInstallPayload = true },
+                onReload: {},
+                onMissingFile: { XCTFail("File exists") },
+                onMissingFileWithUnsavedChanges: { XCTFail("File exists") },
+                onExternalChangeWithUnsavedChanges: { _ in didPromptForConflict = true },
+                onExternalChangeReload: { _ in }
+            )
+        }
+
+        try await Task.sleep(for: .milliseconds(20))
+        revision += 1
+        await reload.value
+
+        XCTAssertFalse(didInstallPayload)
+        XCTAssertTrue(didPromptForConflict)
     }
 
     func testWorkspaceDocumentCoordinatorReopensMostRecentClosedUntitledDocument() {
@@ -342,7 +566,7 @@ private final class RecordingDocumentRouter: WorkspaceDocumentRouting {
     func createUntitledDocument() {}
     func createUntitledDocument(sessionIdentifier: UUID) {}
 
-    func restoreSession(_ references: [RestorableDocumentReference], activate activeIdentifier: String?) -> Bool {
+    func restoreSession(_ references: [RestorableDocumentReference], activate activeIdentifier: String?) async -> Bool {
         restoredReferences = references
         restoredActiveIdentifier = activeIdentifier
         return !references.isEmpty

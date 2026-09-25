@@ -29,7 +29,7 @@ enum SessionRestorer {
     }
 
     @discardableResult
-    static func reopenLastFiles() -> Bool {
-        manager.reopenLastFiles()
+    static func reopenLastFiles() async -> Bool {
+        await manager.reopenLastFiles()
     }
 }

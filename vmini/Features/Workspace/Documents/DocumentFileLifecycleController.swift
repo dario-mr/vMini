@@ -2,24 +2,25 @@ import AppKit
 
 @MainActor
 final class DocumentFileLifecycleController {
+    typealias PayloadLoader = (URL) async throws -> DocumentPayload
+
     private let externalChangeCoordinator: DocumentExternalChangeCoordinator
-    private let typeResolver: NSDocumentController
     private let openDocumentsStore: OpenDocumentsStore
+    private let payloadLoader: PayloadLoader
 
     init(
         externalChangeCoordinator: DocumentExternalChangeCoordinator,
-        typeResolver: NSDocumentController,
-        openDocumentsStore: OpenDocumentsStore
+        openDocumentsStore: OpenDocumentsStore,
+        payloadLoader: @escaping PayloadLoader = DocumentPayloadLoader.load(from:)
     ) {
         self.externalChangeCoordinator = externalChangeCoordinator
-        self.typeResolver = typeResolver
         self.openDocumentsStore = openDocumentsStore
+        self.payloadLoader = payloadLoader
     }
 
     convenience init(openDocumentsStore: OpenDocumentsStore) {
         self.init(
             externalChangeCoordinator: DocumentExternalChangeCoordinator(),
-            typeResolver: .shared,
             openDocumentsStore: openDocumentsStore
         )
     }
@@ -61,17 +62,20 @@ final class DocumentFileLifecycleController {
 
     func reloadFromDiskAfterExternalChange(
         fileURL: URL?,
+        currentFileURL: () -> URL?,
+        contentRevision: () -> UInt64,
+        startingRevision: UInt64,
         restartWatcher: Bool,
         isDocumentEdited: Bool,
+        isDocumentCurrentlyEdited: () -> Bool,
         reloadEvenIfEdited: Bool,
-        readFromData: (Data, String) throws -> Void,
-        updateResolvedFileType: (String) -> Void,
+        installPayload: (DocumentPayload) -> Void,
         onReload: () -> Void,
         onMissingFile: () -> Void,
         onMissingFileWithUnsavedChanges: () -> Void,
         onExternalChangeWithUnsavedChanges: (Bool) -> Void,
         onExternalChangeReload: @escaping @MainActor (Bool) -> Void
-    ) {
+    ) async {
         guard let fileURL else { return }
         guard FileManager.default.fileExists(atPath: fileURL.path) else {
             externalChangeCoordinator.stop()
@@ -91,19 +95,32 @@ final class DocumentFileLifecycleController {
             return
         }
 
+        let standardizedURL = fileURL.standardizedFileURL
         do {
-            let typeName = try typeResolver.typeForContents(of: fileURL)
-            let data = try Data(contentsOf: fileURL, options: [.mappedIfSafe])
-            try readFromData(data, typeName)
-            updateResolvedFileType(typeName)
+            let payload = try await payloadLoader(standardizedURL)
+            guard currentFileURL()?.standardizedFileURL == standardizedURL else { return }
+            guard contentRevision() == startingRevision else {
+                if isDocumentCurrentlyEdited() {
+                    onExternalChangeWithUnsavedChanges(false)
+                }
+                if restartWatcher {
+                    restartWatching(fileURL: currentFileURL(), onExternalChangeReload: onExternalChangeReload)
+                }
+                return
+            }
+
+            installPayload(payload)
             onReload()
             openDocumentsStore.refresh()
 
             if restartWatcher {
-                restartWatching(fileURL: fileURL, onExternalChangeReload: onExternalChangeReload)
+                restartWatching(fileURL: currentFileURL(), onExternalChangeReload: onExternalChangeReload)
             }
         } catch {
             NSLog("Could not reload externally changed file %@: %@", fileURL.path as NSString, error.localizedDescription)
+            if restartWatcher, currentFileURL()?.standardizedFileURL == standardizedURL {
+                restartWatching(fileURL: currentFileURL(), onExternalChangeReload: onExternalChangeReload)
+            }
         }
     }
 

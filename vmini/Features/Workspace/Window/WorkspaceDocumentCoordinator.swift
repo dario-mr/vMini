@@ -6,7 +6,7 @@ protocol WorkspaceDocumentRouting: AnyObject {
     func open(urls: [URL], activate activeURL: URL?)
     func createUntitledDocument()
     func createUntitledDocument(sessionIdentifier: UUID)
-    func restoreSession(_ references: [RestorableDocumentReference], activate activeIdentifier: String?) -> Bool
+    func restoreSession(_ references: [RestorableDocumentReference], activate activeIdentifier: String?) async -> Bool
     func closeCurrentDocument()
     func close(document: Document)
     func reopenMostRecentClosedDocument()
@@ -26,6 +26,7 @@ final class WorkspaceDocumentCoordinator: WorkspaceDocumentRouting {
     private var documentsBeingReviewedForClose = Set<ObjectIdentifier>()
     private var closeReviewCompletions: [ObjectIdentifier: (Bool) -> Void] = [:]
     private var isReviewingBulkClose = false
+    private var selectionIntent: UInt64 = 0
 
     init(
         documentOpener: WorkspaceDocumentOpener,
@@ -49,6 +50,7 @@ final class WorkspaceDocumentCoordinator: WorkspaceDocumentRouting {
     }
 
     func present(document: Document) {
+        selectionIntent &+= 1
         if !openDocumentsStore.contains(document) {
             documentController.addDocument(document)
             openDocumentsStore.register(document)
@@ -60,19 +62,23 @@ final class WorkspaceDocumentCoordinator: WorkspaceDocumentRouting {
 
     func open(urls: [URL], activate activeURL: URL? = nil) {
         let fallbackDocument = openDocumentsStore.activeDocument
+        let requestIntent = beginSelectionIntent()
         Task { @MainActor [weak self] in
             guard let self else { return }
-            await documentOpener.openInBackground(
+            let failures = await documentOpener.openInBackground(
                 urls,
                 activate: activeURL,
                 fallbackDocument: fallbackDocument,
                 presentDocument: { [weak self] document in
-                    self?.present(document: document)
+                    guard let self, selectionIntent == requestIntent else { return }
+                    present(document: document)
                 },
                 noDocumentFallback: { [weak self] in
-                    self?.onNeedsWindowStateRefresh?()
+                    guard let self, selectionIntent == requestIntent else { return }
+                    onNeedsWindowStateRefresh?()
                 }
             )
+            presentOpenFailures(failures)
         }
     }
 
@@ -85,17 +91,44 @@ final class WorkspaceDocumentCoordinator: WorkspaceDocumentRouting {
     }
 
     @discardableResult
-    func restoreSession(_ references: [RestorableDocumentReference], activate activeIdentifier: String?) -> Bool {
-        documentOpener.restoreSession(
+    func restoreSession(_ references: [RestorableDocumentReference], activate activeIdentifier: String?) async -> Bool {
+        let requestIntent = beginSelectionIntent()
+        let result = await documentOpener.restoreSession(
             references,
             activate: activeIdentifier,
             presentDocument: { [weak self] document in
-                self?.present(document: document)
+                guard let self, selectionIntent == requestIntent else { return }
+                present(document: document)
             },
             noDocumentFallback: { [weak self] in
-                self?.onNeedsWindowStateRefresh?()
+                guard let self, selectionIntent == requestIntent else { return }
+                onNeedsWindowStateRefresh?()
             }
         )
+        presentOpenFailures(result.failures)
+        return result.didRestore
+    }
+
+    private func beginSelectionIntent() -> UInt64 {
+        selectionIntent &+= 1
+        return selectionIntent
+    }
+
+    private func presentOpenFailures(_ failures: [DocumentOpenFailure]) {
+        guard !failures.isEmpty else { return }
+
+        let alert = NSAlert()
+        alert.messageText = failures.count == 1 ? "Could Not Open File" : "Could Not Open Files"
+        alert.informativeText = failures.map {
+            "\($0.url.lastPathComponent): \($0.message)"
+        }.joined(separator: "\n\n")
+        alert.addButton(withTitle: "OK")
+
+        if let window = WorkspaceWindowController.shared.window {
+            alert.beginSheetModal(for: window)
+        } else {
+            alert.runModal()
+        }
     }
 
     func closeCurrentDocument() {

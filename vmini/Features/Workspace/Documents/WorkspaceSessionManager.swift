@@ -68,12 +68,12 @@ final class WorkspaceSessionManager {
     }
 
     @discardableResult
-    func reopenLastFiles() -> Bool {
+    func reopenLastFiles() async -> Bool {
         guard let snapshot = restoredSnapshot() else {
             return false
         }
 
-        return documentRouter.restoreSession(
+        return await documentRouter.restoreSession(
             snapshot.documentReferences,
             activate: snapshot.activeDocumentReference?.persistenceIdentifier
         )

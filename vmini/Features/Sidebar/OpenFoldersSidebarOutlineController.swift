@@ -28,6 +28,9 @@ final class OpenFoldersSidebarOutlineController: NSObject, NSOutlineViewDataSour
 
     func attach(to outlineView: NSOutlineView) {
         self.outlineView = outlineView
+        treeProvider.onChildrenLoaded = { [weak self] url in
+            self?.reloadChildren(at: url)
+        }
         outlineView.delegate = self
         outlineView.dataSource = self
         outlineView.target = self
@@ -113,6 +116,11 @@ final class OpenFoldersSidebarOutlineController: NSObject, NSOutlineViewDataSour
         folderStore.select(node.url)
     }
 
+    func outlineViewItemWillExpand(_ notification: Notification) {
+        guard !isApplyingExpansionState, let node = notification.userInfo?["NSObject"] as? FolderTreeNode else { return }
+        folderStore.setExpanded(true, for: node.url)
+    }
+
     func outlineViewItemDidExpand(_ notification: Notification) {
         guard !isApplyingExpansionState, let node = notification.userInfo?["NSObject"] as? FolderTreeNode else { return }
         folderStore.setExpanded(true, for: node.url)
@@ -171,6 +179,15 @@ final class OpenFoldersSidebarOutlineController: NSObject, NSOutlineViewDataSour
         outlineView.reloadData()
         applyExpansionState()
         applySelection()
+    }
+
+    private func reloadChildren(at url: URL) {
+        guard let outlineView,
+              let node = nodeMatchingPath(url.standardizedFileURL.path, in: rootNodes) else { return }
+
+        node.invalidateChildren()
+        outlineView.reloadItem(node, reloadChildren: true)
+        applyExpansionState()
     }
 
     private func refreshFolders(changedPaths: Set<String>) {

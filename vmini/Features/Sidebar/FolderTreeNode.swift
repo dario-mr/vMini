@@ -1,5 +1,6 @@
 import AppKit
 
+@MainActor
 final class FolderTreeNode {
     let url: URL
     let title: String

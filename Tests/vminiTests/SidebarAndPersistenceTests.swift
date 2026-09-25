@@ -4,7 +4,7 @@ import XCTest
 
 @MainActor
 final class SidebarAndPersistenceTests: XCTestCase {
-    func testFolderTreeProviderSortsDirectoriesBeforeFilesAndFiltersHiddenEntries() throws {
+    func testFolderTreeProviderSortsDirectoriesBeforeFilesAndFiltersHiddenEntries() async throws {
         let rootURL = try makeTemporaryDirectory(name: "tree-root")
         let visibleDirectory = rootURL.appendingPathComponent("Beta", isDirectory: true)
         let visiblePackage = rootURL.appendingPathComponent("Alpha.app", isDirectory: true)
@@ -17,18 +17,22 @@ final class SidebarAndPersistenceTests: XCTestCase {
         try "file".write(to: visibleFile, atomically: true, encoding: .utf8)
         try "hidden".write(to: hiddenFile, atomically: true, encoding: .utf8)
 
-        let provider = FolderTreeProvider(fileManager: .default)
-        let titles = provider.childNodes(for: rootURL).map(\.title)
+        let provider = FolderTreeProvider()
+        let rootNode = try XCTUnwrap(provider.rootNodes(for: [rootURL]).first)
+        XCTAssertTrue(rootNode.children.isEmpty)
+        await provider.loadChildren(for: rootURL)
+        let titles = rootNode.children.map(\.title)
 
         XCTAssertEqual(titles, ["Alpha.app", "Beta", "gamma.txt"])
     }
 
-    func testFolderTreeProviderRefreshesNodeWhenFileBecomesDirectory() throws {
+    func testFolderTreeProviderRefreshesNodeWhenFileBecomesDirectory() async throws {
         let rootURL = try makeTemporaryDirectory(name: "file-to-directory")
         let replacedURL = rootURL.appendingPathComponent("Replaced")
         try "file".write(to: replacedURL, atomically: true, encoding: .utf8)
 
-        let provider = FolderTreeProvider(fileManager: .default)
+        let provider = FolderTreeProvider()
+        await provider.loadChildren(for: rootURL)
         let oldNode = try XCTUnwrap(provider.childNodes(for: rootURL).first)
         XCTAssertFalse(oldNode.isDirectory)
 
@@ -36,6 +40,7 @@ final class SidebarAndPersistenceTests: XCTestCase {
         try FileManager.default.createDirectory(at: replacedURL, withIntermediateDirectories: false)
 
         let invalidatedPaths = provider.invalidateContents(at: [rootURL])
+        await provider.loadChildren(for: rootURL)
         let newNode = try XCTUnwrap(provider.childNodes(for: rootURL).first)
 
         XCTAssertTrue(invalidatedPaths.contains(replacedURL.path))
@@ -43,15 +48,17 @@ final class SidebarAndPersistenceTests: XCTestCase {
         XCTAssertTrue(newNode.isDirectory)
     }
 
-    func testFolderTreeProviderInvalidatesCachedDescendantsBeforeRemovingEdges() throws {
+    func testFolderTreeProviderInvalidatesCachedDescendantsBeforeRemovingEdges() async throws {
         let rootURL = try makeTemporaryDirectory(name: "tree-invalidation")
         let replacedURL = rootURL.appendingPathComponent("Folder", isDirectory: true)
         let oldChildURL = replacedURL.appendingPathComponent("old.txt")
         try FileManager.default.createDirectory(at: replacedURL, withIntermediateDirectories: false)
         try "old".write(to: oldChildURL, atomically: true, encoding: .utf8)
 
-        let provider = FolderTreeProvider(fileManager: .default)
+        let provider = FolderTreeProvider()
+        await provider.loadChildren(for: rootURL)
         let oldFolder = try XCTUnwrap(provider.childNodes(for: rootURL).first)
+        await provider.loadChildren(for: replacedURL)
         let oldChild = try XCTUnwrap(oldFolder.children.first)
 
         try FileManager.default.removeItem(at: replacedURL)
@@ -60,7 +67,9 @@ final class SidebarAndPersistenceTests: XCTestCase {
         try "new".write(to: newChildURL, atomically: true, encoding: .utf8)
 
         let invalidatedPaths = provider.invalidateContents(at: [rootURL])
+        await provider.loadChildren(for: rootURL)
         let newFolder = try XCTUnwrap(provider.childNodes(for: rootURL).first)
+        await provider.loadChildren(for: replacedURL)
 
         XCTAssertTrue(invalidatedPaths.contains(oldChildURL.path))
         XCTAssertFalse(newFolder === oldFolder)
@@ -70,7 +79,7 @@ final class SidebarAndPersistenceTests: XCTestCase {
 
     func testFolderTreeNodeDoesNotKeepItsProviderAlive() throws {
         let rootURL = try makeTemporaryDirectory(name: "provider-lifetime")
-        var provider: FolderTreeProvider? = FolderTreeProvider(fileManager: .default)
+        var provider: FolderTreeProvider? = FolderTreeProvider()
         let weakProvider = { [weak provider] in provider }
         let node = try XCTUnwrap(provider?.rootNodes(for: [rootURL]).first)
 
@@ -109,6 +118,26 @@ final class SidebarAndPersistenceTests: XCTestCase {
         controller.applyExpansionState(to: [rootNode])
 
         XCTAssertEqual(outlineView.collapseCallIdentifiers, [ObjectIdentifier(childNode)])
+    }
+
+    func testFolderOutlineRecordsExpansionIntentBeforeAsyncChildrenLoad() {
+        let folderURL = URL(fileURLWithPath: "/tmp/cold-folder", isDirectory: true)
+        let store = OpenFoldersStore(persistence: WorkspacePersistence(
+            userDefaults: makeUserDefaults(prefix: "SidebarAndPersistenceTests.ColdExpand")
+        ))
+        let controller = OpenFoldersSidebarOutlineController(folderStore: store, treeProvider: FolderTreeProvider())
+        controller.attach(to: OutlineViewSpy())
+        let node = FolderTreeNode(
+            url: folderURL,
+            title: folderURL.lastPathComponent,
+            isDirectory: true,
+            provider: StubFolderProvider(tree: [:])
+        )
+        let notification = Notification(name: NSNotification.Name("willExpand"), userInfo: ["NSObject": node])
+
+        controller.outlineViewItemWillExpand(notification)
+
+        XCTAssertTrue(store.isExpanded(folderURL))
     }
 
     func testFolderSidebarSelectionControllerOnlySelectsVisibleExpandedNodes() {
@@ -165,19 +194,21 @@ final class SidebarAndPersistenceTests: XCTestCase {
         XCTAssertEqual(persistence.syntaxLanguageOverrides["/tmp/file.txt"], SyntaxLanguage.yaml.rawValue)
     }
 
-    func testOpenFoldersSidebarOutlineControllerOnlyShowsRemoveFolderForRootNodes() throws {
+    func testOpenFoldersSidebarOutlineControllerOnlyShowsRemoveFolderForRootNodes() async throws {
         let rootURL = try makeTemporaryDirectory(name: "menu-root")
         let childDirectoryURL = rootURL.appendingPathComponent("Child", isDirectory: true)
         try FileManager.default.createDirectory(at: childDirectoryURL, withIntermediateDirectories: true)
 
         let persistence = WorkspacePersistence(userDefaults: makeUserDefaults(prefix: "SidebarAndPersistenceTests.ContextMenu"))
         let store = OpenFoldersStore(persistence: persistence)
-        let controller = OpenFoldersSidebarOutlineController(folderStore: store, treeProvider: FolderTreeProvider(fileManager: .default))
+        let provider = FolderTreeProvider()
+        let controller = OpenFoldersSidebarOutlineController(folderStore: store, treeProvider: provider)
         let outlineView = OutlineViewSpy()
         let menu = NSMenu()
 
         controller.attach(to: outlineView)
         store.add([rootURL])
+        await provider.loadChildren(for: rootURL)
         controller.apply(
             state: OpenFoldersStore.State(
                 folderURLs: store.folderURLs,
@@ -205,14 +236,15 @@ final class SidebarAndPersistenceTests: XCTestCase {
         XCTAssertTrue(menu.items.isEmpty)
     }
 
-    func testRemovingFolderEvictsItsCachedTree() throws {
+    func testRemovingFolderEvictsItsCachedTree() async throws {
         let rootURL = try makeTemporaryDirectory(name: "removed-root")
         let childURL = rootURL.appendingPathComponent("child.txt")
         try "child".write(to: childURL, atomically: true, encoding: .utf8)
 
         let persistence = WorkspacePersistence(userDefaults: makeUserDefaults(prefix: "SidebarAndPersistenceTests.RemovedRoot"))
         let store = OpenFoldersStore(persistence: persistence)
-        let provider = FolderTreeProvider(fileManager: .default)
+        let provider = FolderTreeProvider()
+        await provider.loadChildren(for: rootURL)
         let controller = OpenFoldersSidebarOutlineController(folderStore: store, treeProvider: provider)
         let outlineView = OutlineViewSpy()
         controller.attach(to: outlineView)
