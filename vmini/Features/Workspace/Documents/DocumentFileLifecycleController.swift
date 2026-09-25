@@ -7,6 +7,8 @@ final class DocumentFileLifecycleController {
     private let externalChangeCoordinator: DocumentExternalChangeCoordinator
     private let openDocumentsStore: OpenDocumentsStore
     private let payloadLoader: PayloadLoader
+    private var reloadGeneration: UInt64 = 0
+    private var reloadNeedsWatcherRestart = false
 
     init(
         externalChangeCoordinator: DocumentExternalChangeCoordinator,
@@ -35,6 +37,7 @@ final class DocumentFileLifecycleController {
         onExternalChangeReload: @escaping @MainActor (Bool) -> Void,
         onSyntaxHighlightingChanged: () -> Void
     ) {
+        stopWatching()
         contentController.applyFileURLChange(from: oldValue, to: newValue)
         restartWatching(fileURL: newValue, onExternalChangeReload: onExternalChangeReload)
         editorSession.update(text: currentText, syntaxLanguage: syntaxLanguage)
@@ -44,7 +47,7 @@ final class DocumentFileLifecycleController {
     }
 
     func prepareForSave() {
-        externalChangeCoordinator.stop()
+        stopWatching()
     }
 
     func finishSave(fileURL: URL?, onExternalChangeReload: @escaping @MainActor (Bool) -> Void) {
@@ -57,6 +60,8 @@ final class DocumentFileLifecycleController {
     }
 
     func stopWatching() {
+        reloadGeneration &+= 1
+        reloadNeedsWatcherRestart = false
         externalChangeCoordinator.stop()
     }
 
@@ -76,9 +81,12 @@ final class DocumentFileLifecycleController {
         onExternalChangeWithUnsavedChanges: (Bool) -> Void,
         onExternalChangeReload: @escaping @MainActor (Bool) -> Void
     ) async {
+        reloadGeneration &+= 1
+        let generation = reloadGeneration
+        reloadNeedsWatcherRestart = reloadNeedsWatcherRestart || restartWatcher
         guard let fileURL else { return }
         guard FileManager.default.fileExists(atPath: fileURL.path) else {
-            externalChangeCoordinator.stop()
+            stopWatching()
             if isDocumentEdited {
                 onMissingFileWithUnsavedChanges()
             } else {
@@ -88,8 +96,8 @@ final class DocumentFileLifecycleController {
         }
 
         if isDocumentEdited && !reloadEvenIfEdited {
-            onExternalChangeWithUnsavedChanges(restartWatcher)
-            if restartWatcher {
+            onExternalChangeWithUnsavedChanges(reloadNeedsWatcherRestart)
+            if reloadNeedsWatcherRestart {
                 restartWatching(fileURL: fileURL, onExternalChangeReload: onExternalChangeReload)
             }
             return
@@ -98,12 +106,13 @@ final class DocumentFileLifecycleController {
         let standardizedURL = fileURL.standardizedFileURL
         do {
             let payload = try await payloadLoader(standardizedURL)
+            guard generation == reloadGeneration else { return }
             guard currentFileURL()?.standardizedFileURL == standardizedURL else { return }
             guard contentRevision() == startingRevision else {
                 if isDocumentCurrentlyEdited() {
                     onExternalChangeWithUnsavedChanges(false)
                 }
-                if restartWatcher {
+                if reloadNeedsWatcherRestart {
                     restartWatching(fileURL: currentFileURL(), onExternalChangeReload: onExternalChangeReload)
                 }
                 return
@@ -113,12 +122,13 @@ final class DocumentFileLifecycleController {
             onReload()
             openDocumentsStore.refresh()
 
-            if restartWatcher {
+            if reloadNeedsWatcherRestart {
                 restartWatching(fileURL: currentFileURL(), onExternalChangeReload: onExternalChangeReload)
             }
         } catch {
+            guard generation == reloadGeneration else { return }
             NSLog("Could not reload externally changed file %@: %@", fileURL.path as NSString, error.localizedDescription)
-            if restartWatcher, currentFileURL()?.standardizedFileURL == standardizedURL {
+            if reloadNeedsWatcherRestart, currentFileURL()?.standardizedFileURL == standardizedURL {
                 restartWatching(fileURL: currentFileURL(), onExternalChangeReload: onExternalChangeReload)
             }
         }
@@ -128,6 +138,7 @@ final class DocumentFileLifecycleController {
         fileURL: URL?,
         onExternalChangeReload: @escaping @MainActor (Bool) -> Void
     ) {
+        reloadNeedsWatcherRestart = false
         externalChangeCoordinator.watch(fileURL: fileURL, onReload: onExternalChangeReload)
     }
 }

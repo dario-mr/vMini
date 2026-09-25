@@ -15,7 +15,7 @@ final class EditorTextEditingTests: XCTestCase {
         let textView = NSTextView()
         textView.string = "alpha\nbeta\ngamma"
         let ruler = LineNumberRulerView(textView: textView)
-        ruler.invalidateLineNumbers()
+        ruler.resetLineCache()
 
         textView.setSelectedRange(NSRange(location: 8, length: 0))
         let cursor = ruler.currentCursorPosition()
@@ -29,7 +29,7 @@ final class EditorTextEditingTests: XCTestCase {
         let textView = NSTextView()
         textView.string = "one\ntwo\nthree"
         let ruler = LineNumberRulerView(textView: textView)
-        ruler.invalidateLineNumbers()
+        ruler.resetLineCache()
 
         let storage = textView.textStorage!
         storage.replaceCharacters(in: NSRange(location: 4, length: 4), with: "")

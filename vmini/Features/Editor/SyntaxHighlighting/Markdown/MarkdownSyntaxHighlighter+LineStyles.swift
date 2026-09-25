@@ -211,7 +211,7 @@ enum MarkdownLineStylePlanner {
         var digitCount = 0
         while digitCount < line.length {
             let character = line.character(at: digitCount)
-            guard CharacterSet.decimalDigits.contains(UnicodeScalar(character)!) else {
+            guard let scalar = UnicodeScalar(character), CharacterSet.decimalDigits.contains(scalar) else {
                 break
             }
             digitCount += 1

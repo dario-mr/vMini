@@ -96,13 +96,17 @@ final class FolderTreeProvider: FolderTreeProviding {
     }
 
     @discardableResult
-    func invalidateContents(at urls: [URL]) -> Set<String> {
+    func invalidateContents(at urls: [URL], removingRoots: Bool = false) -> Set<String> {
         let invalidatedPaths = Set(urls.map(\.standardizedFileURL.path))
         guard !invalidatedPaths.isEmpty else { return [] }
 
         let affectedPaths = reachablePaths(from: invalidatedPaths)
         for path in affectedPaths {
-            nodesByPath.removeValue(forKey: path)?.invalidateChildren()
+            nodesByPath[path]?.invalidateChildren()
+            // The outline still holds refreshed directories; evict only their descendants.
+            if removingRoots || !invalidatedPaths.contains(path) {
+                nodesByPath.removeValue(forKey: path)
+            }
             childURLsByPath.removeValue(forKey: path)
             metadataByPath.removeValue(forKey: path)
             pendingChildLoads.removeValue(forKey: path)?.task.cancel()

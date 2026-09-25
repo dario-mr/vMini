@@ -4,6 +4,44 @@ import XCTest
 
 @MainActor
 final class SidebarAndPersistenceTests: XCTestCase {
+    func testFolderOutlineRefreshesTheSameRootRepeatedly() async throws {
+        let rootURL = try makeTemporaryDirectory(name: "repeated-refresh")
+        let store = OpenFoldersStore(persistence: WorkspacePersistence(
+            userDefaults: makeUserDefaults(prefix: "SidebarAndPersistenceTests.RepeatedRefresh")
+        ))
+        let provider = FolderTreeProvider()
+        let outline = NSOutlineView()
+        outline.addTableColumn(NSTableColumn(identifier: NSUserInterfaceItemIdentifier("test")))
+        let controller = OpenFoldersSidebarOutlineController(folderStore: store, treeProvider: provider)
+        controller.attach(to: outline)
+        store.add([rootURL])
+        func apply(_ version: Int) {
+            controller.apply(state: OpenFoldersStore.State(
+                folderURLs: [rootURL], selectedURL: nil, expandedFolderPaths: [rootURL.path],
+                contentVersion: version, refreshedFolderPaths: version == 0 ? [] : [rootURL.path]
+            ))
+        }
+        apply(0)
+        await provider.loadChildren(for: rootURL)
+        let root = try XCTUnwrap(controller.outlineView(outline, child: 0, ofItem: nil) as? FolderTreeNode)
+        XCTAssertTrue(root.children.isEmpty)
+        let reloadChildren = provider.onChildrenLoaded
+
+        for version in 1...3 {
+            let loaded = expectation(description: "refresh \(version)")
+            provider.onChildrenLoaded = { url in
+                reloadChildren?(url)
+                loaded.fulfill()
+            }
+            try "file".write(to: rootURL.appendingPathComponent("\(version).txt"), atomically: true, encoding: .utf8)
+            apply(version)
+            // Let the outline trigger the load; explicitly loading here would hide a stale node cache.
+            await fulfillment(of: [loaded], timeout: 2)
+            XCTAssertEqual(root.children.map(\.title), (1...version).map { "\($0).txt" })
+            XCTAssertTrue(provider.rootNodes(for: [rootURL]).first === root)
+        }
+    }
+
     func testFolderTreeProviderSortsDirectoriesBeforeFilesAndFiltersHiddenEntries() async throws {
         let rootURL = try makeTemporaryDirectory(name: "tree-root")
         let visibleDirectory = rootURL.appendingPathComponent("Beta", isDirectory: true)
