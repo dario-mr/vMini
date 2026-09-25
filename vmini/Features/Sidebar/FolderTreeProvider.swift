@@ -1,40 +1,76 @@
 import AppKit
 
+@MainActor
 protocol FolderTreeProviding: AnyObject {
     func childNodes(for url: URL) -> [FolderTreeNode]
 }
 
+private struct FolderChildSnapshot: Sendable {
+    struct Child: Sendable {
+        let url: URL
+        let title: String
+        let isDirectory: Bool
+    }
+
+    let children: [Child]
+
+    static func load(for url: URL) -> FolderChildSnapshot {
+        let values: [URLResourceKey] = [.isDirectoryKey, .isPackageKey]
+        let urls = (try? FileManager.default.contentsOfDirectory(
+            at: url,
+            includingPropertiesForKeys: values,
+            options: [.skipsHiddenFiles, .skipsPackageDescendants]
+        )) ?? []
+
+        return FolderChildSnapshot(children: urls
+            .filter { !$0.lastPathComponent.hasPrefix(".") }
+            .map { childURL in
+                let standardizedURL = childURL.standardizedFileURL
+                let isDirectory = (try? standardizedURL.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
+                return Child(
+                    url: standardizedURL,
+                    title: standardizedURL.lastPathComponent,
+                    isDirectory: isDirectory
+                )
+            })
+    }
+}
+
+@MainActor
 final class FolderTreeProvider: FolderTreeProviding {
     private struct NodeMetadata {
         let title: String
         let isDirectory: Bool
     }
 
-    private let fileManager: FileManager
+    private struct PendingLoad {
+        let id: UUID
+        let task: Task<FolderChildSnapshot, Never>
+    }
+
+    var onChildrenLoaded: ((URL) -> Void)?
+
     private var nodesByPath: [String: FolderTreeNode] = [:]
     private var childURLsByPath: [String: [URL]] = [:]
     private var metadataByPath: [String: NodeMetadata] = [:]
+    private var pendingChildLoads: [String: PendingLoad] = [:]
 
-    init(fileManager: FileManager) {
-        self.fileManager = fileManager
-    }
-
-    convenience init() {
-        self.init(fileManager: .default)
-    }
+    init() {}
 
     func rootNodes(for urls: [URL]) -> [FolderTreeNode] {
         urls.map { node(for: $0, metadata: metadata(for: $0)) }
     }
 
     func childNodes(for url: URL) -> [FolderTreeNode] {
-        let standardizedPath = url.standardizedFileURL.path
-        let childURLs = childURLsByPath[standardizedPath] ?? loadChildURLs(for: url)
-        childURLsByPath[standardizedPath] = childURLs
+        let path = url.standardizedFileURL.path
+        guard let childURLs = childURLsByPath[path] else {
+            startLoadingChildren(for: url)
+            return []
+        }
 
         return childURLs
             .map { childURL in
-                node(for: childURL, metadata: metadata(for: childURL))
+                node(for: childURL, metadata: metadataByPath[childURL.path] ?? metadata(for: childURL))
             }
             .sorted { lhs, rhs in
                 if lhs.isDirectory != rhs.isDirectory {
@@ -43,6 +79,20 @@ final class FolderTreeProvider: FolderTreeProviding {
 
                 return lhs.title.localizedCaseInsensitiveCompare(rhs.title) == .orderedAscending
             }
+    }
+
+    func loadChildren(for url: URL) async {
+        let path = url.standardizedFileURL.path
+        guard childURLsByPath[path] == nil else { return }
+
+        let pending: PendingLoad
+        if let existing = pendingChildLoads[path] {
+            pending = existing
+        } else {
+            pending = makePendingLoad(for: url)
+            pendingChildLoads[path] = pending
+        }
+        await apply(pending, for: url)
     }
 
     @discardableResult
@@ -55,22 +105,44 @@ final class FolderTreeProvider: FolderTreeProviding {
             nodesByPath.removeValue(forKey: path)?.invalidateChildren()
             childURLsByPath.removeValue(forKey: path)
             metadataByPath.removeValue(forKey: path)
+            pendingChildLoads.removeValue(forKey: path)?.task.cancel()
         }
 
         return affectedPaths
     }
 
-    private func loadChildURLs(for url: URL) -> [URL] {
-        let values: [URLResourceKey] = [.isDirectoryKey, .isPackageKey]
-        let childURLs = (try? fileManager.contentsOfDirectory(
-            at: url,
-            includingPropertiesForKeys: values,
-            options: [.skipsHiddenFiles, .skipsPackageDescendants]
-        )) ?? []
+    private func startLoadingChildren(for url: URL) {
+        let path = url.standardizedFileURL.path
+        guard pendingChildLoads[path] == nil else { return }
+        let pending = makePendingLoad(for: url)
+        pendingChildLoads[path] = pending
+        Task { [weak self] in
+            await self?.apply(pending, for: url)
+        }
+    }
 
-        return childURLs
-            .filter { !$0.lastPathComponent.hasPrefix(".") }
-            .map(\.standardizedFileURL)
+    private func makePendingLoad(for url: URL) -> PendingLoad {
+        PendingLoad(
+            id: UUID(),
+            task: Task.detached(priority: .utility) {
+                FolderChildSnapshot.load(for: url.standardizedFileURL)
+            }
+        )
+    }
+
+    private func apply(_ pending: PendingLoad, for url: URL) async {
+        let path = url.standardizedFileURL.path
+        let snapshot = await pending.task.value
+        guard pendingChildLoads[path]?.id == pending.id else { return }
+
+        pendingChildLoads.removeValue(forKey: path)
+        let children = snapshot.children
+        childURLsByPath[path] = children.map(\.url)
+        for child in children {
+            metadataByPath[child.url.path] = NodeMetadata(title: child.title, isDirectory: child.isDirectory)
+        }
+        nodesByPath[path]?.invalidateChildren()
+        onChildrenLoaded?(url.standardizedFileURL)
     }
 
     private func metadata(for url: URL) -> NodeMetadata {

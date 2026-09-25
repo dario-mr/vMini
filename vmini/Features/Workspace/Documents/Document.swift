@@ -13,6 +13,7 @@ final class Document: NSDocument {
     private let fileLifecycleController: DocumentFileLifecycleController
     private var syntaxHighlightingObservers: [UUID: (Document) -> Void] = [:]
     private var isPresentingExternalChangeAlert = false
+    private(set) var contentRevision: UInt64 = 0
 
     var sidebarTitle: String {
         fileURL?.lastPathComponent ?? displayName
@@ -159,35 +160,38 @@ final class Document: NSDocument {
     }
 
     private func reloadFromDiskAfterExternalChange(restartWatcher: Bool, reloadEvenIfEdited: Bool) {
-        fileLifecycleController.reloadFromDiskAfterExternalChange(
-            fileURL: fileURL,
-            restartWatcher: restartWatcher,
-            isDocumentEdited: isDocumentEdited,
-            reloadEvenIfEdited: reloadEvenIfEdited,
-            readFromData: { [weak self] data, typeName in
-                try self?.read(from: data, ofType: typeName)
-            },
-            updateResolvedFileType: { [weak self] typeName in
-                self?.fileType = typeName
-            },
-            onReload: { [weak self] in
-                self?.updateChangeCount(.changeCleared)
-                self?.undoManager?.removeAllActions()
-            },
-            onMissingFile: { [weak self] in
-                self?.close()
-            },
-            onMissingFileWithUnsavedChanges: { [weak self] in
-                self?.presentExternalChangeAlert(fileIsMissing: true)
-            },
-            onExternalChangeWithUnsavedChanges: { [weak self] _ in
-                self?.presentExternalChangeAlert(fileIsMissing: false)
-            },
-            onExternalChangeReload: { [weak self] restartWatcher in
-                guard restartWatcher else { return }
-                self?.reloadFromDiskAfterExternalChange(restartWatcher: true)
-            }
-        )
+        let requestedFileURL = fileURL
+        let startingRevision = contentRevision
+        let wasEdited = isDocumentEdited
+
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            await fileLifecycleController.reloadFromDiskAfterExternalChange(
+                fileURL: requestedFileURL,
+                currentFileURL: { self.fileURL },
+                contentRevision: { self.contentRevision },
+                startingRevision: startingRevision,
+                restartWatcher: restartWatcher,
+                isDocumentEdited: wasEdited,
+                isDocumentCurrentlyEdited: { self.isDocumentEdited },
+                reloadEvenIfEdited: reloadEvenIfEdited,
+                installPayload: {
+                    self.installLoadedContent($0.text, ofType: $0.typeName)
+                    self.fileType = $0.typeName
+                },
+                onReload: {
+                    self.updateChangeCount(.changeCleared)
+                    self.undoManager?.removeAllActions()
+                },
+                onMissingFile: { self.close() },
+                onMissingFileWithUnsavedChanges: { self.presentExternalChangeAlert(fileIsMissing: true) },
+                onExternalChangeWithUnsavedChanges: { _ in self.presentExternalChangeAlert(fileIsMissing: false) },
+                onExternalChangeReload: { [weak self] restartWatcher in
+                    guard restartWatcher else { return }
+                    self?.reloadFromDiskAfterExternalChange(restartWatcher: true)
+                }
+            )
+        }
     }
 
     private func presentExternalChangeAlert(fileIsMissing: Bool) {
@@ -242,14 +246,19 @@ final class Document: NSDocument {
     override func read(from data: Data, ofType typeName: String) throws {
         if let decoded = String(data: data, encoding: .utf8) {
             MainActor.assumeIsolated {
-                contentController.updateRead(typeName: typeName, text: decoded)
-                editorSession.update(text: decoded, syntaxLanguage: syntaxLanguage)
-                notifySyntaxHighlightingDidChange()
+                installLoadedContent(decoded, ofType: typeName)
             }
             return
         }
 
         throw CocoaError(.fileReadInapplicableStringEncoding)
+    }
+
+    func installLoadedContent(_ text: String, ofType typeName: String) {
+        contentRevision &+= 1
+        contentController.updateRead(typeName: typeName, text: text)
+        editorSession.update(text: text, syntaxLanguage: syntaxLanguage)
+        notifySyntaxHighlightingDidChange()
     }
 
     func editorViewController(onFileSystemURLsDropped: @escaping ([URL]) -> Void) -> EditorViewController {
@@ -264,6 +273,7 @@ final class Document: NSDocument {
                 editorViewController.syntaxLanguage = resolvedSyntaxLanguage
                 notifySyntaxHighlightingDidChange()
             }
+            contentRevision &+= 1
             contentController.updateText(editorViewController.text)
             let wasEdited = isDocumentEdited
             updateChangeCount(.changeDone)

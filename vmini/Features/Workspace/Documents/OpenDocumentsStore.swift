@@ -28,11 +28,16 @@ final class OpenDocumentsStore {
         documents.contains(where: { $0 === document })
     }
 
-    func register(_ document: Document, makeActive: Bool = false) {
-        let wasInserted = appendIfNeeded(document)
+    func register(
+        _ document: Document,
+        at index: Int? = nil,
+        makeActive: Bool = false,
+        activateIfEmpty: Bool = true
+    ) {
+        let wasInserted = insertIfNeeded(document, at: index)
         let didSelect: Bool
 
-        if makeActive || activeDocument == nil {
+        if makeActive || (activateIfEmpty && activeDocument == nil) {
             didSelect = activeDocument !== document
             activeDocument = document
         } else {
@@ -96,9 +101,13 @@ final class OpenDocumentsStore {
         }
     }
 
-    private func appendIfNeeded(_ document: Document) -> Bool {
+    private func insertIfNeeded(_ document: Document, at index: Int?) -> Bool {
         guard !contains(document) else { return false }
-        documents.append(document)
+        if let index {
+            documents.insert(document, at: min(max(index, 0), documents.count))
+        } else {
+            documents.append(document)
+        }
         return true
     }
 
