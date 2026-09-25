@@ -12,6 +12,7 @@ final class EditorTabBarController {
 
     var onSelectDocument: ((Document) -> Void)?
     var onCloseDocument: ((Document) -> Void)?
+    var onTogglePinDocument: ((Document) -> Void)?
     var onCloseOtherDocuments: ((Document) -> Void)?
     var onCloseAllDocuments: (() -> Void)?
     var onCreateNewDocument: (() -> Void)?
@@ -48,7 +49,11 @@ final class EditorTabBarController {
         for document in documents {
             let identifier = ObjectIdentifier(document)
             let tabView = tabViewsByDocumentIdentifier[identifier] ?? makeTabView(for: document)
-            tabView.configure(document: document, isActive: document === activeDocument)
+            tabView.configure(
+                document: document,
+                isActive: document === activeDocument,
+                isPinned: OpenDocumentsStore.shared.isPinned(document)
+            )
 
             if tabView.superview == nil {
                 contentView.addSubview(tabView)
@@ -115,12 +120,19 @@ final class EditorTabBarController {
 
     private func makeTabView(for document: Document) -> DocumentTabView {
         let tabView = DocumentTabView()
-        tabView.configure(document: document, isActive: false)
+        tabView.configure(
+            document: document,
+            isActive: false,
+            isPinned: OpenDocumentsStore.shared.isPinned(document)
+        )
         tabView.onSelect = { [weak self] document in
             self?.onSelectDocument?(document)
         }
         tabView.onClose = { [weak self] document in
             self?.onCloseDocument?(document)
+        }
+        tabView.onTogglePin = { [weak self] document in
+            self?.onTogglePinDocument?(document)
         }
         tabView.onCloseOthers = { [weak self] document in
             self?.onCloseOtherDocuments?(document)

@@ -9,11 +9,19 @@ final class OpenDocumentsStore {
 
     static let shared = OpenDocumentsStore()
 
+    private let persistence: WorkspacePersistence
+    private var pinnedIdentifiers: Set<String>
     private(set) var documents: [Document] = []
     private(set) var activeDocument: Document?
     private var observers: [UUID: (State) -> Void] = [:]
     private var mutationDepth = 0
     private var pendingNotification = false
+
+    init(persistence: WorkspacePersistence? = nil) {
+        let persistence = persistence ?? .shared
+        self.persistence = persistence
+        pinnedIdentifiers = Set(persistence.pinnedTabIdentifiers)
+    }
 
     func observe(_ observer: @escaping (State) -> Void) -> ObservationToken {
         let identifier = UUID()
@@ -28,6 +36,32 @@ final class OpenDocumentsStore {
         documents.contains(where: { $0 === document })
     }
 
+    func isPinned(_ document: Document) -> Bool {
+        pinnedIdentifiers.contains(Self.pinIdentifier(for: document))
+    }
+
+    func togglePinned(_ document: Document) {
+        guard contains(document) else { return }
+
+        let identifier = Self.pinIdentifier(for: document)
+        if !pinnedIdentifiers.insert(identifier).inserted {
+            pinnedIdentifiers.remove(identifier)
+        }
+        persistence.pinnedTabIdentifiers = pinnedIdentifiers.sorted()
+        keepPinnedDocumentsFirst()
+        stateDidChange()
+    }
+
+    func migratePinnedIdentifier(from oldURL: URL?, to newURL: URL?, sessionIdentifier: UUID) {
+        let oldIdentifier = Self.pinIdentifier(for: oldURL, sessionIdentifier: sessionIdentifier)
+        let newIdentifier = Self.pinIdentifier(for: newURL, sessionIdentifier: sessionIdentifier)
+        guard oldIdentifier != newIdentifier else { return }
+
+        guard pinnedIdentifiers.remove(oldIdentifier) != nil else { return }
+        pinnedIdentifiers.insert(newIdentifier)
+        persistence.pinnedTabIdentifiers = pinnedIdentifiers.sorted()
+    }
+
     func register(
         _ document: Document,
         at index: Int? = nil,
@@ -35,6 +69,9 @@ final class OpenDocumentsStore {
         activateIfEmpty: Bool = true
     ) {
         let wasInserted = insertIfNeeded(document, at: index)
+        if wasInserted {
+            keepPinnedDocumentsFirst()
+        }
         let didSelect: Bool
 
         if makeActive || (activateIfEmpty && activeDocument == nil) {
@@ -78,15 +115,21 @@ final class OpenDocumentsStore {
     func reorder(document: Document, to destinationIndex: Int) {
         guard let sourceIndex = documents.firstIndex(where: { $0 === document }) else { return }
 
-        let clampedDestinationIndex = min(max(destinationIndex, 0), documents.count - 1)
+        var remainingDocuments = documents
+        remainingDocuments.remove(at: sourceIndex)
+        let pinnedCount = remainingDocuments.filter(isPinned).count
+        let minimumDestinationIndex = isPinned(document) ? 0 : pinnedCount
+        let maximumDestinationIndex = isPinned(document) ? pinnedCount : remainingDocuments.count
+        let clampedDestinationIndex = min(max(destinationIndex, minimumDestinationIndex), maximumDestinationIndex)
         guard sourceIndex != clampedDestinationIndex else { return }
 
-        let movedDocument = documents.remove(at: sourceIndex)
-        documents.insert(movedDocument, at: clampedDestinationIndex)
+        remainingDocuments.insert(document, at: clampedDestinationIndex)
+        documents = remainingDocuments
         stateDidChange()
     }
 
     func refresh() {
+        keepPinnedDocumentsFirst()
         stateDidChange()
     }
 
@@ -113,6 +156,25 @@ final class OpenDocumentsStore {
 
     private func currentState() -> State {
         State(documents: documents, activeDocument: activeDocument)
+    }
+
+    private func keepPinnedDocumentsFirst() {
+        documents = documents.filter { pinnedIdentifiers.contains(Self.pinIdentifier(for: $0)) }
+            + documents.filter { !pinnedIdentifiers.contains(Self.pinIdentifier(for: $0)) }
+    }
+
+    private static func pinIdentifier(for document: Document) -> String {
+        pinIdentifier(for: document.fileURL, sessionIdentifier: document.sessionIdentifier)
+    }
+
+    private static func pinIdentifier(for fileURL: URL?, sessionIdentifier: UUID) -> String {
+        let reference: RestorableDocumentReference
+        if let fileURL {
+            reference = .file(path: fileURL.standardizedFileURL.path)
+        } else {
+            reference = .untitled(sessionID: sessionIdentifier)
+        }
+        return reference.persistenceIdentifier
     }
 
     private func stateDidChange() {

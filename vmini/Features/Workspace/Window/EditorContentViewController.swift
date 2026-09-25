@@ -170,6 +170,11 @@ final class EditorContentViewController: NSViewController {
         tabBarController.onCloseDocument = { [weak self] document in
             self?.close(document)
         }
+        tabBarController.onTogglePinDocument = { [weak self] document in
+            guard let self else { return }
+            documentStore.togglePinned(document)
+            SessionRestorer.saveOpenFiles()
+        }
         tabBarController.onCloseOtherDocuments = { [weak self] document in
             self?.closeAll(except: document)
         }
@@ -243,7 +248,7 @@ final class EditorContentViewController: NSViewController {
     }
 
     private func closeAll(except documentToKeep: Document) {
-        close(documentState.documents.filter { $0 !== documentToKeep })
+        close(documentState.documents.filter { $0 !== documentToKeep && !documentStore.isPinned($0) })
     }
 
     private func closeAll() {

@@ -3,8 +3,10 @@ import AppKit
 final class DocumentTabView: NSView {
     private enum Layout {
         static let titleLeadingInset: CGFloat = 12
-        static let titleToCloseButtonSpacing: CGFloat = 12
+        static let titleToPinButtonSpacing: CGFloat = 8
+        static let pinButtonToCloseButtonSpacing: CGFloat = 8
         static let closeButtonTrailingInset: CGFloat = 10
+        static let pinButtonSize: CGFloat = 12
         static let closeButtonSize: CGFloat = 12
     }
 
@@ -18,6 +20,7 @@ final class DocumentTabView: NSView {
 
     var onSelect: ((Document) -> Void)?
     var onClose: ((Document) -> Void)?
+    var onTogglePin: ((Document) -> Void)?
     var onCloseOthers: ((Document) -> Void)?
     var onCloseAll: (() -> Void)?
     var onDragStarted: ((DocumentTabView, NSPoint) -> Void)?
@@ -25,10 +28,12 @@ final class DocumentTabView: NSView {
     var onDragEnded: ((DocumentTabView) -> Void)?
 
     private let titleLabel = NSTextField(labelWithString: "")
+    private let pinButton = NSButton(title: "", target: nil, action: nil)
     private let closeButton = NSButton(title: "", target: nil, action: nil)
     private var trackingArea: NSTrackingArea?
     private var isHovered = false
     private var isActive = false
+    private var isPinned = false
     private var displayedTitle = ""
     private var dragStartLocationInWindow: NSPoint?
     private var isDraggingTab = false
@@ -44,6 +49,17 @@ final class DocumentTabView: NSView {
         titleLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         titleLabel.setContentHuggingPriority(.defaultLow, for: .horizontal)
 
+        pinButton.translatesAutoresizingMaskIntoConstraints = false
+        pinButton.isBordered = false
+        pinButton.bezelStyle = .regularSquare
+        pinButton.imagePosition = .imageOnly
+        pinButton.symbolConfiguration = NSImage.SymbolConfiguration(pointSize: 9, weight: .regular)
+        pinButton.target = self
+        pinButton.action = #selector(handlePinButton)
+        pinButton.contentTintColor = AppColors.defaultControlTint
+        pinButton.setButtonType(.momentaryChange)
+        pinButton.isHidden = true
+
         closeButton.translatesAutoresizingMaskIntoConstraints = false
         closeButton.isBordered = false
         closeButton.bezelStyle = .regularSquare
@@ -56,6 +72,7 @@ final class DocumentTabView: NSView {
         closeButton.setButtonType(.momentaryChange)
 
         addSubview(titleLabel)
+        addSubview(pinButton)
         addSubview(closeButton)
 
         NSLayoutConstraint.activate([
@@ -64,7 +81,12 @@ final class DocumentTabView: NSView {
 
             titleLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Layout.titleLeadingInset),
             titleLabel.centerYAnchor.constraint(equalTo: centerYAnchor),
-            titleLabel.trailingAnchor.constraint(lessThanOrEqualTo: closeButton.leadingAnchor, constant: -Layout.titleToCloseButtonSpacing),
+            titleLabel.trailingAnchor.constraint(lessThanOrEqualTo: pinButton.leadingAnchor, constant: -Layout.titleToPinButtonSpacing),
+
+            pinButton.trailingAnchor.constraint(equalTo: closeButton.leadingAnchor, constant: -Layout.pinButtonToCloseButtonSpacing),
+            pinButton.centerYAnchor.constraint(equalTo: centerYAnchor),
+            pinButton.widthAnchor.constraint(equalToConstant: Layout.pinButtonSize),
+            pinButton.heightAnchor.constraint(equalToConstant: Layout.pinButtonSize),
 
             closeButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Layout.closeButtonTrailingInset),
             closeButton.centerYAnchor.constraint(equalTo: centerYAnchor),
@@ -157,19 +179,21 @@ final class DocumentTabView: NSView {
         applyAppearance()
     }
 
-    func configure(document: Document, isActive: Bool) {
+    func configure(document: Document, isActive: Bool, isPinned: Bool) {
         self.document = document
         let nextTitle = document.shortDisplayTitle
         let didChangeTitle = displayedTitle != nextTitle
         let didChangeActiveState = self.isActive != isActive
+        let didChangePinnedState = self.isPinned != isPinned
 
         self.isActive = isActive
+        self.isPinned = isPinned
         if didChangeTitle {
             displayedTitle = nextTitle
             titleLabel.stringValue = nextTitle
         }
 
-        guard didChangeTitle || didChangeActiveState else {
+        guard didChangeTitle || didChangeActiveState || didChangePinnedState else {
             return
         }
 
@@ -180,7 +204,9 @@ final class DocumentTabView: NSView {
         let titleWidth = ceil(titleLabel.intrinsicContentSize.width)
         let contentWidth = Layout.titleLeadingInset
             + titleWidth
-            + Layout.titleToCloseButtonSpacing
+            + Layout.titleToPinButtonSpacing
+            + Layout.pinButtonSize
+            + Layout.pinButtonToCloseButtonSpacing
             + Layout.closeButtonSize
             + Layout.closeButtonTrailingInset
         return min(max(contentWidth, EditorTabBarLayout.minimumTabWidth), EditorTabBarLayout.maximumTabWidth)
@@ -197,6 +223,7 @@ final class DocumentTabView: NSView {
             setBackgroundColor(AppColors.editorBackground.cgColor, animated: false)
             titleLabel.textColor = AppColors.primaryText
             titleLabel.font = NSFont.systemFont(ofSize: Typography.fontSize, weight: Typography.activeWeight)
+            pinButton.contentTintColor = AppColors.activeControlTint
             closeButton.contentTintColor = AppColors.activeControlTint
         } else {
             let backgroundColor = (isHovered
@@ -205,8 +232,17 @@ final class DocumentTabView: NSView {
             setBackgroundColor(backgroundColor, animated: true)
             titleLabel.textColor = isHovered ? AppColors.sidebarText : AppColors.inactiveTabText
             titleLabel.font = NSFont.systemFont(ofSize: Typography.fontSize, weight: Typography.inactiveWeight)
+            pinButton.contentTintColor = isHovered ? AppColors.hoveredControlTint : AppColors.inactiveControlTint
             closeButton.contentTintColor = isHovered ? AppColors.hoveredControlTint : AppColors.inactiveControlTint
         }
+
+        pinButton.isHidden = !isPinned && !isHovered
+        let pinAction = isPinned ? "Unpin Tab" : "Pin Tab"
+        pinButton.image = NSImage(
+            systemSymbolName: isPinned ? "pin.fill" : "pin",
+            accessibilityDescription: pinAction
+        )
+        pinButton.toolTip = pinAction
     }
 
     private func setBackgroundColor(_ color: CGColor, animated: Bool) {
@@ -264,6 +300,12 @@ final class DocumentTabView: NSView {
     private func handleCloseButton() {
         guard let document else { return }
         onClose?(document)
+    }
+
+    @objc
+    private func handlePinButton() {
+        guard let document else { return }
+        onTogglePin?(document)
     }
 
     private func makeContextMenu() -> NSMenu {

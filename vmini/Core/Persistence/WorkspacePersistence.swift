@@ -40,6 +40,11 @@ final class WorkspacePersistence {
         set { set(newValue, forKey: UserDefaultsKeys.sessionRestorerActiveDocumentReference) }
     }
 
+    var pinnedTabIdentifiers: [String] {
+        get { userDefaults.stringArray(forKey: UserDefaultsKeys.pinnedTabIdentifiers) ?? [] }
+        set { userDefaults.set(newValue, forKey: UserDefaultsKeys.pinnedTabIdentifiers) }
+    }
+
     var syntaxLanguageOverrides: [String: String] {
         get { userDefaults.dictionary(forKey: UserDefaultsKeys.syntaxLanguageOverrides) as? [String: String] ?? [:] }
         set { userDefaults.set(newValue, forKey: UserDefaultsKeys.syntaxLanguageOverrides) }

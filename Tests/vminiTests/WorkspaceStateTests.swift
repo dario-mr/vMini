@@ -44,6 +44,46 @@ final class WorkspaceStateTests: XCTestCase {
         XCTAssertTrue(store.activeDocument === documentB)
     }
 
+    func testPinnedTabsStayLeftAndPersistAcrossStoreRecreation() {
+        let persistence = WorkspacePersistence(
+            userDefaults: makeUserDefaults(prefix: "WorkspaceStateTests.PinnedTabs")
+        )
+        let store = OpenDocumentsStore(persistence: persistence)
+        let pinnedAID = UUID()
+        let pinnedBID = UUID()
+        let unpinnedID = UUID()
+        let pinnedA = makeDocument(openDocumentsStore: store, sessionIdentifier: pinnedAID)
+        let pinnedB = makeDocument(openDocumentsStore: store, sessionIdentifier: pinnedBID)
+        let unpinned = makeDocument(openDocumentsStore: store, sessionIdentifier: unpinnedID)
+
+        store.register(unpinned)
+        store.register(pinnedA)
+        store.register(pinnedB)
+        store.togglePinned(pinnedA)
+        store.togglePinned(pinnedB)
+        store.reorder(document: unpinned, to: 0)
+        store.reorder(document: pinnedB, to: 0)
+
+        XCTAssertEqual(store.documents.map(ObjectIdentifier.init), [
+            ObjectIdentifier(pinnedB), ObjectIdentifier(pinnedA), ObjectIdentifier(unpinned),
+        ])
+
+        let restoredStore = OpenDocumentsStore(persistence: persistence)
+        let restoredB = makeDocument(openDocumentsStore: restoredStore, sessionIdentifier: pinnedBID)
+        let restoredA = makeDocument(openDocumentsStore: restoredStore, sessionIdentifier: pinnedAID)
+        let restoredUnpinned = makeDocument(openDocumentsStore: restoredStore, sessionIdentifier: unpinnedID)
+        restoredStore.register(restoredB)
+        restoredStore.register(restoredA)
+        restoredStore.register(restoredUnpinned)
+
+        XCTAssertTrue(restoredStore.isPinned(restoredA))
+        XCTAssertTrue(restoredStore.isPinned(restoredB))
+        XCTAssertFalse(restoredStore.isPinned(restoredUnpinned))
+        XCTAssertEqual(restoredStore.documents.map(ObjectIdentifier.init), [
+            ObjectIdentifier(restoredB), ObjectIdentifier(restoredA), ObjectIdentifier(restoredUnpinned),
+        ])
+    }
+
     func testOpenFoldersStoreRestoresBookmarksAndExpandedStateFromPersistence() throws {
         let userDefaults = makeUserDefaults(prefix: "WorkspaceStateTests.Persistence")
         let persistence = WorkspacePersistence(userDefaults: userDefaults)
@@ -119,9 +159,12 @@ final class WorkspaceStateTests: XCTestCase {
         XCTAssertEqual(observedStates[1].expandedFolderPaths, [rootURL.standardizedFileURL.path])
     }
 
-    private func makeDocument(openDocumentsStore: OpenDocumentsStore) -> Document {
+    private func makeDocument(
+        openDocumentsStore: OpenDocumentsStore,
+        sessionIdentifier: UUID = UUID()
+    ) -> Document {
         Document(
-            sessionIdentifier: UUID(),
+            sessionIdentifier: sessionIdentifier,
             syntaxOverrideStore: SyntaxOverrideStore(userDefaults: makeUserDefaults(prefix: "WorkspaceStateTests.Syntax")),
             openDocumentsStore: openDocumentsStore
         )
