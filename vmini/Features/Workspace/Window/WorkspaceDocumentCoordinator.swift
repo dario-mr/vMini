@@ -65,19 +65,21 @@ final class WorkspaceDocumentCoordinator: WorkspaceDocumentRouting {
         let requestIntent = beginSelectionIntent()
         Task { @MainActor [weak self] in
             guard let self else { return }
-            let failures = await documentOpener.openInBackground(
-                urls,
-                activate: activeURL,
-                fallbackDocument: fallbackDocument,
-                presentDocument: { [weak self] document in
-                    guard let self, selectionIntent == requestIntent else { return }
-                    present(document: document)
-                },
-                noDocumentFallback: { [weak self] in
-                    guard let self, selectionIntent == requestIntent else { return }
-                    onNeedsWindowStateRefresh?()
-                }
-            )
+            let failures = await AppPerformanceProfiler.measure("WorkspaceOpen") {
+                await documentOpener.openInBackground(
+                    urls,
+                    activate: activeURL,
+                    fallbackDocument: fallbackDocument,
+                    presentDocument: { [weak self] document in
+                        guard let self, selectionIntent == requestIntent else { return }
+                        present(document: document)
+                    },
+                    noDocumentFallback: { [weak self] in
+                        guard let self, selectionIntent == requestIntent else { return }
+                        onNeedsWindowStateRefresh?()
+                    }
+                )
+            }
             presentOpenFailures(failures)
         }
     }

@@ -246,7 +246,9 @@ final class Document: NSDocument {
     override func read(from data: Data, ofType typeName: String) throws {
         if let decoded = String(data: data, encoding: .utf8) {
             MainActor.assumeIsolated {
-                installLoadedContent(decoded, ofType: typeName)
+                AppPerformanceProfiler.measure("DocumentInstall") {
+                    installLoadedContent(decoded, ofType: typeName)
+                }
             }
             return
         }

@@ -148,15 +148,14 @@ final class EditorBracketHighlightController {
     func refresh() {
         clearHighlights()
 
-        guard
-            let layoutManager = textView.layoutManager,
-            let match = EditorBracketMatching.match(
+        guard let layoutManager = textView.layoutManager else { return }
+        let match = AppPerformanceProfiler.measure("BracketMatching") {
+            EditorBracketMatching.match(
                 near: textView.selectedRange(),
                 in: textView.string as NSString
             )
-        else {
-            return
         }
+        guard let match else { return }
 
         let highlightColor = highlightColorProvider()
         for range in match.highlightedRanges {
