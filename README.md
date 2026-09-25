@@ -41,7 +41,7 @@ If you have a real Apple team configured for distribution signing, pass it in:
 DEVELOPMENT_TEAM=YOURTEAMID ./scripts/package.sh
 ```
 
-## Profile interactions
+## Profiler
 
 Record a CLI trace for focus, tab switching, and sidebar file-open latency:
 
