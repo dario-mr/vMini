@@ -11,4 +11,5 @@ enum UserDefaultsKeys {
     static let sessionRestorerActiveDocumentReference = "SessionRestorer.activeDocumentReference"
     static let openFolders = "OpenFolders"
     static let openFoldersExpandedPaths = "OpenFolders.expandedPaths"
+    static let pinnedTabIdentifiers = "PinnedTabIdentifiers"
 }

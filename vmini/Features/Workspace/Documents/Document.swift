@@ -89,6 +89,11 @@ final class Document: NSDocument {
     override var fileURL: URL? {
         didSet {
             MainActor.assumeIsolated {
+                openDocumentsStore.migratePinnedIdentifier(
+                    from: oldValue,
+                    to: fileURL,
+                    sessionIdentifier: sessionIdentifier
+                )
                 fileLifecycleController.handleFileURLChange(
                     from: oldValue,
                     to: fileURL,
