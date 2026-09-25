@@ -20,6 +20,9 @@ final class EditorStatusBarView: NSView {
     private let separatorView = NSView()
     private let cursorPositionLabel = NSTextField(labelWithString: "")
     private let syntaxStatusButton = NSButton(title: "", target: nil, action: nil)
+    private let openingIndicatorStack = NSStackView()
+    private let openingProgressIndicator = NSProgressIndicator()
+    private let openingStatusLabel = NSTextField(labelWithString: "Opening file…")
     private var state: EditorStatusBarState?
 
     override init(frame frameRect: NSRect) {
@@ -29,6 +32,7 @@ final class EditorStatusBarView: NSView {
 
         configureSeparator()
         configureButton()
+        configureOpeningIndicator()
         applyTheme()
     }
 
@@ -54,11 +58,21 @@ final class EditorStatusBarView: NSView {
         applyTitleAppearance()
     }
 
+    func setDocumentOpening(_ isOpening: Bool) {
+        openingIndicatorStack.isHidden = !isOpening
+        if isOpening {
+            openingProgressIndicator.startAnimation(nil)
+        } else {
+            openingProgressIndicator.stopAnimation(nil)
+        }
+    }
+
     func applyTheme() {
         layer?.backgroundColor = AppColors.tabBarBackground.blended(withFraction: 0.22, of: AppColors.editorBackground)?.cgColor
             ?? AppColors.tabBarBackground.cgColor
         separatorView.layer?.backgroundColor = AppColors.primaryText.withAlphaComponent(0.08).cgColor
         syntaxStatusButton.contentTintColor = AppColors.defaultControlTint
+        openingStatusLabel.textColor = AppColors.sidebarText
         applyTitleAppearance()
     }
 
@@ -101,6 +115,31 @@ final class EditorStatusBarView: NSView {
 
             syntaxStatusButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -10),
             syntaxStatusButton.centerYAnchor.constraint(equalTo: centerYAnchor),
+        ])
+    }
+
+    private func configureOpeningIndicator() {
+        openingProgressIndicator.style = .spinning
+        openingProgressIndicator.controlSize = .small
+        openingProgressIndicator.isIndeterminate = true
+        openingProgressIndicator.isDisplayedWhenStopped = false
+        openingProgressIndicator.translatesAutoresizingMaskIntoConstraints = false
+        openingStatusLabel.font = NSFont.systemFont(ofSize: Layout.textSize, weight: .medium)
+
+        openingIndicatorStack.orientation = .horizontal
+        openingIndicatorStack.alignment = .centerY
+        openingIndicatorStack.spacing = 5
+        openingIndicatorStack.translatesAutoresizingMaskIntoConstraints = false
+        openingIndicatorStack.addArrangedSubview(openingProgressIndicator)
+        openingIndicatorStack.addArrangedSubview(openingStatusLabel)
+        openingIndicatorStack.isHidden = true
+        addSubview(openingIndicatorStack)
+
+        NSLayoutConstraint.activate([
+            openingProgressIndicator.widthAnchor.constraint(equalToConstant: 16),
+            openingProgressIndicator.heightAnchor.constraint(equalToConstant: 16),
+            openingIndicatorStack.centerXAnchor.constraint(equalTo: centerXAnchor),
+            openingIndicatorStack.centerYAnchor.constraint(equalTo: centerYAnchor),
         ])
     }
 

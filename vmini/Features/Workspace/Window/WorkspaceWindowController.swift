@@ -25,6 +25,10 @@ final class WorkspaceWindowController: NSWindowController {
 
         super.init(window: window)
         shouldCascadeWindows = false
+        let workspaceViewController = self.workspaceViewController
+        documentCoordinator.onDocumentOpeningStateChanged = { [weak workspaceViewController] isOpening in
+            workspaceViewController?.setDocumentOpening(isOpening)
+        }
         documentCoordinator.onDocumentPresentationRequested = { [weak self] in
             self?.showWorkspaceWindow()
         }

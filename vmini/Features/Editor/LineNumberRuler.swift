@@ -49,10 +49,16 @@ final class LineNumberRulerView: NSView {
     }
 
     func invalidateLineNumbers() {
-        rebuildLineCache()
         synchronizeRuleThickness()
         lastSelectedLineStart = selectedLineStart()
         needsDisplay = true
+    }
+
+    func resetLineCache() {
+        AppPerformanceProfiler.measure("LineNumberCacheBuild") {
+            rebuildLineCache()
+        }
+        invalidateLineNumbers()
     }
 
     func noteTextStorageDidEdit(_ textStorage: NSTextStorage, editedRange: NSRange, changeInLength: Int) {
@@ -318,7 +324,21 @@ final class LineNumberRulerView: NSView {
     }
 
     private static func allLineStarts(in text: NSString) -> [Int] {
-        uniquedLineStarts([0] + lineStarts(in: text, range: NSRange(location: 0, length: text.length)))
+        let bufferSize = 64 * 1024
+        let buffer = UnsafeMutablePointer<unichar>.allocate(capacity: bufferSize)
+        defer { buffer.deallocate() }
+
+        var starts = [0]
+        var base = 0
+        while base < text.length {
+            let length = min(bufferSize, text.length - base)
+            text.getCharacters(buffer, range: NSRange(location: base, length: length))
+            for index in 0..<length where buffer[index] == 10 {
+                starts.append(base + index + 1)
+            }
+            base += length
+        }
+        return starts
     }
 
     private static func lineStarts(in text: NSString, range: NSRange) -> [Int] {
