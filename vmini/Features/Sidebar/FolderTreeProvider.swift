@@ -19,11 +19,11 @@ private struct FolderChildSnapshot: Sendable {
         let urls = (try? FileManager.default.contentsOfDirectory(
             at: url,
             includingPropertiesForKeys: values,
-            options: [.skipsHiddenFiles, .skipsPackageDescendants]
+            options: [.skipsPackageDescendants]
         )) ?? []
 
         return FolderChildSnapshot(children: urls
-            .filter { !$0.lastPathComponent.hasPrefix(".") }
+            .filter { $0.lastPathComponent != ".DS_Store" }
             .map { childURL in
                 let standardizedURL = childURL.standardizedFileURL
                 let isDirectory = (try? standardizedURL.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false

@@ -42,18 +42,20 @@ final class SidebarAndPersistenceTests: XCTestCase {
         }
     }
 
-    func testFolderTreeProviderSortsDirectoriesBeforeFilesAndFiltersHiddenEntries() async throws {
+    func testFolderTreeProviderSortsDirectoriesBeforeFilesAndFiltersDSStore() async throws {
         let rootURL = try makeTemporaryDirectory(name: "tree-root")
         let visibleDirectory = rootURL.appendingPathComponent("Beta", isDirectory: true)
         let visiblePackage = rootURL.appendingPathComponent("Alpha.app", isDirectory: true)
         let visibleFile = rootURL.appendingPathComponent("gamma.txt")
         let hiddenFile = rootURL.appendingPathComponent(".secret")
+        let metadataFile = rootURL.appendingPathComponent(".DS_Store")
 
         try FileManager.default.createDirectory(at: visibleDirectory, withIntermediateDirectories: true)
         try FileManager.default.createDirectory(at: visiblePackage, withIntermediateDirectories: true)
         try "package".write(to: visiblePackage.appendingPathComponent("Contents.txt"), atomically: true, encoding: .utf8)
         try "file".write(to: visibleFile, atomically: true, encoding: .utf8)
         try "hidden".write(to: hiddenFile, atomically: true, encoding: .utf8)
+        try "metadata".write(to: metadataFile, atomically: true, encoding: .utf8)
 
         let provider = FolderTreeProvider()
         let rootNode = try XCTUnwrap(provider.rootNodes(for: [rootURL]).first)
@@ -61,7 +63,7 @@ final class SidebarAndPersistenceTests: XCTestCase {
         await provider.loadChildren(for: rootURL)
         let titles = rootNode.children.map(\.title)
 
-        XCTAssertEqual(titles, ["Alpha.app", "Beta", "gamma.txt"])
+        XCTAssertEqual(titles, ["Alpha.app", "Beta", ".secret", "gamma.txt"])
     }
 
     func testFolderTreeProviderRefreshesNodeWhenFileBecomesDirectory() async throws {
