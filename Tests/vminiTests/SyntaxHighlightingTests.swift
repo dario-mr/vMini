@@ -98,6 +98,23 @@ final class SyntaxHighlightingTests: XCTestCase {
         )
     }
 
+    func testLanguageResolverRecognizesDotenvFileNames() {
+        for fileName in [".env", ".env.development", ".env.development.local", ".ENV.Production"] {
+            XCTAssertEqual(
+                SyntaxLanguageResolver.resolve(
+                    fileURL: URL(fileURLWithPath: "/tmp/\(fileName)"),
+                    typeIdentifier: UTType.plainText.identifier
+                ),
+                .dotenv
+            )
+        }
+
+        XCTAssertEqual(
+            SyntaxLanguageResolver.resolve(fileURL: URL(fileURLWithPath: "/tmp/.envrc"), typeIdentifier: UTType.plainText.identifier),
+            .plaintext
+        )
+    }
+
     func testLanguageResolverRecognizesShellFilesAndShebangs() {
         XCTAssertEqual(
             SyntaxLanguageResolver.resolve(fileURL: URL(fileURLWithPath: "/tmp/script.sh"), typeIdentifier: UTType.plainText.identifier),
@@ -130,6 +147,8 @@ final class SyntaxHighlightingTests: XCTestCase {
         XCTAssertEqual(SyntaxLanguageResolver.resolveFenceInfoString("bash"), .bash)
         XCTAssertEqual(SyntaxLanguageResolver.resolveFenceInfoString("zsh"), .bash)
         XCTAssertEqual(SyntaxLanguageResolver.resolveFenceInfoString("shell"), .bash)
+        XCTAssertEqual(SyntaxLanguageResolver.resolveFenceInfoString("env"), .dotenv)
+        XCTAssertEqual(SyntaxLanguageResolver.resolveFenceInfoString("dotenv"), .dotenv)
         XCTAssertEqual(SyntaxLanguageResolver.resolveFenceInfoString("json"), .json)
         XCTAssertEqual(SyntaxLanguageResolver.resolveFenceInfoString("yaml"), .yaml)
         XCTAssertEqual(SyntaxLanguageResolver.resolveFenceInfoString("yml"), .yaml)
@@ -532,6 +551,30 @@ final class SyntaxHighlightingTests: XCTestCase {
         assertColor(theme.option, at: nsText.range(of: "--global").location, in: storage)
         assertColor(theme.builtin, at: nsText.range(of: "ssh-add --apple-use-keychain").location, in: storage)
         assertColor(theme.option, at: nsText.range(of: "--apple-use-keychain").location, in: storage)
+    }
+
+    func testDotenvHighlighterStylesAssignmentsCommentsAndVariables() {
+        let text = """
+        # comment
+        CLUSTER=winterfell
+        LIA_ENABLED=false
+        export API_URL="${API_HOST}/v1" # inline comment
+        LITERAL='$VAR'
+        """
+
+        let storage = makeHighlightedStorage(text, language: .dotenv)
+        let theme = ThemeCatalog.palette(for: .default).syntaxTheme
+        let nsText = text as NSString
+
+        assertColor(theme.comment, at: nsText.range(of: "# comment").location, in: storage)
+        assertColor(theme.propertyKey, at: nsText.range(of: "CLUSTER").location, in: storage)
+        assertColor(theme.operator, at: nsText.range(of: "=").location, in: storage)
+        assertColor(theme.string, at: nsText.range(of: "winterfell").location, in: storage)
+        assertColor(theme.string, at: nsText.range(of: "false").location, in: storage)
+        assertColor(theme.keyword, at: nsText.range(of: "export").location, in: storage)
+        assertColor(theme.variable, at: nsText.range(of: "${API_HOST}").location, in: storage)
+        assertColor(theme.comment, at: nsText.range(of: "# inline comment").location, in: storage)
+        assertColor(theme.string, at: nsText.range(of: "$VAR").location, in: storage)
     }
 
     func testBashMultilineRangeCacheTracksOrdinaryUnicodeEdits() throws {
