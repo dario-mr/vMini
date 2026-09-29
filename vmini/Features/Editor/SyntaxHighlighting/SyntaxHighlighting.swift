@@ -38,6 +38,8 @@ enum SyntaxLanguageResolver {
         "bash": .bash,
         "zsh": .bash,
         "shell": .bash,
+        "env": .dotenv,
+        "dotenv": .dotenv,
         "md": .markdown,
         "markdown": .markdown,
         "json": .json,
@@ -49,6 +51,11 @@ enum SyntaxLanguageResolver {
         if let fileExtension = fileURL?.pathExtension.lowercased(),
            let language = shellFileExtensionMap[fileExtension] {
             return language
+        }
+
+        if let fileName = fileURL?.lastPathComponent.lowercased(),
+           fileName == ".env" || fileName.hasPrefix(".env.") {
+            return .dotenv
         }
 
         if let fileName = fileURL?.lastPathComponent.lowercased(),
@@ -272,6 +279,7 @@ final class HighlighterRegistry {
         self.init(highlighters: [
             PlainTextSyntaxHighlighter(),
             BashSyntaxHighlighter(),
+            DotenvSyntaxHighlighter(),
             SSHConfigSyntaxHighlighter(),
             MarkdownSyntaxHighlighter(),
             JSONSyntaxHighlighter(),

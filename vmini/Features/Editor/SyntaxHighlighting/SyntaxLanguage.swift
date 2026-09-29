@@ -4,6 +4,7 @@ enum SyntaxLanguage: String, CaseIterable {
     case plaintext
     case markdown
     case bash
+    case dotenv
     case sshconfig
     case json
     case yaml
@@ -16,6 +17,8 @@ enum SyntaxLanguage: String, CaseIterable {
             "Markdown"
         case .bash:
             "Bash"
+        case .dotenv:
+            "Dotenv"
         case .sshconfig:
             "SSH Config"
         case .json:
