@@ -8,6 +8,7 @@ enum SyntaxLanguage: String, CaseIterable {
     case sshconfig
     case json
     case yaml
+    case kotlin
 
     var displayName: String {
         switch self {
@@ -25,6 +26,8 @@ enum SyntaxLanguage: String, CaseIterable {
             "JSON"
         case .yaml:
             "YAML"
+        case .kotlin:
+            "Kotlin"
         }
     }
 }

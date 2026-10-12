@@ -22,6 +22,11 @@ enum SyntaxLanguageResolver {
         "yml": .yaml,
     ]
 
+    private static let kotlinFileExtensionMap: [String: SyntaxLanguage] = [
+        "kt": .kotlin,
+        "kts": .kotlin,
+    ]
+
     private static let fileNameMap: [String: SyntaxLanguage] = [
         "config": .sshconfig,
         ".zshenv": .bash,
@@ -45,6 +50,9 @@ enum SyntaxLanguageResolver {
         "json": .json,
         "yaml": .yaml,
         "yml": .yaml,
+        "kt": .kotlin,
+        "kts": .kotlin,
+        "kotlin": .kotlin,
     ]
 
     static func resolve(fileURL: URL?, typeIdentifier: String?, content: String? = nil) -> SyntaxLanguage {
@@ -74,6 +82,11 @@ enum SyntaxLanguageResolver {
 
         if let fileExtension = fileURL?.pathExtension.lowercased(),
            let language = yamlFileExtensionMap[fileExtension] {
+            return language
+        }
+
+        if let fileExtension = fileURL?.pathExtension.lowercased(),
+           let language = kotlinFileExtensionMap[fileExtension] {
             return language
         }
 
@@ -284,6 +297,7 @@ final class HighlighterRegistry {
             MarkdownSyntaxHighlighter(),
             JSONSyntaxHighlighter(),
             YAMLSyntaxHighlighter(),
+            KotlinSyntaxHighlighter(),
         ])
     }
 

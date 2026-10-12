@@ -163,7 +163,7 @@ enum EditorTextEditing {
         switch syntaxLanguage {
         case .bash, .dotenv, .sshconfig, .yaml:
             "#"
-        case .plaintext, .markdown, .json:
+        case .plaintext, .markdown, .json, .kotlin:
             "//"
         }
     }
