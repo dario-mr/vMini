@@ -98,6 +98,25 @@ final class SyntaxHighlightingTests: XCTestCase {
         )
     }
 
+    func testLanguageResolverAndRegistryRecognizeKotlin() {
+        for fileName in ["Main.kt", "build.kts"] {
+            XCTAssertEqual(
+                SyntaxLanguageResolver.resolve(
+                    fileURL: URL(fileURLWithPath: "/tmp/\(fileName)"),
+                    typeIdentifier: UTType.plainText.identifier
+                ),
+                .kotlin
+            )
+        }
+
+        let registry = HighlighterRegistry.shared
+        XCTAssertTrue(registry.highlighter(for: .kotlin) is KotlinSyntaxHighlighter)
+        for infoString in ["kotlin", "kt", "kts"] {
+            XCTAssertEqual(SyntaxLanguageResolver.resolveFenceInfoString(infoString), .kotlin)
+            XCTAssertTrue(registry.highlighter(forFenceInfoString: infoString) as? KotlinSyntaxHighlighter != nil)
+        }
+    }
+
     func testLanguageResolverRecognizesDotenvFileNames() {
         for fileName in [".env", ".env.development", ".env.development.local", ".ENV.Production"] {
             XCTAssertEqual(
@@ -207,6 +226,76 @@ final class SyntaxHighlightingTests: XCTestCase {
         assertColor(theme.codeFence, at: nsText.range(of: "```sh").location, in: storage)
         assertColor(theme.builtin, at: nsText.range(of: "echo hi").location, in: storage)
         assertBackgroundColor(theme.codeBlockBackground, at: nsText.range(of: "echo hi").location, in: storage)
+    }
+
+    func testKotlinHighlighterStylesCoreTokens() {
+        let text = [
+            "class Greeter {",
+            "    fun greet(name: String): String = \"Hello, $name\"",
+            "    val raw = \"\"\"multi",
+            "line raw\"\"\"",
+            "    /* outer",
+            "       /* nested */ still comment */",
+            "    // line comment",
+            "    val answer = 42",
+            "    val transform: (String) -> String = { value -> value }",
+            "}",
+        ].joined(separator: "\n")
+        let storage = makeHighlightedStorage(text, language: .kotlin)
+        let theme = ThemeCatalog.palette(for: .default).syntaxTheme
+        let nsText = text as NSString
+
+        assertColor(theme.keyword, at: nsText.range(of: "fun").location, in: storage)
+        assertColor(theme.builtin, at: nsText.range(of: "String").location, in: storage)
+        assertColor(theme.string, at: nsText.range(of: "Hello").location, in: storage)
+        assertColor(theme.string, at: nsText.range(of: "multi\nline raw").location, in: storage)
+        assertColor(theme.comment, at: nsText.range(of: "outer").location, in: storage)
+        assertColor(theme.comment, at: nsText.range(of: "still comment").location, in: storage)
+        assertColor(theme.comment, at: nsText.range(of: "line comment").location, in: storage)
+        assertColor(theme.variable, at: nsText.range(of: "42").location, in: storage)
+        assertColor(theme.operator, at: nsText.range(of: "->").location, in: storage)
+    }
+
+    func testKotlinHighlighterExpandsForDelimiterEditsAndKeepsOrdinaryEditsLocal() {
+        let highlighter = KotlinSyntaxHighlighter()
+
+        for (delimiter, replacement) in [("/*", "//"), ("\"\"\"", "\"")] {
+            let oldText = "before\n\(delimiter) content\nend" as NSString
+            let replacedRange = oldText.range(of: delimiter)
+            let editContext = SyntaxHighlightEditContext(
+                replacementRange: replacedRange,
+                replacementString: replacement,
+                replacedText: delimiter
+            )
+            let updatedText = oldText.replacingCharacters(in: replacedRange, with: replacement) as NSString
+            let editedRange = NSRange(location: replacedRange.location, length: (replacement as NSString).length)
+
+            let expandedRange = highlighter.expandedHighlightRange(
+                for: editedRange,
+                editContext: editContext,
+                in: updatedText
+            )
+
+            XCTAssertEqual(expandedRange, NSRange(location: 0, length: updatedText.length))
+        }
+
+        let oldText = "one\ntwo\nthree" as NSString
+        let replacedRange = oldText.range(of: "two")
+        let editContext = SyntaxHighlightEditContext(
+            replacementRange: replacedRange,
+            replacementString: "TWO",
+            replacedText: "two"
+        )
+        let updatedText = oldText.replacingCharacters(in: replacedRange, with: "TWO") as NSString
+        let editedRange = updatedText.range(of: "TWO")
+        let expandedRange = highlighter.expandedHighlightRange(
+            for: editedRange,
+            editContext: editContext,
+            in: updatedText
+        )
+
+        XCTAssertEqual(expandedRange, updatedText.lineRange(for: editedRange))
+        XCTAssertLessThan(expandedRange.length, updatedText.length)
     }
 
     func testMarkdownHighlighterStylesStandaloneOrderedListMarkers() {
