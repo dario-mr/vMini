@@ -83,6 +83,7 @@
 		A0000000000000000000015A /* JSONSyntaxHighlighter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000015B /* JSONSyntaxHighlighter.swift */; };
 		A000000000000000000001A0 /* YAMLSyntaxHighlighter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000001A1 /* YAMLSyntaxHighlighter.swift */; };
 		A0000000000000000000022B /* KotlinSyntaxHighlighter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000022C /* KotlinSyntaxHighlighter.swift */; };
+		A0000000000000000000022D /* JavaSyntaxHighlighter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000022E /* JavaSyntaxHighlighter.swift */; };
 		A0000000000000000000022A /* DotenvSyntaxHighlighter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000229 /* DotenvSyntaxHighlighter.swift */; };
 		A0000000000000000000011A /* OpenFilesSidebar.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000010A /* OpenFilesSidebar.swift */; };
 		A000000000000000000001D0 /* FolderSidebarExpansionController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000001D1 /* FolderSidebarExpansionController.swift */; };
@@ -223,6 +224,7 @@
 		A000000000000000000001A1 /* YAMLSyntaxHighlighter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YAMLSyntaxHighlighter.swift; sourceTree = "<group>"; };
 		A00000000000000000000229 /* DotenvSyntaxHighlighter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DotenvSyntaxHighlighter.swift; sourceTree = "<group>"; };
 		A0000000000000000000022C /* KotlinSyntaxHighlighter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KotlinSyntaxHighlighter.swift; sourceTree = "<group>"; };
+		A0000000000000000000022E /* JavaSyntaxHighlighter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JavaSyntaxHighlighter.swift; sourceTree = "<group>"; };
 		A0000000000000000000010A /* OpenFilesSidebar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenFilesSidebar.swift; sourceTree = "<group>"; };
 		A000000000000000000001D1 /* FolderSidebarExpansionController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FolderSidebarExpansionController.swift; sourceTree = "<group>"; };
 		A000000000000000000001D3 /* FolderSidebarSelectionController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FolderSidebarSelectionController.swift; sourceTree = "<group>"; };
@@ -484,6 +486,7 @@
 				A0000000000000000000015B /* JSONSyntaxHighlighter.swift */,
 				A000000000000000000001A1 /* YAMLSyntaxHighlighter.swift */,
 				A0000000000000000000022C /* KotlinSyntaxHighlighter.swift */,
+				A0000000000000000000022E /* JavaSyntaxHighlighter.swift */,
 				A00000000000000000000229 /* DotenvSyntaxHighlighter.swift */,
 				A00000000000000000000141 /* MarkdownSyntaxHighlighter.swift */,
 				A00000000000000000000226 /* Markdown */,
@@ -760,6 +763,7 @@
 				A0000000000000000000015A /* JSONSyntaxHighlighter.swift in Sources */,
 				A000000000000000000001A0 /* YAMLSyntaxHighlighter.swift in Sources */,
 				A0000000000000000000022B /* KotlinSyntaxHighlighter.swift in Sources */,
+				A0000000000000000000022D /* JavaSyntaxHighlighter.swift in Sources */,
 				A0000000000000000000022A /* DotenvSyntaxHighlighter.swift in Sources */,
 				A00000000000000000000140 /* MarkdownSyntaxHighlighter.swift in Sources */,
 				A00000000000000000000220 /* MarkdownSyntaxHighlighter+AttributeStyling.swift in Sources */,

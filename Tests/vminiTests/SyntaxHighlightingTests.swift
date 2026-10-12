@@ -117,6 +117,23 @@ final class SyntaxHighlightingTests: XCTestCase {
         }
     }
 
+    func testLanguageResolverAndRegistryRecognizeJava25() {
+        for fileName in ["Main.java", "module-info.java"] {
+            XCTAssertEqual(
+                SyntaxLanguageResolver.resolve(
+                    fileURL: URL(fileURLWithPath: "/tmp/\(fileName)"),
+                    typeIdentifier: UTType.plainText.identifier
+                ),
+                .java
+            )
+        }
+
+        let registry = HighlighterRegistry.shared
+        XCTAssertTrue(registry.highlighter(for: .java) is JavaSyntaxHighlighter)
+        XCTAssertEqual(SyntaxLanguageResolver.resolveFenceInfoString("java"), .java)
+        XCTAssertTrue(registry.highlighter(forFenceInfoString: "java") is JavaSyntaxHighlighter)
+    }
+
     func testLanguageResolverRecognizesDotenvFileNames() {
         for fileName in [".env", ".env.development", ".env.development.local", ".ENV.Production"] {
             XCTAssertEqual(
@@ -287,6 +304,89 @@ final class SyntaxHighlightingTests: XCTestCase {
             replacedText: "two"
         )
         let updatedText = oldText.replacingCharacters(in: replacedRange, with: "TWO") as NSString
+        let editedRange = updatedText.range(of: "TWO")
+        let expandedRange = highlighter.expandedHighlightRange(
+            for: editedRange,
+            editContext: editContext,
+            in: updatedText
+        )
+
+        XCTAssertEqual(expandedRange, updatedText.lineRange(for: editedRange))
+        XCTAssertLessThan(expandedRange.length, updatedText.length)
+    }
+
+    func testJavaHighlighterStylesJava25AndCoreTokens() {
+        let text = [
+            "import module java.base;",
+            "sealed interface Shape permits Circle {}",
+            "non-sealed class Circle {}",
+            "record Point(int x) {}",
+            "@RestController",
+            "@org.example.RequestMapping(\"/api\")",
+            "@interface CustomAnnotation {}",
+            "class Demo {",
+            "  String greeting = \"hi\";",
+            "  String text = \"\"\"",
+            "    text block class",
+            "    \"\"\";",
+            "  char marker = 'J';",
+            "  long value = 0x2A_FFL;",
+            "  void run() { // line comment",
+            "    /* block comment */ if (value > 0) return;",
+            "    case String item when item.length() > 0 -> item;",
+            "  }",
+            "}",
+        ].joined(separator: "\n")
+        let storage = makeHighlightedStorage(text, language: .java)
+        let theme = ThemeCatalog.palette(for: .default).syntaxTheme
+        let nsText = text as NSString
+
+        for keyword in ["module", "sealed", "permits", "non-sealed", "record", "when"] {
+            assertColor(theme.keyword, at: nsText.range(of: keyword).location, in: storage)
+        }
+        assertColor(theme.builtin, at: nsText.range(of: "RestController").location, in: storage)
+        assertColor(theme.builtin, at: nsText.range(of: "org.example.RequestMapping").location, in: storage)
+        assertColor(theme.keyword, at: nsText.range(of: "interface", options: .backwards).location, in: storage)
+        assertColor(theme.builtin, at: nsText.range(of: "String").location, in: storage)
+        assertColor(theme.string, at: nsText.range(of: "hi").location, in: storage)
+        assertColor(theme.string, at: nsText.range(of: "text block class").location, in: storage)
+        assertColor(theme.string, at: nsText.range(of: "J").location, in: storage)
+        assertColor(theme.variable, at: nsText.range(of: "0x2A_FFL").location, in: storage)
+        assertColor(theme.comment, at: nsText.range(of: "line comment").location, in: storage)
+        assertColor(theme.comment, at: nsText.range(of: "block comment").location, in: storage)
+        assertColor(theme.operator, at: nsText.range(of: ">", options: .backwards).location, in: storage)
+    }
+
+    func testJavaHighlighterExpandsForDelimiterEditsAndKeepsOrdinaryEditsLocal() {
+        let highlighter = JavaSyntaxHighlighter()
+
+        for (delimiter, replacement) in [("/*", "//"), ("\"\"\"", "\"")] {
+            let oldText = "before\n\(delimiter) content\nend" as NSString
+            let replacedRange = oldText.range(of: delimiter)
+            let editContext = SyntaxHighlightEditContext(
+                replacementRange: replacedRange,
+                replacementString: replacement,
+                replacedText: delimiter
+            )
+            let updatedText = oldText.replacingCharacters(in: replacedRange, with: replacement) as NSString
+            let editedRange = NSRange(location: replacedRange.location, length: (replacement as NSString).length)
+            let expandedRange = highlighter.expandedHighlightRange(
+                for: editedRange,
+                editContext: editContext,
+                in: updatedText
+            )
+
+            XCTAssertEqual(expandedRange, NSRange(location: 0, length: updatedText.length))
+        }
+
+        let text = "one\ntwo\nthree" as NSString
+        let replacedRange = text.range(of: "two")
+        let editContext = SyntaxHighlightEditContext(
+            replacementRange: replacedRange,
+            replacementString: "TWO",
+            replacedText: "two"
+        )
+        let updatedText = text.replacingCharacters(in: replacedRange, with: "TWO") as NSString
         let editedRange = updatedText.range(of: "TWO")
         let expandedRange = highlighter.expandedHighlightRange(
             for: editedRange,
@@ -868,6 +968,19 @@ final class SyntaxHighlightingTests: XCTestCase {
         }
         assertColor(syntaxTheme.plainText, at: nsText.range(of: "#").location, in: storage)
         assertNonBoldFont(at: nsText.range(of: "#").location, in: storage)
+    }
+
+    func testEditorViewControllerUsesSlashSlashCommentPrefixForJava() throws {
+        let viewController = EditorViewController()
+        viewController.loadViewIfNeeded()
+        viewController.syntaxLanguage = .java
+        viewController.text = "class Demo {}"
+
+        let textView = try XCTUnwrap(findTextView(in: viewController.view))
+        textView.setSelectedRange(NSRange(location: 0, length: 0))
+        viewController.toggleLineComment()
+
+        XCTAssertEqual(viewController.text, "//class Demo {}")
     }
 
     func testEditorViewControllerUsesShellCommentPrefixForBash() throws {
