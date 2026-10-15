@@ -48,6 +48,12 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
             AppColors.primaryActionBackground.withAlphaComponent(0.35)
         }
     )
+    private lazy var selectionOccurrenceController = EditorSelectionOccurrenceController(
+        textView: textView,
+        highlightColorProvider: {
+            AppColors.primaryActionBackground.withAlphaComponent(0.6)
+        }
+    )
     private lazy var viewportController = EditorViewportController(
         textView: textView,
         scrollView: scrollView,
@@ -170,6 +176,7 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
     func textDidChange(_ notification: Notification) {
         formattingErrorPresenter.clear()
         textViewStyler.synchronizeWordWrapLayout()
+        selectionOccurrenceController.refresh()
         bracketHighlightController.refresh()
         onTextChanged?()
         notifyCursorPositionChanged()
@@ -208,6 +215,7 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
         }
 
         pendingSyntaxHighlightEditContext = nil
+        selectionOccurrenceController.refresh()
         viewportController.handleTextStorageDidEdit(
             textStorage,
             editedRange: editedRange,
@@ -217,6 +225,7 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
 
     func textViewDidChangeSelection(_ notification: Notification) {
         viewportController.handleSelectionDidChange()
+        selectionOccurrenceController.refresh()
         bracketHighlightController.refresh()
         notifyCursorPositionChanged()
     }
@@ -322,6 +331,7 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
     private func refreshSyntaxHighlighting() {
         guard isViewLoaded else { return }
         syntaxHighlightController.refresh(language: syntaxLanguage)
+        selectionOccurrenceController.refresh()
         bracketHighlightController.refresh()
     }
 

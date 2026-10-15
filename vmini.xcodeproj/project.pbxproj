@@ -65,6 +65,8 @@
 		A00000000000000000000194 /* EditorSyntaxHighlightController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000195 /* EditorSyntaxHighlightController.swift */; };
 		A00000000000000000000196 /* EditorViewportController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000197 /* EditorViewportController.swift */; };
 		A000000000000000000001A2 /* EditorBracketHighlightController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000001A3 /* EditorBracketHighlightController.swift */; };
+		A00000000000000000000230 /* EditorSelectionOccurrenceController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000231 /* EditorSelectionOccurrenceController.swift */; };
+		A00000000000000000000232 /* EditorSelectionOccurrenceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000233 /* EditorSelectionOccurrenceTests.swift */; };
 		A00000000000000000000172 /* EditorTextEditing.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000173 /* EditorTextEditing.swift */; };
 		A0000000000000000000018C /* EditorTextEditing.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000173 /* EditorTextEditing.swift */; };
 		A00000000000000000000118 /* EditorViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000108 /* EditorViewController.swift */; };
@@ -208,6 +210,8 @@
 		A00000000000000000000195 /* EditorSyntaxHighlightController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorSyntaxHighlightController.swift; sourceTree = "<group>"; };
 		A00000000000000000000197 /* EditorViewportController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorViewportController.swift; sourceTree = "<group>"; };
 		A000000000000000000001A3 /* EditorBracketHighlightController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorBracketHighlightController.swift; sourceTree = "<group>"; };
+		A00000000000000000000231 /* EditorSelectionOccurrenceController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorSelectionOccurrenceController.swift; sourceTree = "<group>"; };
+		A00000000000000000000233 /* EditorSelectionOccurrenceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorSelectionOccurrenceTests.swift; sourceTree = "<group>"; };
 		A00000000000000000000173 /* EditorTextEditing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorTextEditing.swift; sourceTree = "<group>"; };
 		A00000000000000000000108 /* EditorViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorViewController.swift; sourceTree = "<group>"; };
 		A00000000000000000000109 /* LineNumberRuler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LineNumberRuler.swift; sourceTree = "<group>"; };
@@ -465,6 +469,7 @@
 				A00000000000000000000193 /* EditorTextViewStyler.swift */,
 				A00000000000000000000195 /* EditorSyntaxHighlightController.swift */,
 				A000000000000000000001A3 /* EditorBracketHighlightController.swift */,
+				A00000000000000000000231 /* EditorSelectionOccurrenceController.swift */,
 				A00000000000000000000197 /* EditorViewportController.swift */,
 				A00000000000000000000173 /* EditorTextEditing.swift */,
 				A00000000000000000000108 /* EditorViewController.swift */,
@@ -593,6 +598,7 @@
 			children = (
 				A00000000000000000000178 /* EditorTextEditingTests.swift */,
 				A0000000000000000000017A /* EditorCommandTests.swift */,
+				A00000000000000000000233 /* EditorSelectionOccurrenceTests.swift */,
 				A0000000000000000000017C /* EditorFontTests.swift */,
 				A0000000000000000000017E /* SyntaxHighlightingTests.swift */,
 				A00000000000000000000180 /* ThemeSystemTests.swift */,
@@ -750,6 +756,7 @@
 				A00000000000000000000192 /* EditorTextViewStyler.swift in Sources */,
 				A00000000000000000000194 /* EditorSyntaxHighlightController.swift in Sources */,
 				A000000000000000000001A2 /* EditorBracketHighlightController.swift in Sources */,
+				A00000000000000000000230 /* EditorSelectionOccurrenceController.swift in Sources */,
 				A00000000000000000000196 /* EditorViewportController.swift in Sources */,
 				A00000000000000000000172 /* EditorTextEditing.swift in Sources */,
 				A00000000000000000000118 /* EditorViewController.swift in Sources */,
@@ -806,6 +813,7 @@
 			files = (
 				A00000000000000000000177 /* EditorTextEditingTests.swift in Sources */,
 				A00000000000000000000179 /* EditorCommandTests.swift in Sources */,
+				A00000000000000000000232 /* EditorSelectionOccurrenceTests.swift in Sources */,
 				A0000000000000000000017B /* EditorFontTests.swift in Sources */,
 				A0000000000000000000017D /* SyntaxHighlightingTests.swift in Sources */,
 				A0000000000000000000017F /* ThemeSystemTests.swift in Sources */,
