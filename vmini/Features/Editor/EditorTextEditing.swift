@@ -110,6 +110,42 @@ enum EditorTextEditing {
         )
     }
 
+    static func indentSelectedLines(in text: NSString, selectedRange: NSRange) -> EditorTextEdit? {
+        let clampedSelectedRange = clampedRange(selectedRange, toLength: text.length)
+        guard clampedSelectedRange.length > 0 else { return nil }
+
+        let affectedRange = affectedLineRange(in: text, selectedRange: clampedSelectedRange)
+        let affectedEnd = NSMaxRange(affectedRange)
+        let replacement = NSMutableString(string: text.substring(with: affectedRange))
+        var lineLocations: [Int] = []
+        var lineLocation = affectedRange.location
+
+        while lineLocation < affectedEnd {
+            lineLocations.append(lineLocation)
+            let lineRange = text.lineRange(for: NSRange(location: lineLocation, length: 0))
+            let nextLineLocation = NSMaxRange(lineRange)
+            guard nextLineLocation > lineLocation else { break }
+            lineLocation = nextLineLocation
+        }
+
+        for lineLocation in lineLocations.reversed() {
+            replacement.insert("\t", at: lineLocation - affectedRange.location)
+        }
+
+        let selectionEnd = NSMaxRange(clampedSelectedRange)
+        let adjustedSelectionStart = clampedSelectedRange.location + lineLocations.filter { $0 <= clampedSelectedRange.location }.count
+        let adjustedSelectionEnd = selectionEnd + lineLocations.filter { $0 < selectionEnd }.count
+
+        return EditorTextEdit(
+            replacementRange: affectedRange,
+            replacementText: replacement as String,
+            selectedRange: NSRange(
+                location: adjustedSelectionStart,
+                length: adjustedSelectionEnd - adjustedSelectionStart
+            )
+        )
+    }
+
     static func moveSelectedLines(
         in text: NSString,
         selectedRange: NSRange,

@@ -53,6 +53,18 @@ final class EditorCommandController {
     }
 
     @discardableResult
+    func indentSelectedLines() -> Bool {
+        guard let textStorage = textView.textStorage else { return false }
+
+        let text = textView.string as NSString
+        guard let edit = EditorTextEditing.indentSelectedLines(in: text, selectedRange: textView.selectedRange()) else {
+            return false
+        }
+
+        return applyBufferEdit(edit, using: textStorage)
+    }
+
+    @discardableResult
     func moveSelectedLinesUp() -> Bool {
         moveSelectedLines(direction: .up)
     }

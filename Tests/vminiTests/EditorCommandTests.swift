@@ -125,6 +125,42 @@ final class EditorCommandTests: XCTestCase {
         XCTAssertEqual(textView.selectedRange(), NSRange(location: 0, length: 0))
     }
 
+    func testTabIndentsSingleLineSelectionInsteadOfReplacingIt() throws {
+        let viewController = EditorViewController()
+        viewController.loadViewIfNeeded()
+        viewController.text = "prefix selected suffix"
+
+        let textView = try XCTUnwrap(findTextView(in: viewController.view))
+        let selectedRange = (viewController.text as NSString).range(of: "selected")
+        textView.setSelectedRange(selectedRange)
+
+        textView.insertTab(nil)
+
+        XCTAssertEqual(viewController.text, "\tprefix selected suffix")
+        XCTAssertEqual(
+            textView.selectedRange(),
+            NSRange(location: selectedRange.location + 1, length: selectedRange.length)
+        )
+    }
+
+    func testTabIndentsEveryLineInMultilineSelectionInsteadOfReplacingIt() throws {
+        let viewController = EditorViewController()
+        viewController.loadViewIfNeeded()
+        viewController.text = "alpha\nbeta\ngamma"
+
+        let textView = try XCTUnwrap(findTextView(in: viewController.view))
+        let selectedRange = (viewController.text as NSString).range(of: "beta\ngamma")
+        textView.setSelectedRange(selectedRange)
+
+        textView.insertTab(nil)
+
+        XCTAssertEqual(viewController.text, "alpha\n\tbeta\n\tgamma")
+        XCTAssertEqual(
+            textView.selectedRange(),
+            NSRange(location: selectedRange.location + 1, length: selectedRange.length + 1)
+        )
+    }
+
     func testEscapeCollapsesActiveSelectionToInsertionPoint() {
         let textView = FileDropTextView(frame: NSRect(x: 0, y: 0, width: 300, height: 200))
         textView.string = "hello world"
