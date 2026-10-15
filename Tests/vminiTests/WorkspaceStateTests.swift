@@ -4,6 +4,106 @@ import XCTest
 
 @MainActor
 final class WorkspaceStateTests: XCTestCase {
+    func testPreviewReusesItsPositionAndNotifiesOnceWithoutClosingKeptTabs() {
+        let store = OpenDocumentsStore()
+        let kept = makeDocument(openDocumentsStore: store)
+        let first = makeDocument(openDocumentsStore: store)
+        let second = makeDocument(openDocumentsStore: store)
+        let last = makeDocument(openDocumentsStore: store)
+        store.register(kept)
+        store.registerPreview(first)
+        store.register(last)
+        var observedStates: [OpenDocumentsStore.State] = []
+        let token = store.observe { observedStates.append($0) }
+        defer { _ = token }
+
+        store.registerPreview(second)
+
+        XCTAssertEqual(store.documents.map(ObjectIdentifier.init), [kept, second, last].map(ObjectIdentifier.init))
+        XCTAssertTrue(store.activeDocument === second)
+        XCTAssertTrue(second.isPreview)
+        XCTAssertFalse(first.isPreview)
+        XCTAssertEqual(observedStates.count, 2)
+        XCTAssertEqual(observedStates.last?.documents.count, 3)
+
+        store.registerPreview(kept)
+        XCTAssertTrue(store.activeDocument === kept)
+        XCTAssertFalse(kept.isPreview)
+        XCTAssertTrue(store.previewDocument === second)
+    }
+
+    func testEditingPreviewKeepsItOpenAfterUndoAndBrowsing() {
+        let store = OpenDocumentsStore()
+        let edited = makeDocument(openDocumentsStore: store)
+        let next = makeDocument(openDocumentsStore: store)
+        store.registerPreview(edited)
+        let editor = edited.editorViewController(onFileSystemURLsDropped: { _ in })
+        editor.text = "edited content"
+        editor.onTextChanged?()
+
+        XCTAssertTrue(edited.isDocumentEdited)
+        XCTAssertFalse(edited.isPreview)
+        edited.updateChangeCount(.changeUndone)
+        store.registerPreview(next)
+
+        XCTAssertEqual(store.documents.count, 2)
+        XCTAssertTrue(store.contains(edited))
+        XCTAssertEqual(editor.text, "edited content")
+        XCTAssertTrue(next.isPreview)
+    }
+
+    func testKeepingAndPinningPreviewsPreventsReplacementAndClosingClearsPreview() {
+        let store = OpenDocumentsStore(persistence: WorkspacePersistence(
+            userDefaults: makeUserDefaults(prefix: "WorkspaceStateTests.PreviewPin")
+        ))
+        let kept = makeDocument(openDocumentsStore: store)
+        let pinned = makeDocument(openDocumentsStore: store)
+        let preview = makeDocument(openDocumentsStore: store)
+        store.registerPreview(kept)
+        kept.keepOpen()
+        store.registerPreview(pinned)
+        store.togglePinned(pinned)
+        store.registerPreview(preview)
+
+        XCTAssertEqual(store.documents.count, 3)
+        XCTAssertFalse(kept.isPreview)
+        XCTAssertFalse(pinned.isPreview)
+        XCTAssertTrue(store.isPinned(pinned))
+        XCTAssertTrue(preview.isPreview)
+        preview.close()
+        XCTAssertNil(store.previewDocument)
+        XCTAssertEqual(store.documents.count, 2)
+    }
+
+    func testPreviewTabUsesItalicUntilDoubleClickKeepsItOpen() throws {
+        let store = OpenDocumentsStore()
+        let document = makeDocument(openDocumentsStore: store)
+        store.registerPreview(document)
+        let tab = DocumentTabView()
+        tab.configure(document: document, isActive: true, isPinned: false)
+        let title = try XCTUnwrap(tab.subviews.compactMap { $0 as? NSTextField }.first)
+        XCTAssertTrue(try XCTUnwrap(title.font).fontDescriptor.symbolicTraits.contains(.italic))
+
+        let click = try XCTUnwrap(NSEvent.mouseEvent(
+            with: .leftMouseDown, location: .zero, modifierFlags: [], timestamp: 0,
+            windowNumber: 0, context: nil, eventNumber: 0, clickCount: 1, pressure: 1
+        ))
+        tab.mouseDown(with: click)
+        XCTAssertTrue(document.isPreview)
+
+        let doubleClick = try XCTUnwrap(NSEvent.mouseEvent(
+            with: .leftMouseDown, location: .zero, modifierFlags: [], timestamp: 0,
+            windowNumber: 0, context: nil, eventNumber: 1, clickCount: 2, pressure: 1
+        ))
+        tab.mouseDown(with: doubleClick)
+        tab.configure(document: document, isActive: true, isPinned: false)
+        XCTAssertFalse(document.isPreview)
+        XCTAssertFalse(try XCTUnwrap(title.font).fontDescriptor.symbolicTraits.contains(.italic))
+
+        store.registerPreview(document)
+        XCTAssertFalse(document.isPreview)
+    }
+
     func testOpenDocumentsStoreBatchUpdateCoalescesObserverNotifications() {
         let store = OpenDocumentsStore()
         let documentA = makeDocument(openDocumentsStore: store)

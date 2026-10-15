@@ -12,6 +12,12 @@ final class OpenFoldersSidebarViewController: NSViewController {
         }
     }
 
+    var onFileDoubleClicked: ((URL) -> Void)? {
+        didSet {
+            outlineController.onFileDoubleClicked = onFileDoubleClicked
+        }
+    }
+
     private let headerContainer = NSView()
     private let headerLabel = NSTextField(labelWithString: "FOLDERS")
     private let scrollView = NSScrollView()

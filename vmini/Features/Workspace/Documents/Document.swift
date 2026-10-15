@@ -15,6 +15,21 @@ final class Document: NSDocument {
     private var isPresentingExternalChangeAlert = false
     private(set) var contentRevision: UInt64 = 0
 
+    var isPreview: Bool { openDocumentsStore.previewDocument === self }
+
+    func keepOpen() {
+        openDocumentsStore.keepOpen(self)
+    }
+
+    override func updateChangeCount(_ change: NSDocument.ChangeType) {
+        super.updateChangeCount(change)
+        MainActor.assumeIsolated {
+            if isDocumentEdited {
+                keepOpen()
+            }
+        }
+    }
+
     var sidebarTitle: String {
         fileURL?.lastPathComponent ?? displayName
     }

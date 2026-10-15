@@ -4,6 +4,42 @@ import XCTest
 
 @MainActor
 final class SidebarAndPersistenceTests: XCTestCase {
+    func testFolderSidebarSingleAndDoubleClickUseSeparateFileActions() async throws {
+        let rootURL = try makeTemporaryDirectory(name: "preview-clicks")
+        let fileURL = rootURL.appendingPathComponent("file.txt")
+        try "text".write(to: fileURL, atomically: true, encoding: .utf8)
+        let store = OpenFoldersStore(persistence: WorkspacePersistence(
+            userDefaults: makeUserDefaults(prefix: "SidebarAndPersistenceTests.PreviewClicks")
+        ))
+        let provider = FolderTreeProvider()
+        let controller = OpenFoldersSidebarOutlineController(folderStore: store, treeProvider: provider)
+        let outline = OutlineViewSpy()
+        controller.attach(to: outline)
+        store.add([rootURL])
+        await provider.loadChildren(for: rootURL)
+        controller.apply(state: OpenFoldersStore.State(
+            folderURLs: [rootURL], selectedURL: nil, expandedFolderPaths: [rootURL.path],
+            contentVersion: 0, refreshedFolderPaths: []
+        ))
+        let root = try XCTUnwrap(outline.stubbedItemsByRow[0] as? FolderTreeNode)
+        outline.stubbedItemsByRow[1] = try XCTUnwrap(root.children.first)
+        outline.stubbedClickedRow = 1
+        var previews: [URL] = []
+        var kept: [URL] = []
+        controller.onFileSelected = { previews.append($0) }
+        controller.onFileDoubleClicked = { kept.append($0) }
+
+        controller.perform(try XCTUnwrap(outline.action))
+        XCTAssertEqual(previews, [fileURL])
+        XCTAssertTrue(kept.isEmpty)
+        controller.perform(try XCTUnwrap(outline.doubleAction))
+        XCTAssertEqual(kept, [fileURL])
+
+        outline.stubbedClickedRow = 0
+        controller.perform(try XCTUnwrap(outline.doubleAction))
+        XCTAssertEqual(kept, [fileURL])
+    }
+
     func testFolderOutlineRefreshesTheSameRootRepeatedly() async throws {
         let rootURL = try makeTemporaryDirectory(name: "repeated-refresh")
         let store = OpenFoldersStore(persistence: WorkspacePersistence(

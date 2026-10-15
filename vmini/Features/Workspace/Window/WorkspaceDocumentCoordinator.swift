@@ -4,6 +4,7 @@ import AppKit
 protocol WorkspaceDocumentRouting: AnyObject {
     func present(document: Document)
     func open(urls: [URL], activate activeURL: URL?)
+    func preview(url: URL)
     func createUntitledDocument()
     func createUntitledDocument(sessionIdentifier: UUID)
     func restoreSession(_ references: [RestorableDocumentReference], activate activeIdentifier: String?) async -> Bool
@@ -67,6 +68,14 @@ final class WorkspaceDocumentCoordinator: WorkspaceDocumentRouting {
     }
 
     func open(urls: [URL], activate activeURL: URL? = nil) {
+        open(urls: urls, activate: activeURL, asPreview: false)
+    }
+
+    func preview(url: URL) {
+        open(urls: [url], activate: url, asPreview: true)
+    }
+
+    private func open(urls: [URL], activate activeURL: URL?, asPreview: Bool) {
         guard !urls.isEmpty else { return }
 
         let fallbackDocument = openDocumentsStore.activeDocument
@@ -83,6 +92,8 @@ final class WorkspaceDocumentCoordinator: WorkspaceDocumentRouting {
                 await self.documentOpener.openInBackground(
                     urls,
                     activate: activeURL,
+                    asPreview: asPreview,
+                    shouldOpen: { [weak self] in self?.selectionIntent == requestIntent },
                     fallbackDocument: fallbackDocument,
                     presentDocument: { [weak self] document in
                         guard let self, selectionIntent == requestIntent else { return }

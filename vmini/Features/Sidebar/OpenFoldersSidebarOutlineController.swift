@@ -9,6 +9,7 @@ final class OpenFoldersSidebarOutlineController: NSObject, NSOutlineViewDataSour
     }
 
     var onFileSelected: ((URL) -> Void)?
+    var onFileDoubleClicked: ((URL) -> Void)?
 
     private let folderStore: OpenFoldersStore
     private let treeProvider: FolderTreeProvider
@@ -35,6 +36,7 @@ final class OpenFoldersSidebarOutlineController: NSObject, NSOutlineViewDataSour
         outlineView.dataSource = self
         outlineView.target = self
         outlineView.action = #selector(activateSelectedItem)
+        outlineView.doubleAction = #selector(keepSelectedFileOpen)
 
         let menu = NSMenu()
         menu.delegate = self
@@ -164,6 +166,14 @@ final class OpenFoldersSidebarOutlineController: NSObject, NSOutlineViewDataSour
         } else {
             onFileSelected?(node.url)
         }
+    }
+
+    @objc
+    private func keepSelectedFileOpen() {
+        guard let outlineView else { return }
+        let row = outlineView.clickedRow >= 0 ? outlineView.clickedRow : outlineView.selectedRow
+        guard row >= 0, let node = outlineView.item(atRow: row) as? FolderTreeNode, !node.isDirectory else { return }
+        onFileDoubleClicked?(node.url)
     }
 
     @objc
