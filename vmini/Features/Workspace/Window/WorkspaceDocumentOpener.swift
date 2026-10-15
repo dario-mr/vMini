@@ -30,6 +30,8 @@ final class WorkspaceDocumentOpener {
     func openInBackground(
         _ urls: [URL],
         activate activeURL: URL?,
+        asPreview: Bool = false,
+        shouldOpen: () -> Bool = { true },
         fallbackDocument: Document?,
         presentDocument: @escaping (Document) -> Void,
         noDocumentFallback: @escaping () -> Void
@@ -39,11 +41,13 @@ final class WorkspaceDocumentOpener {
 
         for url in urls.map(\.standardizedFileURL) {
             do {
-                lastOpenedDocument = try await openDocumentInBackground(at: url)
+                lastOpenedDocument = try await openDocumentInBackground(at: url, asPreview: asPreview, shouldOpen: shouldOpen)
             } catch {
                 failures.append(DocumentOpenFailure(url: url, message: error.localizedDescription))
             }
         }
+
+        guard !asPreview || shouldOpen() else { return [] }
 
         if
             let activeURL = activeURL?.standardizedFileURL,
@@ -115,23 +119,34 @@ final class WorkspaceDocumentOpener {
         return (!restoredDocuments.isEmpty, failures)
     }
 
-    private func openDocumentInBackground(at url: URL) async throws -> Document {
+    private func openDocumentInBackground(
+        at url: URL,
+        asPreview: Bool = false,
+        shouldOpen: () -> Bool = { true }
+    ) async throws -> Document? {
         let standardizedURL = url.standardizedFileURL
         documentController.noteNewRecentDocumentURL(standardizedURL)
 
         if let existing = documentController.document(for: standardizedURL) as? Document {
+            if !asPreview { existing.keepOpen() }
             return existing
         }
 
         let payload = try await payloadLoader(standardizedURL)
+        guard !asPreview || shouldOpen() else { return nil }
         if let existing = documentController.document(for: standardizedURL) as? Document {
+            if !asPreview { existing.keepOpen() }
             return existing
         }
 
-        let document = Document()
+        let document = Document(sessionIdentifier: UUID(), syntaxOverrideStore: .shared, openDocumentsStore: openDocumentsStore)
         install(payload, into: document)
         documentController.addDocument(document)
-        openDocumentsStore.register(document, activateIfEmpty: false)
+        if asPreview {
+            openDocumentsStore.registerPreview(document)
+        } else {
+            openDocumentsStore.register(document, activateIfEmpty: false)
+        }
         return document
     }
 

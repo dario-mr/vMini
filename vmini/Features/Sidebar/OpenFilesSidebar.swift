@@ -40,6 +40,9 @@ final class OpenFilesSidebarViewController: NSViewController {
         self.tableController = OpenFilesSidebarTableController(documentRouter: documentRouter)
         super.init(nibName: nil, bundle: nil)
         foldersViewController.onFileSelected = { url in
+            documentRouter.preview(url: url)
+        }
+        foldersViewController.onFileDoubleClicked = { url in
             documentRouter.open(urls: [url], activate: url)
         }
     }

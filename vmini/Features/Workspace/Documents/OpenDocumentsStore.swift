@@ -13,6 +13,7 @@ final class OpenDocumentsStore {
     private var pinnedIdentifiers: Set<String>
     private(set) var documents: [Document] = []
     private(set) var activeDocument: Document?
+    private(set) var previewDocument: Document?
     private var observers: [UUID: (State) -> Void] = [:]
     private var mutationDepth = 0
     private var pendingNotification = false
@@ -42,6 +43,8 @@ final class OpenDocumentsStore {
 
     func togglePinned(_ document: Document) {
         guard contains(document) else { return }
+
+        keepOpen(document)
 
         let identifier = Self.pinIdentifier(for: document)
         if !pinnedIdentifiers.insert(identifier).inserted {
@@ -91,6 +94,9 @@ final class OpenDocumentsStore {
         }
 
         documents.remove(at: removedIndex)
+        if previewDocument === document {
+            previewDocument = nil
+        }
 
         if activeDocument === document {
             activeDocument = documents.isEmpty
@@ -98,6 +104,35 @@ final class OpenDocumentsStore {
                 : documents[max(0, min(removedIndex - 1, documents.count - 1))]
         }
 
+        stateDidChange()
+    }
+
+    func registerPreview(_ document: Document) {
+        guard !contains(document) else {
+            select(document)
+            return
+        }
+
+        performBatchUpdate {
+            var replacementIndex: Int?
+            if let previewDocument {
+                if previewDocument.isDocumentEdited || isPinned(previewDocument) {
+                    keepOpen(previewDocument)
+                } else {
+                    replacementIndex = documents.firstIndex { $0 === previewDocument }
+                    previewDocument.close()
+                }
+            }
+            if !document.isDocumentEdited && !isPinned(document) {
+                previewDocument = document
+            }
+            register(document, at: replacementIndex, makeActive: true)
+        }
+    }
+
+    func keepOpen(_ document: Document) {
+        guard previewDocument === document else { return }
+        previewDocument = nil
         stateDidChange()
     }
 

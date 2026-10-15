@@ -34,6 +34,7 @@ final class DocumentTabView: NSView {
     private var isHovered = false
     private var isActive = false
     private var isPinned = false
+    private var isPreview = false
     private var displayedTitle = ""
     private var dragStartLocationInWindow: NSPoint?
     private var isDraggingTab = false
@@ -118,6 +119,9 @@ final class DocumentTabView: NSView {
 
     override func mouseDown(with event: NSEvent) {
         guard let document else { return }
+        if event.clickCount == 2 {
+            document.keepOpen()
+        }
         dragStartLocationInWindow = event.locationInWindow
         isDraggingTab = false
         onSelect?(document)
@@ -185,15 +189,17 @@ final class DocumentTabView: NSView {
         let didChangeTitle = displayedTitle != nextTitle
         let didChangeActiveState = self.isActive != isActive
         let didChangePinnedState = self.isPinned != isPinned
+        let didChangePreviewState = isPreview != document.isPreview
 
         self.isActive = isActive
         self.isPinned = isPinned
+        isPreview = document.isPreview
         if didChangeTitle {
             displayedTitle = nextTitle
             titleLabel.stringValue = nextTitle
         }
 
-        guard didChangeTitle || didChangeActiveState || didChangePinnedState else {
+        guard didChangeTitle || didChangeActiveState || didChangePinnedState || didChangePreviewState else {
             return
         }
 
@@ -234,6 +240,10 @@ final class DocumentTabView: NSView {
             titleLabel.font = NSFont.systemFont(ofSize: Typography.fontSize, weight: Typography.inactiveWeight)
             pinButton.contentTintColor = isHovered ? AppColors.hoveredControlTint : AppColors.inactiveControlTint
             closeButton.contentTintColor = isHovered ? AppColors.hoveredControlTint : AppColors.inactiveControlTint
+        }
+
+        if isPreview, let font = titleLabel.font {
+            titleLabel.font = NSFontManager.shared.convert(font, toHaveTrait: .italicFontMask)
         }
 
         pinButton.isHidden = !isPinned && !isHovered

@@ -4,6 +4,170 @@ import XCTest
 
 @MainActor
 final class SessionWorkflowTests: XCTestCase {
+    func testBrowsingFilesReplacesOnlyPreviewAndExplicitOpenKeepsIt() async throws {
+        let store = OpenDocumentsStore()
+        let controller = DocumentController()
+        let opener = WorkspaceDocumentOpener(documentController: controller, openDocumentsStore: store)
+        defer { store.documents.forEach { $0.close() } }
+        let kept = makeDocument(store: store)
+        store.register(kept)
+        var previousURL: URL?
+        for name in ["first.txt", "second.txt", "third.txt"] {
+            let url = try makeTemporaryFile(named: name, contents: name)
+            let failures = await opener.openInBackground(
+                [url], activate: url, asPreview: true, fallbackDocument: kept,
+                presentDocument: { store.select($0) }, noDocumentFallback: { XCTFail("Expected preview") }
+            )
+            XCTAssertTrue(failures.isEmpty)
+            XCTAssertEqual(store.documents.count, 2)
+            XCTAssertTrue(store.contains(kept))
+            XCTAssertEqual(store.previewDocument?.fileURL, url)
+            if let previousURL {
+                XCTAssertNil(controller.document(for: previousURL))
+            }
+            previousURL = url
+        }
+        let preview = try XCTUnwrap(store.previewDocument)
+        let url = try XCTUnwrap(preview.fileURL)
+        let failures = await opener.openInBackground(
+            [url], activate: url, fallbackDocument: kept,
+            presentDocument: { store.select($0) }, noDocumentFallback: { XCTFail("Expected open file") }
+        )
+        XCTAssertTrue(failures.isEmpty)
+        XCTAssertNil(store.previewDocument)
+        XCTAssertTrue(store.activeDocument === preview)
+        XCTAssertEqual(store.documents.count, 2)
+    }
+
+    func testFailedPreviewLeavesCurrentPreviewOpen() async throws {
+        let store = OpenDocumentsStore()
+        let opener = WorkspaceDocumentOpener(documentController: DocumentController(), openDocumentsStore: store)
+        let document = makeDocument(store: store)
+        store.registerPreview(document)
+        let missingURL = URL(fileURLWithPath: "/tmp/vmini-preview-missing-\(UUID().uuidString).txt")
+
+        let failures = await opener.openInBackground(
+            [missingURL], activate: missingURL, asPreview: true, fallbackDocument: document,
+            presentDocument: { store.select($0) }, noDocumentFallback: { XCTFail("Expected current preview") }
+        )
+
+        XCTAssertEqual(failures.map(\.url), [missingURL])
+        XCTAssertTrue(store.previewDocument === document)
+        XCTAssertTrue(store.activeDocument === document)
+        XCTAssertEqual(store.documents.count, 1)
+    }
+
+    func testOpenFilesSidebarSelectsPreviewAndDoubleClickKeepsItOpen() throws {
+        let store = OpenDocumentsStore()
+        let document = makeDocument(store: store)
+        store.registerPreview(document)
+        let table = NSTableView()
+        let controller = OpenFilesSidebarTableController(documentRouter: RecordingDocumentRouter())
+        table.addTableColumn(NSTableColumn(identifier: NSUserInterfaceItemIdentifier("test")))
+        controller.attach(to: table)
+        controller.update(documents: store.documents, activeDocument: document)
+        table.selectRowIndexes(IndexSet(integer: 0), byExtendingSelection: false)
+
+        controller.perform(try XCTUnwrap(table.action))
+        XCTAssertTrue(document.isPreview)
+        controller.perform(try XCTUnwrap(table.doubleAction))
+        XCTAssertFalse(document.isPreview)
+        XCTAssertTrue(store.contains(document))
+    }
+
+    func testOverlappingPreviewLoadsOnlyOpenTheLatestFile() async throws {
+        for newestFinishesFirst in [false, true] {
+            let store = OpenDocumentsStore()
+            let controller = DocumentController()
+            let started = (0..<2).map { expectation(description: "preview \($0) started") }
+            var continuations: [CheckedContinuation<DocumentPayload, Error>] = []
+            let opener = WorkspaceDocumentOpener(
+                documentController: controller, openDocumentsStore: store,
+                payloadLoader: { _ in
+                    try await withCheckedThrowingContinuation { continuation in
+                        continuations.append(continuation)
+                        started[continuations.count - 1].fulfill()
+                    }
+                }
+            )
+            let coordinator = WorkspaceDocumentCoordinator(
+                documentOpener: opener, openDocumentsStore: store,
+                closedDocumentHistory: ClosedDocumentHistory(), documentController: controller
+            )
+            let urls = try [
+                makeTemporaryFile(named: "old.txt", contents: "old"),
+                makeTemporaryFile(named: "latest.txt", contents: "latest")
+            ]
+            coordinator.preview(url: urls[0])
+            await fulfillment(of: [started[0]], timeout: 2)
+            coordinator.preview(url: urls[1])
+            await fulfillment(of: [started[1]], timeout: 2)
+            let firstCompletion = expectation(description: "first load completed")
+            firstCompletion.expectedFulfillmentCount = 2
+            let allCompleted = expectation(description: "all preview loads completed")
+            // The initial true and the next true account for the in-flight loads and the first completion.
+            coordinator.onDocumentOpeningStateChanged = { isOpening in
+                if isOpening { firstCompletion.fulfill() } else { allCompleted.fulfill() }
+            }
+            let firstIndex = newestFinishesFirst ? 1 : 0
+            continuations[firstIndex].resume(returning: DocumentPayload(
+                url: urls[firstIndex], typeName: "public.plain-text", text: "first completion"
+            ))
+            await fulfillment(of: [firstCompletion], timeout: 2)
+            XCTAssertEqual(store.documents.count, newestFinishesFirst ? 1 : 0)
+            let lastIndex = 1 - firstIndex
+            continuations[lastIndex].resume(returning: DocumentPayload(
+                url: urls[lastIndex], typeName: "public.plain-text", text: "last completion"
+            ))
+            await fulfillment(of: [allCompleted], timeout: 2)
+            XCTAssertEqual(store.documents.count, 1)
+            XCTAssertEqual(controller.documents.count, 1)
+            XCTAssertEqual(store.activeDocument?.fileURL, urls[1])
+            XCTAssertTrue(store.activeDocument?.isPreview == true)
+            store.documents.forEach { $0.close() }
+        }
+    }
+
+    func testDoubleClickWhilePreviewLoadsKeepsFileOpenInEitherCompletionOrder() async throws {
+        for previewFinishesFirst in [false, true] {
+            let store = OpenDocumentsStore()
+            let controller = DocumentController()
+            let started = (0..<2).map { expectation(description: "open \($0) started") }
+            var continuations: [CheckedContinuation<DocumentPayload, Error>] = []
+            let opener = WorkspaceDocumentOpener(
+                documentController: controller, openDocumentsStore: store,
+                payloadLoader: { _ in
+                    try await withCheckedThrowingContinuation { continuation in
+                        continuations.append(continuation)
+                        started[continuations.count - 1].fulfill()
+                    }
+                }
+            )
+            let coordinator = WorkspaceDocumentCoordinator(
+                documentOpener: opener, openDocumentsStore: store,
+                closedDocumentHistory: ClosedDocumentHistory(), documentController: controller
+            )
+            let url = try makeTemporaryFile(named: "double-click.txt", contents: "text")
+            coordinator.preview(url: url)
+            await fulfillment(of: [started[0]], timeout: 2)
+            coordinator.open(urls: [url], activate: url)
+            await fulfillment(of: [started[1]], timeout: 2)
+            let completed = expectation(description: "both opens completed")
+            coordinator.onDocumentOpeningStateChanged = { if !$0 { completed.fulfill() } }
+            let order = previewFinishesFirst ? [0, 1] : [1, 0]
+            for index in order {
+                continuations[index].resume(returning: DocumentPayload(url: url, typeName: "public.plain-text", text: "text"))
+                await Task.yield()
+            }
+            await fulfillment(of: [completed], timeout: 2)
+            XCTAssertEqual(store.documents.count, 1)
+            XCTAssertEqual(controller.documents.count, 1)
+            XCTAssertEqual(store.activeDocument?.fileURL, url)
+            XCTAssertNil(store.previewDocument)
+            store.documents.forEach { $0.close() }
+        }
+    }
+
     func testSessionManagerPersistsMixedDocumentsAndRestoresActiveSelection() async throws {
         let persistence = WorkspacePersistence(userDefaults: makeUserDefaults(prefix: "SessionWorkflowTests.Session"))
         let store = OpenDocumentsStore()
@@ -622,6 +786,7 @@ private final class RecordingDocumentRouter: WorkspaceDocumentRouting {
 
     func present(document: Document) {}
     func open(urls: [URL], activate activeURL: URL?) {}
+    func preview(url: URL) {}
     func createUntitledDocument() {}
     func createUntitledDocument(sessionIdentifier: UUID) {}
 

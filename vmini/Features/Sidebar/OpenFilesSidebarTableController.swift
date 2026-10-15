@@ -41,7 +41,7 @@ final class OpenFilesSidebarTableController: NSObject, NSTableViewDataSource, NS
         tableView.dataSource = self
         tableView.target = self
         tableView.action = #selector(activateSelection)
-        tableView.doubleAction = #selector(activateSelection)
+        tableView.doubleAction = #selector(keepSelectionOpen)
     }
 
     func update(documents: [Document], activeDocument: Document?) {
@@ -110,6 +110,15 @@ final class OpenFilesSidebarTableController: NSObject, NSTableViewDataSource, NS
         tableView.reloadData()
         isReloadingSelection = false
         reloadSelection(scrollIfNeeded: true)
+    }
+
+    @objc
+    private func keepSelectionOpen() {
+        guard let tableView else { return }
+        let row = tableView.clickedRow >= 0 ? tableView.clickedRow : tableView.selectedRow
+        guard row >= 0, row < documents.count else { return }
+        documents[row].keepOpen()
+        documentRouter.present(document: documents[row])
     }
 
     @objc
