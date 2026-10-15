@@ -13,31 +13,37 @@ Xcode still needs to be installed.
 
 Build the app:
 
-```bash
+```shell
 ./scripts/build.sh
 ```
 
 Build the release app:
 
-```bash
+```shell
 CONFIGURATION=Release ./scripts/build.sh
 ```
 
 Build and run the app:
 
-```bash
+```shell
 ./scripts/run.sh
+```
+
+Run tests:
+
+```shell
+swift test -c release
 ```
 
 Create a distributable archive and zip:
 
-```bash
+```shell
 ./scripts/package.sh
 ```
 
 If you have a real Apple team configured for distribution signing, pass it in:
 
-```bash
+```shell
 DEVELOPMENT_TEAM=YOURTEAMID ./scripts/package.sh
 ```
 
@@ -56,13 +62,13 @@ See [profiling.md](docs/profiling.md) for interaction profiling and benchmark in
 Override [icon_512x512@2x.png](vmini/Assets.xcassets/AppIcon.appiconset/icon_512x512@2x.png) with
 the new `1024x1024` icon, then run:
 
-```bash
+```shell
 ./scripts/generate-app-icon-set.sh
 ```
 
 Then clear build data and restart dock to see the new icon:
 
-```bash
+```shell
 rm -rf ~/Library/Developer/Xcode/DerivedData
 killall Dock
 ```

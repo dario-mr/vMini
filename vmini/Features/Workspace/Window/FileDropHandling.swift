@@ -50,8 +50,19 @@ final class FileDropTextView: NSTextView {
     }
 
     var onFileSystemURLsDropped: (([URL]) -> Void)?
+    var onIndentSelectedLines: (() -> Bool)?
     var onMoveSelectedLinesUp: (() -> Bool)?
     var onMoveSelectedLinesDown: (() -> Bool)?
+
+    @objc
+    override func insertTab(_ sender: Any?) {
+        guard selectedRange().length > 0 else {
+            super.insertTab(sender)
+            return
+        }
+
+        _ = onIndentSelectedLines?()
+    }
 
     override func keyDown(with event: NSEvent) {
         let modifiers = event.modifierFlags.intersection(.deviceIndependentFlagsMask)

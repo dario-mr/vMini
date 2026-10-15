@@ -288,6 +288,9 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
         textView.onFileSystemURLsDropped = { [weak self] urls in
             self?.onFileSystemURLsDropped?(urls)
         }
+        textView.onIndentSelectedLines = { [weak self] in
+            self?.commandController.indentSelectedLines() ?? false
+        }
         textView.onMoveSelectedLinesUp = { [weak self] in
             self?.moveSelectedLinesUp() ?? false
         }
