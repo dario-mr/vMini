@@ -124,24 +124,25 @@ enum MenuBuilder {
         menu.addItem(.separator())
 
         let findMenuItem = NSMenuItem(title: "Find", action: nil, keyEquivalent: "")
-        findMenuItem.submenu = makeFindMenu()
+        findMenuItem.submenu = makeFindMenu(commandTarget: commandTarget)
         menu.addItem(findMenuItem)
 
         return menu
     }
 
-    private static func makeFindMenu() -> NSMenu {
+    private static func makeFindMenu(commandTarget: AnyObject?) -> NSMenu {
         let menu = NSMenu(title: "Find")
-
-        let showFind = menu.addItem(withTitle: "Find…", action: #selector(NSResponder.performTextFinderAction(_:)), keyEquivalent: "f")
-        showFind.tag = NSTextFinder.Action.showFindInterface.rawValue
-
-        let findNext = menu.addItem(withTitle: "Find Next", action: #selector(NSResponder.performTextFinderAction(_:)), keyEquivalent: "g")
-        findNext.tag = NSTextFinder.Action.nextMatch.rawValue
-
-        let findPrevious = menu.addItem(withTitle: "Find Previous", action: #selector(NSResponder.performTextFinderAction(_:)), keyEquivalent: "G")
-        findPrevious.tag = NSTextFinder.Action.previousMatch.rawValue
-
+        for (title, key, action) in [
+            ("Find…", "f", EditorSearchAction.find),
+            ("Replace…", "r", .replace),
+            ("Find Next", String(UnicodeScalar(NSF3FunctionKey)!), .next),
+            ("Find Previous", String(UnicodeScalar(NSF2FunctionKey)!), .previous),
+        ] {
+            let item = menu.addItem(withTitle: title, action: #selector(AppCommandDispatcher.performEditorSearchAction(_:)), keyEquivalent: key)
+            item.target = commandTarget
+            item.tag = action.rawValue
+            item.keyEquivalentModifierMask = action == .find || action == .replace ? .command : []
+        }
         return menu
     }
 

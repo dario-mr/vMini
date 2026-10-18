@@ -4,6 +4,7 @@ import AppKit
 final class EditorSelectionOccurrenceController {
     private static let marker = NSAttributedString.Key("vmini.selectionOccurrence")
 
+    var isEnabled = true { didSet { refresh() } }
     private let textView: NSTextView
     private let highlightColorProvider: () -> NSColor
     private var pendingRefreshTask: Task<Void, Never>?
@@ -21,6 +22,7 @@ final class EditorSelectionOccurrenceController {
     func refresh() {
         pendingRefreshTask?.cancel()
         clearHighlights()
+        guard isEnabled else { return }
 
         guard textView.selectedRanges.count == 1 else { return }
         let selection = textView.selectedRange()

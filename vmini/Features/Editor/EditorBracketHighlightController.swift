@@ -132,6 +132,7 @@ enum EditorBracketMatching {
 
 @MainActor
 final class EditorBracketHighlightController {
+    var isEnabled = true { didSet { refresh() } }
     private let textView: NSTextView
     private let highlightColorProvider: () -> NSColor
 
@@ -147,6 +148,7 @@ final class EditorBracketHighlightController {
 
     func refresh() {
         clearHighlights()
+        guard isEnabled else { return }
 
         guard let layoutManager = textView.layoutManager else { return }
         let match = AppPerformanceProfiler.measure("BracketMatching") {

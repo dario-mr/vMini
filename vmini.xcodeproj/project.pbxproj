@@ -124,6 +124,11 @@
 		A0000000000000000000020E /* WorkspaceSessionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000020F /* WorkspaceSessionManager.swift */; };
 		A00000000000000000000211 /* SidebarFolderWatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000212 /* SidebarFolderWatcher.swift */; };
 		A00000000000000000000214 /* AppPerformanceProfiler.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000213 /* AppPerformanceProfiler.swift */; };
+		B00000000000000000000001 /* EditorSearchButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000002 /* EditorSearchButton.swift */; };
+		B00000000000000000000003 /* EditorSearchPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000004 /* EditorSearchPanel.swift */; };
+		B00000000000000000000005 /* EditorSearchController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000006 /* EditorSearchController.swift */; };
+		B00000000000000000000007 /* EditorSearchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000008 /* EditorSearchTests.swift */; };
+		B00000000000000000000009 /* EditorSearchFieldCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000000000000000000000A /* EditorSearchFieldCell.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -255,6 +260,11 @@
 		A000000000000000000001DD /* WorkspaceDocumentOpener.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceDocumentOpener.swift; sourceTree = "<group>"; };
 		A0000000000000000000012A /* OpenFoldersStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenFoldersStore.swift; sourceTree = "<group>"; };
 		A0000000000000000000012B /* OpenFoldersSidebar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenFoldersSidebar.swift; sourceTree = "<group>"; };
+		B00000000000000000000002 /* EditorSearchButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorSearchButton.swift; sourceTree = "<group>"; };
+		B00000000000000000000004 /* EditorSearchPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorSearchPanel.swift; sourceTree = "<group>"; };
+		B00000000000000000000006 /* EditorSearchController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorSearchController.swift; sourceTree = "<group>"; };
+		B00000000000000000000008 /* EditorSearchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorSearchTests.swift; sourceTree = "<group>"; };
+		B0000000000000000000000A /* EditorSearchFieldCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorSearchFieldCell.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -469,6 +479,10 @@
 				A00000000000000000000193 /* EditorTextViewStyler.swift */,
 				A00000000000000000000195 /* EditorSyntaxHighlightController.swift */,
 				A000000000000000000001A3 /* EditorBracketHighlightController.swift */,
+				B00000000000000000000002 /* EditorSearchButton.swift */,
+				B0000000000000000000000A /* EditorSearchFieldCell.swift */,
+				B00000000000000000000004 /* EditorSearchPanel.swift */,
+				B00000000000000000000006 /* EditorSearchController.swift */,
 				A00000000000000000000231 /* EditorSelectionOccurrenceController.swift */,
 				A00000000000000000000197 /* EditorViewportController.swift */,
 				A00000000000000000000173 /* EditorTextEditing.swift */,
@@ -598,6 +612,7 @@
 			children = (
 				A00000000000000000000178 /* EditorTextEditingTests.swift */,
 				A0000000000000000000017A /* EditorCommandTests.swift */,
+				B00000000000000000000008 /* EditorSearchTests.swift */,
 				A00000000000000000000233 /* EditorSelectionOccurrenceTests.swift */,
 				A0000000000000000000017C /* EditorFontTests.swift */,
 				A0000000000000000000017E /* SyntaxHighlightingTests.swift */,
@@ -756,6 +771,10 @@
 				A00000000000000000000192 /* EditorTextViewStyler.swift in Sources */,
 				A00000000000000000000194 /* EditorSyntaxHighlightController.swift in Sources */,
 				A000000000000000000001A2 /* EditorBracketHighlightController.swift in Sources */,
+				B00000000000000000000001 /* EditorSearchButton.swift in Sources */,
+				B00000000000000000000009 /* EditorSearchFieldCell.swift in Sources */,
+				B00000000000000000000003 /* EditorSearchPanel.swift in Sources */,
+				B00000000000000000000005 /* EditorSearchController.swift in Sources */,
 				A00000000000000000000230 /* EditorSelectionOccurrenceController.swift in Sources */,
 				A00000000000000000000196 /* EditorViewportController.swift in Sources */,
 				A00000000000000000000172 /* EditorTextEditing.swift in Sources */,
@@ -813,6 +832,7 @@
 			files = (
 				A00000000000000000000177 /* EditorTextEditingTests.swift in Sources */,
 				A00000000000000000000179 /* EditorCommandTests.swift in Sources */,
+				B00000000000000000000007 /* EditorSearchTests.swift in Sources */,
 				A00000000000000000000232 /* EditorSelectionOccurrenceTests.swift in Sources */,
 				A0000000000000000000017B /* EditorFontTests.swift in Sources */,
 				A0000000000000000000017D /* SyntaxHighlightingTests.swift in Sources */,

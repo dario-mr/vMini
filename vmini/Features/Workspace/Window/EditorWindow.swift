@@ -8,6 +8,11 @@ final class EditorWindow: NSWindow {
             return super.performKeyEquivalent(with: event)
         }
 
+        if let action = EditorSearchAction.action(for: event),
+           (contentViewController as? EditorContentViewController)?.performSearchAction(action) == true {
+            return true
+        }
+
         let modifiers = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
         let characters = event.charactersIgnoringModifiers?.lowercased()
 
