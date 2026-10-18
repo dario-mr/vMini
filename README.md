@@ -2,6 +2,10 @@
 
 Native macOS text editor, aimed at simplicity and minimum resource usage.
 
+In Markdown files, Cmd-click the text inside `[label](destination)` to open the link.
+Web links open in your default browser; file links open in an editor tab. Relative paths
+resolve from the Markdown file's folder.
+
 ## External editor workflow
 
 You can edit the Swift files in IntelliJ IDEA and use the scripts in `scripts/` for the common Xcode
