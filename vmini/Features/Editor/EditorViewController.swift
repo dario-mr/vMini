@@ -8,6 +8,14 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
 
     var onTextChanged: (() -> Void)?
     var onFileSystemURLsDropped: (([URL]) -> Void)?
+    var documentURLProvider: (() -> URL?)?
+    var onOpenMarkdownURL: (URL) -> Void = { url in
+        if url.isFileURL {
+            WorkspaceDocumentCoordinator.shared.open(urls: [url], activate: url)
+        } else {
+            NSWorkspace.shared.open(url)
+        }
+    }
     var onJSONFormattingError: ((String, String) -> Void)? {
         didSet {
             formattingErrorPresenter.onJSONFormattingError = onJSONFormattingError
@@ -310,8 +318,22 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
         scrollView.autohidesScrollers = true
     }
 
+    private func markdownURL(at index: Int) -> URL? {
+        guard syntaxLanguage == .markdown,
+              let destination = MarkdownLink.destination(in: textView.string, at: index) else { return nil }
+        return MarkdownLink.resolve(destination, relativeTo: documentURLProvider?())
+    }
+
     private func configureTextView() {
         textView.delegate = self
+        textView.isCommandClickTarget = { [weak self] index in
+            self?.markdownURL(at: index) != nil
+        }
+        textView.onCommandClick = { [weak self] index in
+            guard let self, let url = markdownURL(at: index) else { return false }
+            onOpenMarkdownURL(url)
+            return true
+        }
         textView.onCancelSearch = { [weak self] in
             self?.searchController.perform(.close) ?? false
         }

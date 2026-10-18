@@ -20,6 +20,63 @@ class EditorTextView: NSTextView {
     var onIndentSelectedLines: (() -> Bool)?
     var onMoveSelectedLinesUp: (() -> Bool)?
     var onMoveSelectedLinesDown: (() -> Bool)?
+    var onCommandClick: ((Int) -> Bool)?
+    var isCommandClickTarget: ((Int) -> Bool)?
+    private var linkTrackingArea: NSTrackingArea?
+
+    override func updateTrackingAreas() {
+        super.updateTrackingAreas()
+        if let linkTrackingArea { removeTrackingArea(linkTrackingArea) }
+        let area = NSTrackingArea(
+            rect: bounds,
+            options: [.activeInKeyWindow, .inVisibleRect, .mouseMoved, .cursorUpdate],
+            owner: self
+        )
+        addTrackingArea(area)
+        linkTrackingArea = area
+    }
+
+    override func mouseMoved(with event: NSEvent) {
+        // NSTextView's handler can briefly restore the I-beam before our link cursor.
+        updateLinkCursor(at: convert(event.locationInWindow, from: nil), modifiers: event.modifierFlags)
+    }
+
+    override func cursorUpdate(with event: NSEvent) {
+        updateLinkCursor(at: convert(event.locationInWindow, from: nil), modifiers: event.modifierFlags)
+    }
+
+    override func flagsChanged(with event: NSEvent) {
+        super.flagsChanged(with: event)
+        guard let window else { return }
+        let point = convert(window.mouseLocationOutsideOfEventStream, from: nil)
+        guard visibleRect.contains(point) else { return }
+        updateLinkCursor(at: point, modifiers: event.modifierFlags)
+    }
+
+    private func updateLinkCursor(at point: NSPoint, modifiers: NSEvent.ModifierFlags) {
+        let isLink = modifiers.contains(.command)
+            && characterIndex(at: point).map { isCommandClickTarget?($0) == true } == true
+        let cursor = isLink ? NSCursor.pointingHand : NSCursor.iBeam
+        if NSCursor.current != cursor { cursor.set() }
+    }
+
+    private func characterIndex(at point: NSPoint) -> Int? {
+        guard let layoutManager, let textContainer else { return nil }
+        let containerPoint = NSPoint(x: point.x - textContainerOrigin.x, y: point.y - textContainerOrigin.y)
+        let glyph = layoutManager.glyphIndex(for: containerPoint, in: textContainer)
+        guard glyph < layoutManager.numberOfGlyphs,
+              layoutManager.boundingRect(forGlyphRange: NSRange(location: glyph, length: 1), in: textContainer).contains(containerPoint) else { return nil }
+        return layoutManager.characterIndexForGlyph(at: glyph)
+    }
+
+    override func mouseDown(with event: NSEvent) {
+        if event.modifierFlags.contains(.command),
+           let index = characterIndex(at: convert(event.locationInWindow, from: nil)),
+           onCommandClick?(index) == true {
+            return
+        }
+        super.mouseDown(with: event)
+    }
 
     override func insertText(_ insertString: Any, replacementRange: NSRange) {
         let selection = selectedRange()

@@ -76,7 +76,7 @@ enum MarkdownLineStylePlanner {
             appendStyle(.color(.inlineCode), range: range, targetRange: targetRange, to: &styles)
         }
 
-        for token in linkTokens(in: line, offset: lineRange.location) {
+        for token in MarkdownLink.tokens(in: line, offset: lineRange.location) where !overlapsAny(token.textRange, with: markersToSkip) {
             appendStyle(.color(.linkText), range: token.textRange, targetRange: targetRange, to: &styles)
             appendStyle(.color(.linkURL), range: token.urlRange, targetRange: targetRange, to: &styles)
         }
@@ -246,7 +246,7 @@ enum MarkdownLineStylePlanner {
         return compact.allSatisfy { $0 == first }
     }
 
-    private static func inlineCodeRanges(in line: String, offset: Int) -> [NSRange] {
+    static func inlineCodeRanges(in line: String, offset: Int) -> [NSRange] {
         let characters = Array(line)
         var ranges: [NSRange] = []
         var index = 0
@@ -268,46 +268,14 @@ enum MarkdownLineStylePlanner {
                 break
             }
 
-            let length = index - start + 1
-            ranges.append(NSRange(location: offset + start, length: length))
+            let lower = line.index(line.startIndex, offsetBy: start)
+            let upper = line.index(line.startIndex, offsetBy: index + 1)
+            let range = NSRange(lower..<upper, in: line)
+            ranges.append(NSRange(location: offset + range.location, length: range.length))
             index += 1
         }
 
         return ranges
-    }
-
-    private struct LinkToken: Sendable {
-        let textRange: NSRange
-        let urlRange: NSRange
-    }
-
-    private static func linkTokens(in line: String, offset: Int) -> [LinkToken] {
-        let characters = Array(line)
-        var tokens: [LinkToken] = []
-        var index = 0
-
-        while index < characters.count {
-            guard characters[index] == "[" else {
-                index += 1
-                continue
-            }
-
-            guard let textEnd = characters[(index + 1)...].firstIndex(of: "]"),
-                  textEnd + 1 < characters.count,
-                  characters[textEnd + 1] == "(",
-                  let urlEnd = characters[(textEnd + 2)...].firstIndex(of: ")") else {
-                index += 1
-                continue
-            }
-
-            tokens.append(LinkToken(
-                textRange: NSRange(location: offset + index, length: textEnd - index + 1),
-                urlRange: NSRange(location: offset + textEnd + 1, length: urlEnd - textEnd)
-            ))
-            index = urlEnd + 1
-        }
-
-        return tokens
     }
 
     private static func emphasisMarkerRanges(in line: String, offset: Int) -> [NSRange] {

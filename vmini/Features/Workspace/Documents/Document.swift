@@ -305,6 +305,7 @@ final class Document: NSDocument {
             }
         }
         editorViewController.syntaxLanguage = syntaxLanguage
+        editorViewController.documentURLProvider = { [weak self] in self?.fileURL }
         return editorViewController
     }
 
