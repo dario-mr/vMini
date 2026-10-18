@@ -2,14 +2,14 @@ import AppKit
 
 @MainActor
 final class EditorCommandController {
-    private let textView: FileDropTextView
+    private let textView: EditorTextView
     private let viewportController: EditorViewportController
     private let syntaxLanguageProvider: () -> SyntaxLanguage
     private let errorPresenter: EditorFormattingErrorPresenter
     private let notifyCursorPositionChanged: () -> Void
 
     init(
-        textView: FileDropTextView,
+        textView: EditorTextView,
         viewportController: EditorViewportController,
         syntaxLanguageProvider: @escaping () -> SyntaxLanguage,
         errorPresenter: EditorFormattingErrorPresenter,
