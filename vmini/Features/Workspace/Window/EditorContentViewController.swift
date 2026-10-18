@@ -128,6 +128,11 @@ final class EditorContentViewController: NSViewController {
         statusBarView.setDocumentOpening(isOpening)
     }
 
+    @discardableResult
+    func performSearchAction(_ action: EditorSearchAction) -> Bool {
+        activeEditorCoordinator?.performSearchAction(action) ?? false
+    }
+
     func toggleLineComment() {
         activeEditorCoordinator?.toggleLineComment()
     }

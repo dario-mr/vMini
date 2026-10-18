@@ -26,6 +26,11 @@ final class AppCommandDispatcher: NSObject, NSMenuItemValidation {
         )
     }
 
+    @objc func performEditorSearchAction(_ sender: NSMenuItem) {
+        guard let action = EditorSearchAction(rawValue: sender.tag) else { return }
+        workspaceResolver.activeEditorContentViewController()?.performSearchAction(action)
+    }
+
     @objc func toggleWordWrap(_ sender: Any?) { EditorSettings.toggleWordWrap() }
     @objc func toggleInvisibleCharacters(_ sender: Any?) { EditorSettings.toggleInvisibleCharacters() }
     @objc func newDocument(_ sender: Any?) { documentRouter.createUntitledDocument() }
@@ -95,7 +100,7 @@ final class AppCommandDispatcher: NSObject, NSMenuItemValidation {
             return FileManager.default.fileExists(atPath: fileURL.path)
         }
 
-        if menuItem.action == #selector(showGoToLine(_:)) {
+        if menuItem.action == #selector(showGoToLine(_:)) || menuItem.action == #selector(performEditorSearchAction(_:)) {
             return OpenDocumentsStore.shared.activeDocument != nil
         }
 

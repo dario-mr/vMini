@@ -18,6 +18,7 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
     private let scrollView = NSScrollView()
     private let formattingErrorBannerView = ErrorBannerView()
     private let textView = FileDropTextView()
+    private(set) lazy var searchController = EditorSearchController(textView: textView)
     private lazy var lineNumberRulerView = LineNumberRulerView(textView: textView)
     private lazy var textViewStyler = EditorTextViewStyler(
         textView: textView,
@@ -116,20 +117,29 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
         configureLineNumberRuler()
         configureFormattingErrorBanner()
 
+        let searchPanel = searchController.panel
+        searchController.onVisibilityChanged = { [weak self] isVisible in
+            self?.selectionOccurrenceController.isEnabled = !isVisible
+            self?.bracketHighlightController.isEnabled = !isVisible
+        }
+        view.addSubview(searchPanel)
         view.addSubview(lineNumberRulerView)
         view.addSubview(scrollView)
 
         let lineNumberRulerWidthConstraint = lineNumberRulerView.widthAnchor.constraint(equalToConstant: lineNumberRulerView.ruleThickness)
         viewportController.attachLineNumberRulerWidthConstraint(lineNumberRulerWidthConstraint)
         NSLayoutConstraint.activate([
+            searchPanel.topAnchor.constraint(equalTo: view.topAnchor),
+            searchPanel.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            searchPanel.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             lineNumberRulerView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            lineNumberRulerView.topAnchor.constraint(equalTo: view.topAnchor),
+            lineNumberRulerView.topAnchor.constraint(equalTo: searchPanel.bottomAnchor),
             lineNumberRulerView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
             lineNumberRulerWidthConstraint,
 
             scrollView.leadingAnchor.constraint(equalTo: lineNumberRulerView.trailingAnchor),
             scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            scrollView.topAnchor.constraint(equalTo: view.topAnchor),
+            scrollView.topAnchor.constraint(equalTo: searchPanel.bottomAnchor),
             scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
         ])
     }
@@ -178,6 +188,7 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
         textViewStyler.synchronizeWordWrapLayout()
         selectionOccurrenceController.refresh()
         bracketHighlightController.refresh()
+        searchController.refresh()
         onTextChanged?()
         notifyCursorPositionChanged()
     }
@@ -225,6 +236,7 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
 
     func textViewDidChangeSelection(_ notification: Notification) {
         viewportController.handleSelectionDidChange()
+        searchController.selectionDidChange()
         selectionOccurrenceController.refresh()
         bracketHighlightController.refresh()
         notifyCursorPositionChanged()
@@ -240,6 +252,12 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
 
     func focusTextView() {
         view.window?.makeFirstResponder(textView)
+    }
+
+    @discardableResult
+    func performSearchAction(_ action: EditorSearchAction) -> Bool {
+        _ = view
+        return searchController.perform(action)
     }
 
     func toggleLineComment() {
@@ -294,6 +312,9 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
 
     private func configureTextView() {
         textView.delegate = self
+        textView.onCancelSearch = { [weak self] in
+            self?.searchController.perform(.close) ?? false
+        }
         textView.onFileSystemURLsDropped = { [weak self] urls in
             self?.onFileSystemURLsDropped?(urls)
         }
@@ -333,6 +354,8 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
         syntaxHighlightController.refresh(language: syntaxLanguage)
         selectionOccurrenceController.refresh()
         bracketHighlightController.refresh()
+        searchController.panel.applyTheme()
+        searchController.refresh()
     }
 
     private func notifyCursorPositionChanged() {

@@ -50,6 +50,7 @@ final class FileDropTextView: NSTextView {
     }
 
     var onFileSystemURLsDropped: (([URL]) -> Void)?
+    var onCancelSearch: (() -> Bool)?
     var onIndentSelectedLines: (() -> Bool)?
     var onMoveSelectedLinesUp: (() -> Bool)?
     var onMoveSelectedLinesDown: (() -> Bool)?
@@ -124,6 +125,7 @@ final class FileDropTextView: NSTextView {
 
     @objc
     override func cancelOperation(_ sender: Any?) {
+        if onCancelSearch?() == true { return }
         let currentSelection = selectedRange()
         guard currentSelection.length > 0 else {
             return

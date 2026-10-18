@@ -70,6 +70,11 @@ final class ActiveEditorCoordinator {
         currentEditorViewController?.focusTextView()
     }
 
+    @discardableResult
+    func performSearchAction(_ action: EditorSearchAction) -> Bool {
+        currentEditorViewController?.performSearchAction(action) ?? false
+    }
+
     func toggleLineComment() {
         currentEditorViewController?.toggleLineComment()
     }

@@ -28,7 +28,7 @@ final class EditorTextViewStyler {
         textView.autoresizingMask = [.width]
         textView.isRichText = false
         textView.allowsUndo = true
-        textView.usesFindPanel = true
+        textView.usesFindPanel = false
         textView.isAutomaticQuoteSubstitutionEnabled = false
         textView.isAutomaticDashSubstitutionEnabled = false
         textView.isAutomaticTextReplacementEnabled = false
