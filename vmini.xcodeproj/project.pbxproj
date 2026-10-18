@@ -129,6 +129,8 @@
 		B00000000000000000000005 /* EditorSearchController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000006 /* EditorSearchController.swift */; };
 		B00000000000000000000007 /* EditorSearchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000008 /* EditorSearchTests.swift */; };
 		B00000000000000000000009 /* EditorSearchFieldCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000000000000000000000A /* EditorSearchFieldCell.swift */; };
+		B0000000000000000000000B /* EditorTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000000000000000000000C /* EditorTextView.swift */; };
+		B0000000000000000000000D /* OpenURLRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000000000000000000000E /* OpenURLRouter.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -265,6 +267,8 @@
 		B00000000000000000000006 /* EditorSearchController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorSearchController.swift; sourceTree = "<group>"; };
 		B00000000000000000000008 /* EditorSearchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorSearchTests.swift; sourceTree = "<group>"; };
 		B0000000000000000000000A /* EditorSearchFieldCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorSearchFieldCell.swift; sourceTree = "<group>"; };
+		B0000000000000000000000C /* EditorTextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorTextView.swift; sourceTree = "<group>"; };
+		B0000000000000000000000E /* OpenURLRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenURLRouter.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -337,6 +341,7 @@
 			children = (
 				A000000000000000000001C1 /* ActiveWorkspaceResolver.swift */,
 				A000000000000000000001C3 /* AppCommandDispatcher.swift */,
+				B0000000000000000000000E /* OpenURLRouter.swift */,
 			);
 			path = Commands;
 			sourceTree = "<group>";
@@ -486,6 +491,7 @@
 				A00000000000000000000231 /* EditorSelectionOccurrenceController.swift */,
 				A00000000000000000000197 /* EditorViewportController.swift */,
 				A00000000000000000000173 /* EditorTextEditing.swift */,
+				B0000000000000000000000C /* EditorTextView.swift */,
 				A00000000000000000000108 /* EditorViewController.swift */,
 				A0000000000000000000015D /* JSONPrettifier.swift */,
 				A00000000000000000000109 /* LineNumberRuler.swift */,
@@ -721,6 +727,7 @@
 				A00000000000000000000111 /* AppDelegate.swift in Sources */,
 				A000000000000000000001C0 /* ActiveWorkspaceResolver.swift in Sources */,
 				A000000000000000000001C2 /* AppCommandDispatcher.swift in Sources */,
+				B0000000000000000000000D /* OpenURLRouter.swift in Sources */,
 				A00000000000000000000124 /* DocumentController.swift in Sources */,
 				A0000000000000000000016A /* AppButton.swift in Sources */,
 				A0000000000000000000016C /* GoToLineViewController.swift in Sources */,
@@ -778,6 +785,7 @@
 				A00000000000000000000230 /* EditorSelectionOccurrenceController.swift in Sources */,
 				A00000000000000000000196 /* EditorViewportController.swift in Sources */,
 				A00000000000000000000172 /* EditorTextEditing.swift in Sources */,
+				B0000000000000000000000B /* EditorTextView.swift in Sources */,
 				A00000000000000000000118 /* EditorViewController.swift in Sources */,
 				A0000000000000000000015C /* JSONPrettifier.swift in Sources */,
 				A00000000000000000000119 /* LineNumberRuler.swift in Sources */,

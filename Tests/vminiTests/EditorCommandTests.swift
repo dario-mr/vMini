@@ -161,8 +161,74 @@ final class EditorCommandTests: XCTestCase {
         )
     }
 
+    func testTypingDelimitersWrapsSelectionAndSupportsUndo() throws {
+        for (opening, closing) in [("`", "`"), ("'", "'"), ("\"", "\""),
+                                   ("(", ")"), ("[", "]"), ("{", "}"),
+                                   ("*", "*"), ("_", "_"), ("~", "~")] {
+            let editor = EditorViewController()
+            editor.loadViewIfNeeded()
+            let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 400, height: 300),
+                                  styleMask: [.titled], backing: .buffered, defer: false)
+            window.contentViewController = editor
+            defer { window.orderOut(nil) }
+            let original = "prefix 😀one\ntwo suffix"
+            editor.text = original
+            let textView = try XCTUnwrap(findTextView(in: editor.view))
+            let selection = (original as NSString).range(of: "😀one\ntwo")
+            textView.setSelectedRange(selection)
+            var changes = 0
+            editor.onTextChanged = { changes += 1 }
+
+            textView.insertText(opening, replacementRange: NSRange(location: NSNotFound, length: 0))
+
+            let wrapped = "prefix \(opening)😀one\ntwo\(closing) suffix"
+            XCTAssertEqual(editor.text, wrapped)
+            XCTAssertEqual(textView.selectedRange(), NSRange(location: selection.location + 1, length: selection.length))
+            XCTAssertEqual(changes, 1)
+            let undoManager = try XCTUnwrap(textView.undoManager)
+            undoManager.undo()
+            XCTAssertEqual(editor.text, original)
+            undoManager.redo()
+            XCTAssertEqual(editor.text, wrapped)
+        }
+    }
+
+    func testTypingDelimitersWithoutSelectionInsertsOneCharacter() {
+        for delimiter in ["`", "'", "\"", "(", "[", "{", "*", "_", "~"] {
+            let textView = EditorTextView()
+            textView.isAutomaticQuoteSubstitutionEnabled = false
+            textView.string = "ab"
+            textView.setSelectedRange(NSRange(location: 1, length: 0))
+
+            textView.insertText(delimiter, replacementRange: NSRange(location: NSNotFound, length: 0))
+
+            XCTAssertEqual(textView.string, "a\(delimiter)b")
+            XCTAssertEqual(textView.selectedRange(), NSRange(location: 2, length: 0))
+        }
+    }
+
+    func testExplicitReplacementAndOrdinaryTypingStillReplaceSelection() {
+        for (input, range) in [("'", NSRange(location: 0, length: 3)),
+                               ("(", NSRange(location: 0, length: 3)),
+                               ("*", NSRange(location: 0, length: 3)),
+                               (")", NSRange(location: NSNotFound, length: 0)),
+                               ("]", NSRange(location: NSNotFound, length: 0)),
+                               ("}", NSRange(location: NSNotFound, length: 0)),
+                               ("x", NSRange(location: NSNotFound, length: 0)),
+                               ("''", NSRange(location: NSNotFound, length: 0))] {
+            let textView = EditorTextView()
+            textView.isAutomaticQuoteSubstitutionEnabled = false
+            textView.string = "abc"
+            textView.setSelectedRange(NSRange(location: 0, length: 3))
+
+            textView.insertText(input, replacementRange: range)
+
+            XCTAssertEqual(textView.string, input)
+        }
+    }
+
     func testEscapeCollapsesActiveSelectionToInsertionPoint() {
-        let textView = FileDropTextView(frame: NSRect(x: 0, y: 0, width: 300, height: 200))
+        let textView = EditorTextView(frame: NSRect(x: 0, y: 0, width: 300, height: 200))
         textView.string = "hello world"
         textView.setSelectedRange(NSRange(location: 2, length: 5))
 
@@ -172,7 +238,7 @@ final class EditorCommandTests: XCTestCase {
     }
 
     func testEscapeWithoutSelectionPreservesInsertionPoint() {
-        let textView = FileDropTextView(frame: NSRect(x: 0, y: 0, width: 300, height: 200))
+        let textView = EditorTextView(frame: NSRect(x: 0, y: 0, width: 300, height: 200))
         textView.string = "hello world"
         textView.setSelectedRange(NSRange(location: 4, length: 0))
 
@@ -182,7 +248,7 @@ final class EditorCommandTests: XCTestCase {
     }
 
     func testHomeAndEndMoveCaretToDocumentBounds() {
-        let textView = FileDropTextView(frame: NSRect(x: 0, y: 0, width: 300, height: 200))
+        let textView = EditorTextView(frame: NSRect(x: 0, y: 0, width: 300, height: 200))
         textView.string = "alpha\nbeta\ngamma"
         textView.setSelectedRange(NSRange(location: 8, length: 0))
 
@@ -195,7 +261,7 @@ final class EditorCommandTests: XCTestCase {
 
     func testPageDownAndUpMoveCaretBetweenVisiblePages() {
         let lines = (0..<200).map { "line \($0)" }.joined(separator: "\n")
-        let textView = FileDropTextView(frame: NSRect(x: 0, y: 0, width: 300, height: 120))
+        let textView = EditorTextView(frame: NSRect(x: 0, y: 0, width: 300, height: 120))
         textView.minSize = .zero
         textView.maxSize = NSSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude)
         textView.isVerticallyResizable = true
