@@ -6,6 +6,11 @@ In Markdown files, Cmd-click the text inside `[label](destination)` to open the 
 Web links open in your default browser; file links open in an editor tab. Relative paths
 resolve from the Markdown file's folder.
 
+Use the mouse's browser Back/Forward buttons or Cmd-[ / Cmd-] to revisit cursor positions
+and previously visited tabs. Cursor clicks, search results, Go to Line, and page/document
+jumps create checkpoints. Closing a tab removes its checkpoints. History lasts for the
+current session; edits can shift the saved cursor positions.
+
 ## External editor workflow
 
 You can edit the Swift files in IntelliJ IDEA and use the scripts in `scripts/` for the common Xcode

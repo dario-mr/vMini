@@ -16,6 +16,9 @@ final class EditorContentViewController: NSViewController {
     private var themeObservation: ObservationToken?
     private var activeDocumentSyntaxObservation: ObservationToken?
     private var documentState = OpenDocumentsStore.State(documents: [], activeDocument: nil)
+    private var navigationHistory = WorkspaceNavigationHistory()
+    private weak var displayedDocument: Document?
+    private var isRestoringNavigation = false
 
     init(
         documentStore: OpenDocumentsStore,
@@ -124,6 +127,25 @@ final class EditorContentViewController: NSViewController {
         activeEditorCoordinator?.focusEditor()
     }
 
+    var canGoBack: Bool { navigationHistory.canGoBack }
+    var canGoForward: Bool { navigationHistory.canGoForward }
+
+    func navigateBack() { navigate(backwards: true) }
+    func navigateForward() { navigate(backwards: false) }
+
+    private func navigate(backwards: Bool) {
+        guard let document = documentState.activeDocument,
+              let selection = activeEditorCoordinator?.navigationSelection else { return }
+        let current = WorkspaceNavigationLocation(documentID: ObjectIdentifier(document), selection: selection)
+        let location = backwards ? navigationHistory.goBack(from: current) : navigationHistory.goForward(from: current)
+        guard let location,
+              let target = documentState.documents.first(where: { ObjectIdentifier($0) == location.documentID }) else { return }
+        isRestoringNavigation = true
+        defer { isRestoringNavigation = false }
+        documentRouter.present(document: target)
+        activeEditorCoordinator?.restoreNavigationSelection(location.selection)
+    }
+
     func setDocumentOpening(_ isOpening: Bool) {
         statusBarView.setDocumentOpening(isOpening)
     }
@@ -192,6 +214,10 @@ final class EditorContentViewController: NSViewController {
     }
 
     private func configureActiveEditorCoordinator() {
+        activeEditorCoordinator?.onNavigationCheckpoint = { [weak self] document, before, after in
+            guard let self, !isRestoringNavigation, before != after else { return }
+            navigationHistory.record(WorkspaceNavigationLocation(documentID: ObjectIdentifier(document), selection: before))
+        }
         activeEditorCoordinator?.onOpenURLs = { [weak self] urls in
             self?.openFileSystemURLs(urls)
         }
@@ -237,11 +263,18 @@ final class EditorContentViewController: NSViewController {
     }
 
     private func syncWorkspace() {
+        if !isRestoringNavigation, let document = displayedDocument,
+           document !== documentState.activeDocument,
+           let selection = activeEditorCoordinator?.navigationSelection {
+            navigationHistory.record(WorkspaceNavigationLocation(documentID: ObjectIdentifier(document), selection: selection))
+        }
+        navigationHistory.retainDocuments(Set(documentState.documents.map(ObjectIdentifier.init)))
         tabBarController.update(
             documents: documentState.documents,
             activeDocument: documentState.activeDocument
         )
         displayActiveDocumentIfNeeded()
+        displayedDocument = documentState.activeDocument
     }
 
     private func present(_ document: Document) {

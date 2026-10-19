@@ -30,6 +30,7 @@ final class EditorSearchController: NSObject, NSTextFieldDelegate {
     private let textView: NSTextView
     private(set) var matches: [NSRange] = []
     var onVisibilityChanged: ((Bool) -> Void)?
+    var onNavigationCheckpoint: ((NSRange, NSRange) -> Void)?
     var isVisible: Bool { !panel.isHidden }
 
     init(textView: NSTextView) {
@@ -164,9 +165,11 @@ final class EditorSearchController: NSObject, NSTextFieldDelegate {
 
     private func selectMatch(at index: Int?) {
         guard let index else { selectionDidChange(); return }
+        let previousSelection = textView.selectedRange()
         textView.setSelectedRange(matches[index])
         textView.scrollRangeToVisible(matches[index])
         selectionDidChange()
+        onNavigationCheckpoint?(previousSelection, matches[index])
     }
 
     @objc func replace() {

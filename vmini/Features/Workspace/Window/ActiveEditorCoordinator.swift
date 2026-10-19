@@ -4,6 +4,7 @@ import AppKit
 final class ActiveEditorCoordinator {
     var onOpenURLs: (([URL]) -> Void)?
     var onCursorPositionChanged: (() -> Void)?
+    var onNavigationCheckpoint: ((Document, NSRange, NSRange) -> Void)?
 
     private weak var parentViewController: NSViewController?
     private weak var containerView: NSView?
@@ -27,6 +28,11 @@ final class ActiveEditorCoordinator {
         }
         editorViewController.onCursorPositionChanged = { [weak self] in
             self?.onCursorPositionChanged?()
+        }
+        editorViewController.onNavigationCheckpoint = { [weak self, weak document, weak editorViewController] before, after in
+            guard let self, let document,
+                  currentEditorViewController === editorViewController else { return }
+            onNavigationCheckpoint?(document, before, after)
         }
 
         guard currentEditorViewController !== editorViewController else {
@@ -116,5 +122,11 @@ final class ActiveEditorCoordinator {
 
     var hasActiveEditor: Bool {
         currentEditorViewController != nil
+    }
+
+    var navigationSelection: NSRange? { currentEditorViewController?.navigationSelection }
+
+    func restoreNavigationSelection(_ selection: NSRange) {
+        currentEditorViewController?.restoreNavigationSelection(selection)
     }
 }
