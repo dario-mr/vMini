@@ -22,6 +22,7 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
         }
     }
     var onCursorPositionChanged: (() -> Void)?
+    var onNavigationCheckpoint: ((NSRange, NSRange) -> Void)?
 
     private let scrollView = NSScrollView()
     private let formattingErrorBannerView = ErrorBannerView()
@@ -302,11 +303,25 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
         viewportController.currentCursorPosition()
     }
 
+    var navigationSelection: NSRange { textView.selectedRange() }
+
+    func restoreNavigationSelection(_ selection: NSRange) {
+        // shortcut: checkpoints use character offsets; track edits if exact anchors become necessary.
+        let selection = selection.clamped(toLength: (textView.string as NSString).length)
+        textView.setSelectedRange(selection)
+        textView.scrollRangeToVisible(selection)
+        viewportController.handleCaretNavigation()
+        focusTextView()
+    }
+
     @discardableResult
     func goToLine(_ lineNumber: Int) -> Bool {
-        commandController.goToLine(lineNumber) { [weak self] in
+        let previousSelection = textView.selectedRange()
+        let result = commandController.goToLine(lineNumber) { [weak self] in
             self?.focusTextView()
         }
+        if result { onNavigationCheckpoint?(previousSelection, textView.selectedRange()) }
+        return result
     }
 
     private func configureScrollView() {
@@ -326,6 +341,12 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
 
     private func configureTextView() {
         textView.delegate = self
+        textView.onNavigationCheckpoint = { [weak self] before, after in
+            self?.onNavigationCheckpoint?(before, after)
+        }
+        searchController.onNavigationCheckpoint = { [weak self] before, after in
+            self?.onNavigationCheckpoint?(before, after)
+        }
         textView.isCommandClickTarget = { [weak self] index in
             self?.markdownURL(at: index) != nil
         }

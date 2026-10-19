@@ -3,6 +3,20 @@ import AppKit
 final class EditorWindow: NSWindow {
     private let commandDispatcher = AppCommandDispatcher()
 
+    override func sendEvent(_ event: NSEvent) {
+        if (event.type == .otherMouseDown || event.type == .otherMouseUp),
+           event.buttonNumber == 3 || event.buttonNumber == 4,
+           attachedSheet == nil,
+           let workspace = contentViewController as? EditorContentViewController {
+            if event.type == .otherMouseDown {
+                if event.buttonNumber == 3 { workspace.navigateBack() }
+                else { workspace.navigateForward() }
+            }
+            return
+        }
+        super.sendEvent(event)
+    }
+
     override func performKeyEquivalent(with event: NSEvent) -> Bool {
         guard event.type == .keyDown else {
             return super.performKeyEquivalent(with: event)
@@ -15,6 +29,13 @@ final class EditorWindow: NSWindow {
 
         let modifiers = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
         let characters = event.charactersIgnoringModifiers?.lowercased()
+
+        if modifiers == [.command], characters == "[" || characters == "]", attachedSheet == nil,
+           let workspace = contentViewController as? EditorContentViewController {
+            if characters == "[" { workspace.navigateBack() }
+            else { workspace.navigateForward() }
+            return true
+        }
 
         if modifiers == [.command], characters == "n" {
             commandDispatcher.newDocument(self)

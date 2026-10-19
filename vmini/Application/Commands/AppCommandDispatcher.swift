@@ -32,6 +32,8 @@ final class AppCommandDispatcher: NSObject, NSMenuItemValidation {
     }
 
     @objc func toggleWordWrap(_ sender: Any?) { EditorSettings.toggleWordWrap() }
+    @objc func navigateBack(_ sender: Any?) { workspaceResolver.activeEditorContentViewController()?.navigateBack() }
+    @objc func navigateForward(_ sender: Any?) { workspaceResolver.activeEditorContentViewController()?.navigateForward() }
     @objc func toggleInvisibleCharacters(_ sender: Any?) { EditorSettings.toggleInvisibleCharacters() }
     @objc func newDocument(_ sender: Any?) { documentRouter.createUntitledDocument() }
     @objc func showSettings(_ sender: Any?) { WorkspaceWindowController.shared.presentSettingsSheet() }
@@ -81,6 +83,12 @@ final class AppCommandDispatcher: NSObject, NSMenuItemValidation {
     }
 
     func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
+        if menuItem.action == #selector(navigateBack(_:)) {
+            return workspaceResolver.activeEditorContentViewController()?.canGoBack ?? false
+        }
+        if menuItem.action == #selector(navigateForward(_:)) {
+            return workspaceResolver.activeEditorContentViewController()?.canGoForward ?? false
+        }
         if menuItem.action == #selector(toggleWordWrap(_:)) {
             menuItem.state = EditorSettings.isWordWrapEnabled() ? .on : .off
             return true

@@ -17,6 +17,7 @@ class EditorTextView: NSTextView {
     }
 
     var onCancelSearch: (() -> Bool)?
+    var onNavigationCheckpoint: ((NSRange, NSRange) -> Void)?
     var onIndentSelectedLines: (() -> Bool)?
     var onMoveSelectedLinesUp: (() -> Bool)?
     var onMoveSelectedLinesDown: (() -> Bool)?
@@ -70,6 +71,8 @@ class EditorTextView: NSTextView {
     }
 
     override func mouseDown(with event: NSEvent) {
+        let previousSelection = selectedRange()
+        defer { onNavigationCheckpoint?(previousSelection, selectedRange()) }
         if event.modifierFlags.contains(.command),
            let index = characterIndex(at: convert(event.locationInWindow, from: nil)),
            onCommandClick?(index) == true {
@@ -108,6 +111,14 @@ class EditorTextView: NSTextView {
 
     override func keyDown(with event: NSEvent) {
         let modifiers = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
+        let previousSelection = selectedRange()
+        let isNavigation = [Navigation.homeKeyCode, Navigation.endKeyCode,
+                            Navigation.pageUpKeyCode, Navigation.pageDownKeyCode].contains(event.keyCode)
+            || (modifiers.contains(.command)
+                && [Navigation.upArrowKeyCode, Navigation.downArrowKeyCode].contains(event.keyCode))
+        defer {
+            if isNavigation { onNavigationCheckpoint?(previousSelection, selectedRange()) }
+        }
 
         if modifiers.contains([.option, .shift]) && !modifiers.contains(.command) && !modifiers.contains(.control) {
             switch event.keyCode {

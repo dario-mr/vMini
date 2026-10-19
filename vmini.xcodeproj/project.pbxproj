@@ -133,6 +133,8 @@
 		B0000000000000000000000D /* OpenURLRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000000000000000000000E /* OpenURLRouter.swift */; };
 		B0000000000000000000000F /* MarkdownLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000010 /* MarkdownLink.swift */; };
 		B00000000000000000000011 /* EditorMarkdownLinkTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000012 /* EditorMarkdownLinkTests.swift */; };
+		B00000000000000000000013 /* WorkspaceNavigationHistory.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000014 /* WorkspaceNavigationHistory.swift */; };
+		B00000000000000000000015 /* WorkspaceNavigationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000016 /* WorkspaceNavigationTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -273,6 +275,8 @@
 		B0000000000000000000000E /* OpenURLRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenURLRouter.swift; sourceTree = "<group>"; };
 		B00000000000000000000010 /* MarkdownLink.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownLink.swift; sourceTree = "<group>"; };
 		B00000000000000000000012 /* EditorMarkdownLinkTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorMarkdownLinkTests.swift; sourceTree = "<group>"; };
+		B00000000000000000000014 /* WorkspaceNavigationHistory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceNavigationHistory.swift; sourceTree = "<group>"; };
+		B00000000000000000000016 /* WorkspaceNavigationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceNavigationTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -564,6 +568,7 @@
 			isa = PBXGroup;
 			children = (
 				A000000000000000000001B0 /* ActiveEditorCoordinator.swift */,
+				B00000000000000000000014 /* WorkspaceNavigationHistory.swift */,
 				A0000000000000000000010C /* EditorContentViewController.swift */,
 				A000000000000000000001B2 /* EditorStatusBarStateBuilder.swift */,
 				A000000000000000000001BF /* TabBar */,
@@ -624,6 +629,7 @@
 				A00000000000000000000178 /* EditorTextEditingTests.swift */,
 				A0000000000000000000017A /* EditorCommandTests.swift */,
 				B00000000000000000000012 /* EditorMarkdownLinkTests.swift */,
+				B00000000000000000000016 /* WorkspaceNavigationTests.swift */,
 				B00000000000000000000008 /* EditorSearchTests.swift */,
 				A00000000000000000000233 /* EditorSelectionOccurrenceTests.swift */,
 				A0000000000000000000017C /* EditorFontTests.swift */,
@@ -821,6 +827,7 @@
 				A0000000000000000000011D /* EditorWindow.swift in Sources */,
 				A00000000000000000000199 /* FontSizeHUDView.swift in Sources */,
 				A000000000000000000001B1 /* ActiveEditorCoordinator.swift in Sources */,
+				B00000000000000000000013 /* WorkspaceNavigationHistory.swift in Sources */,
 				A00000000000000000000164 /* EditorStatusBarView.swift in Sources */,
 				A000000000000000000001B3 /* EditorStatusBarStateBuilder.swift in Sources */,
 				A00000000000000000000126 /* FileDropHandling.swift in Sources */,
@@ -848,6 +855,7 @@
 				A00000000000000000000177 /* EditorTextEditingTests.swift in Sources */,
 				A00000000000000000000179 /* EditorCommandTests.swift in Sources */,
 				B00000000000000000000011 /* EditorMarkdownLinkTests.swift in Sources */,
+				B00000000000000000000015 /* WorkspaceNavigationTests.swift in Sources */,
 				B00000000000000000000007 /* EditorSearchTests.swift in Sources */,
 				A00000000000000000000232 /* EditorSelectionOccurrenceTests.swift in Sources */,
 				A0000000000000000000017B /* EditorFontTests.swift in Sources */,

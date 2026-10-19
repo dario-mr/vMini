@@ -148,6 +148,11 @@ enum MenuBuilder {
 
     private static func makeViewMenu(commandTarget: AnyObject?) -> NSMenu {
         let menu = NSMenu(title: "View")
+        let backItem = menu.addItem(withTitle: "Back", action: #selector(AppCommandDispatcher.navigateBack(_:)), keyEquivalent: "[")
+        backItem.target = commandTarget
+        let forwardItem = menu.addItem(withTitle: "Forward", action: #selector(AppCommandDispatcher.navigateForward(_:)), keyEquivalent: "]")
+        forwardItem.target = commandTarget
+        menu.addItem(.separator())
         let wordWrapItem = menu.addItem(
             withTitle: "Word Wrap",
             action: #selector(AppCommandDispatcher.toggleWordWrap(_:)),
