@@ -5,6 +5,34 @@ import XCTest
 @available(macOS 14.0, *)
 @MainActor
 final class EditorCommandTests: XCTestCase {
+    func testCommandShiftZRedoesNativeUndo() throws {
+        _ = NSApplication.shared
+        let editor = EditorViewController()
+        let window = EditorWindow(contentRect: NSRect(x: 0, y: 0, width: 400, height: 300),
+                                  styleMask: [.titled], backing: .buffered, defer: false)
+        window.contentViewController = editor
+        defer { window.orderOut(nil) }
+        editor.text = "hello"
+        let textView = try XCTUnwrap(findTextView(in: editor.view))
+        window.makeFirstResponder(textView)
+        textView.insertText(" world", replacementRange: NSRange(location: 5, length: 0))
+        XCTAssertEqual(editor.text, "hello world")
+        let undoManager = try XCTUnwrap(textView.undoManager)
+        undoManager.undo()
+        XCTAssertEqual(editor.text, "hello")
+
+        let redoEvent = try XCTUnwrap(NSEvent.keyEvent(
+            with: .keyDown, location: .zero, modifierFlags: [.command, .shift], timestamp: 0,
+            windowNumber: window.windowNumber, context: nil, characters: "Z",
+            charactersIgnoringModifiers: "Z", isARepeat: false, keyCode: 6
+        ))
+        XCTAssertTrue(window.performKeyEquivalent(with: redoEvent))
+        XCTAssertEqual(editor.text, "hello world")
+        XCTAssertFalse(undoManager.canRedo)
+        XCTAssertTrue(window.performKeyEquivalent(with: redoEvent))
+        XCTAssertEqual(editor.text, "hello world")
+    }
+
     func testFormatJSONFormatsWholeDocumentWhenNothingIsSelected() throws {
         let viewController = EditorViewController()
         viewController.loadViewIfNeeded()
