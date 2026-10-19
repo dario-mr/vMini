@@ -30,6 +30,13 @@ final class EditorWindow: NSWindow {
         let modifiers = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
         let characters = event.charactersIgnoringModifiers?.lowercased()
 
+        if modifiers == [.command, .shift], characters == "z" {
+            if let undoManager = firstResponder?.undoManager, undoManager.canRedo {
+                undoManager.redo()
+            }
+            return true
+        }
+
         if modifiers == [.command], characters == "[" || characters == "]", attachedSheet == nil,
            let workspace = contentViewController as? EditorContentViewController {
             if characters == "[" { workspace.navigateBack() }
