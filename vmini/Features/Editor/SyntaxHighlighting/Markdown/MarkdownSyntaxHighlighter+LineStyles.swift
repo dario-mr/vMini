@@ -111,9 +111,18 @@ enum MarkdownLineStylePlanner {
 
     private static func classify(lineRange: NSRange, contentRange: NSRange, in text: NSString) -> LineClassification {
         let line = text.substring(with: contentRange)
-        let indent = min(MarkdownFenceCache.leadingWhitespaceCount(in: line), 3)
+        let listIndent = MarkdownFenceCache.leadingWhitespaceCount(in: line)
+        let listLine = String(line.dropFirst(listIndent)) as NSString
+        let listLocation = contentRange.location + listIndent
+        if let marker = unorderedListMarkerRange(in: listLine, baseLocation: listLocation) {
+            return .unorderedList(markerRange: marker)
+        }
+        if let marker = orderedListMarkerRange(in: listLine, baseLocation: listLocation) {
+            return .orderedList(markerRange: marker)
+        }
+
+        let indent = min(listIndent, 3)
         let trimmed = String(line.dropFirst(indent))
-        let trimmedNSString = trimmed as NSString
         let baseLocation = contentRange.location + indent
 
         if let headingRange = headingMarkerRange(in: trimmed, baseLocation: baseLocation) {
@@ -129,14 +138,6 @@ enum MarkdownLineStylePlanner {
 
         if trimmed.hasPrefix(">") {
             return .blockquote(markerRange: NSRange(location: baseLocation, length: 1))
-        }
-
-        if let unorderedMarker = unorderedListMarkerRange(in: trimmedNSString, baseLocation: baseLocation) {
-            return .unorderedList(markerRange: unorderedMarker)
-        }
-
-        if let orderedMarker = orderedListMarkerRange(in: trimmedNSString, baseLocation: baseLocation) {
-            return .orderedList(markerRange: orderedMarker)
         }
 
         if isThematicBreak(trimmed) {
@@ -197,10 +198,10 @@ enum MarkdownLineStylePlanner {
     }
 
     private static func unorderedListMarkerRange(in line: NSString, baseLocation: Int) -> NSRange? {
-        guard line.length >= 2 else { return nil }
+        guard line.length >= 1 else { return nil }
         let marker = line.substring(with: NSRange(location: 0, length: 1))
-        guard ["-", "*", "+"].contains(marker),
-              line.substring(with: NSRange(location: 1, length: 1)) == " " else {
+        guard ["-", "*", "+"].contains(marker) else { return nil }
+        if line.length > 1, ![" ", "\t"].contains(line.substring(with: NSRange(location: 1, length: 1))) {
             return nil
         }
 

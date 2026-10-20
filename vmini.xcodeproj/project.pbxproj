@@ -136,6 +136,7 @@
 		B00000000000000000000011 /* EditorMarkdownLinkTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000012 /* EditorMarkdownLinkTests.swift */; };
 		B00000000000000000000013 /* WorkspaceNavigationHistory.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000014 /* WorkspaceNavigationHistory.swift */; };
 		B00000000000000000000015 /* WorkspaceNavigationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000016 /* WorkspaceNavigationTests.swift */; };
+		B00000000000000000000019 /* MarkdownListContinuation.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000000000000000000001A /* MarkdownListContinuation.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -279,6 +280,7 @@
 		B00000000000000000000012 /* EditorMarkdownLinkTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorMarkdownLinkTests.swift; sourceTree = "<group>"; };
 		B00000000000000000000014 /* WorkspaceNavigationHistory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceNavigationHistory.swift; sourceTree = "<group>"; };
 		B00000000000000000000016 /* WorkspaceNavigationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceNavigationTests.swift; sourceTree = "<group>"; };
+		B0000000000000000000001A /* MarkdownListContinuation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownListContinuation.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -504,6 +506,7 @@
 				A00000000000000000000173 /* EditorTextEditing.swift */,
 				B0000000000000000000000C /* EditorTextView.swift */,
 				B00000000000000000000010 /* MarkdownLink.swift */,
+				B0000000000000000000001A /* MarkdownListContinuation.swift */,
 				A00000000000000000000108 /* EditorViewController.swift */,
 				A0000000000000000000015D /* JSONPrettifier.swift */,
 				A00000000000000000000109 /* LineNumberRuler.swift */,
@@ -803,6 +806,7 @@
 				A00000000000000000000172 /* EditorTextEditing.swift in Sources */,
 				B0000000000000000000000B /* EditorTextView.swift in Sources */,
 				B0000000000000000000000F /* MarkdownLink.swift in Sources */,
+				B00000000000000000000019 /* MarkdownListContinuation.swift in Sources */,
 				A00000000000000000000118 /* EditorViewController.swift in Sources */,
 				A0000000000000000000015C /* JSONPrettifier.swift in Sources */,
 				A00000000000000000000119 /* LineNumberRuler.swift in Sources */,
