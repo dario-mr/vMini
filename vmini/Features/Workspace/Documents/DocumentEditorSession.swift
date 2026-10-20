@@ -38,6 +38,10 @@ final class DocumentEditorSession {
         editorViewController?.text
     }
 
+    func markChangesSaved() {
+        editorViewController?.markChangesSaved()
+    }
+
     func clear() {
         editorViewController = nil
     }

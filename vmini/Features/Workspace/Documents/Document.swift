@@ -259,8 +259,9 @@ final class Document: NSDocument {
         try MainActor.assumeIsolated {
             let currentText = contentController.currentText(editorText: editorSession.currentEditorText())
             contentController.updateText(currentText)
-            return currentText
-        }.write(to: url, atomically: true, encoding: .utf8)
+            try currentText.write(to: url, atomically: true, encoding: .utf8)
+            editorSession.markChangesSaved()
+        }
     }
 
     override func read(from data: Data, ofType typeName: String) throws {
@@ -302,6 +303,9 @@ final class Document: NSDocument {
 
             if wasEdited != isDocumentEdited {
                 openDocumentsStore.refresh()
+            }
+            if !isDocumentEdited {
+                editorViewController.markChangesSaved()
             }
         }
         editorViewController.syntaxLanguage = syntaxLanguage
