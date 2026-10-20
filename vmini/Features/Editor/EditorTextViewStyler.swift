@@ -108,6 +108,7 @@ final class EditorTextViewStyler {
 
     func applyInvisibleCharactersVisibility(_ isVisible: Bool) {
         textView.layoutManager?.showsInvisibleCharacters = isVisible
+        textView.layoutManager?.showsControlCharacters = isVisible
     }
 
     func synchronizeWordWrapLayout() {
