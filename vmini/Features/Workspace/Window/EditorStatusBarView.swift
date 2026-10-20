@@ -10,7 +10,7 @@ struct EditorStatusBarState {
 
 final class EditorStatusBarView: NSView {
     enum Layout {
-        static let preferredHeight: CGFloat = 21
+        static let preferredHeight: CGFloat = 26
         static let textSize: CGFloat = 12
     }
 

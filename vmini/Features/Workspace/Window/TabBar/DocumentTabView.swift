@@ -28,8 +28,8 @@ final class DocumentTabView: NSView {
     var onDragEnded: ((DocumentTabView) -> Void)?
 
     private let titleLabel = NSTextField(labelWithString: "")
-    private let pinButton = NSButton(title: "", target: nil, action: nil)
-    private let closeButton = NSButton(title: "", target: nil, action: nil)
+    private let pinButton = HoverTintButton(frame: .zero)
+    private let closeButton = HoverTintButton(frame: .zero)
     private var trackingArea: NSTrackingArea?
     private var isHovered = false
     private var isActive = false
@@ -57,7 +57,7 @@ final class DocumentTabView: NSView {
         pinButton.symbolConfiguration = NSImage.SymbolConfiguration(pointSize: 9, weight: .regular)
         pinButton.target = self
         pinButton.action = #selector(handlePinButton)
-        pinButton.contentTintColor = AppColors.defaultControlTint
+        pinButton.setNormalTintColor(AppColors.defaultControlTint)
         pinButton.setButtonType(.momentaryChange)
         pinButton.isHidden = true
 
@@ -69,7 +69,7 @@ final class DocumentTabView: NSView {
         closeButton.symbolConfiguration = NSImage.SymbolConfiguration(pointSize: 9, weight: .bold)
         closeButton.target = self
         closeButton.action = #selector(handleCloseButton)
-        closeButton.contentTintColor = AppColors.defaultControlTint
+        closeButton.setNormalTintColor(AppColors.defaultControlTint)
         closeButton.setButtonType(.momentaryChange)
 
         addSubview(titleLabel)
@@ -229,8 +229,8 @@ final class DocumentTabView: NSView {
             setBackgroundColor(AppColors.editorBackground.cgColor, animated: false)
             titleLabel.textColor = AppColors.primaryText
             titleLabel.font = NSFont.systemFont(ofSize: Typography.fontSize, weight: Typography.activeWeight)
-            pinButton.contentTintColor = AppColors.activeControlTint
-            closeButton.contentTintColor = AppColors.activeControlTint
+            pinButton.setNormalTintColor(AppColors.activeControlTint)
+            closeButton.setNormalTintColor(AppColors.activeControlTint)
         } else {
             let backgroundColor = (isHovered
                 ? AppColors.hoveredTabBackground
@@ -238,8 +238,8 @@ final class DocumentTabView: NSView {
             setBackgroundColor(backgroundColor, animated: true)
             titleLabel.textColor = isHovered ? AppColors.sidebarText : AppColors.inactiveTabText
             titleLabel.font = NSFont.systemFont(ofSize: Typography.fontSize, weight: Typography.inactiveWeight)
-            pinButton.contentTintColor = isHovered ? AppColors.hoveredControlTint : AppColors.inactiveControlTint
-            closeButton.contentTintColor = isHovered ? AppColors.hoveredControlTint : AppColors.inactiveControlTint
+            pinButton.setNormalTintColor(AppColors.inactiveControlTint)
+            closeButton.setNormalTintColor(AppColors.inactiveControlTint)
         }
 
         if isPreview, let font = titleLabel.font {
@@ -375,5 +375,45 @@ extension DocumentTabView: NSMenuItemValidation {
         }
 
         return true
+    }
+}
+
+private final class HoverTintButton: NSButton {
+    private var trackingArea: NSTrackingArea?
+    private var normalTintColor: NSColor?
+    private var isHovered = false
+
+    func setNormalTintColor(_ color: NSColor) {
+        normalTintColor = color.withAlphaComponent(0.4)
+        updateTint()
+    }
+
+    override func updateTrackingAreas() {
+        super.updateTrackingAreas()
+        if let trackingArea { removeTrackingArea(trackingArea) }
+        let trackingArea = NSTrackingArea(
+            rect: bounds,
+            options: [.activeInKeyWindow, .mouseEnteredAndExited, .inVisibleRect],
+            owner: self,
+            userInfo: nil
+        )
+        addTrackingArea(trackingArea)
+        self.trackingArea = trackingArea
+    }
+
+    override func mouseEntered(with event: NSEvent) {
+        super.mouseEntered(with: event)
+        isHovered = true
+        updateTint()
+    }
+
+    override func mouseExited(with event: NSEvent) {
+        super.mouseExited(with: event)
+        isHovered = false
+        updateTint()
+    }
+
+    private func updateTint() {
+        contentTintColor = isHovered ? AppColors.hoveredControlTint.withAlphaComponent(1) : normalTintColor
     }
 }
