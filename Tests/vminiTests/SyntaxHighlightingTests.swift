@@ -414,6 +414,28 @@ final class SyntaxHighlightingTests: XCTestCase {
         assertColor(theme.listMarker, at: nsText.range(of: "3.").location, in: storage)
     }
 
+    func testMarkdownHighlighterColorsNestedListMarkers() {
+        for indentation in ["    ", "        ", "\t", "\t\t", "\t  "] {
+            for marker in ["-", "*", "+", "1.", "10)"] {
+                for suffix in ["", " ", " item", "\titem"] {
+                    let text = "🙂\n- parent\n" + indentation + marker + suffix
+                    let storage = makeHighlightedStorage(text, language: .markdown)
+                    let theme = ThemeCatalog.palette(for: .default).syntaxTheme
+                    let markerLocation = "🙂\n- parent\n".utf16.count + indentation.utf16.count
+                    for index in markerLocation..<(markerLocation + marker.utf16.count) {
+                        assertColor(theme.listMarker, at: index, in: storage)
+                    }
+                    assertColor(theme.plainText, at: markerLocation - 1, in: storage)
+                }
+            }
+        }
+        let text = "```\n    - item\n    1. item\n```"
+        let storage = makeHighlightedStorage(text, language: .markdown)
+        let theme = ThemeCatalog.palette(for: .default).syntaxTheme
+        assertColor(theme.plainText, at: (text as NSString).range(of: "- item").location, in: storage)
+        assertColor(theme.plainText, at: (text as NSString).range(of: "1. item").location, in: storage)
+    }
+
     func testMarkdownHighlighterUsesLocalRangeForPlainTextEdits() {
         let text = "one\ntwo\nthree\nfour\nfive\n" as NSString
         let editedRange = text.range(of: "three")

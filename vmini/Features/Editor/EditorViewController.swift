@@ -206,6 +206,25 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
         notifyCursorPositionChanged()
     }
 
+    func textView(_ textView: NSTextView, doCommandBy commandSelector: Selector) -> Bool {
+        guard syntaxLanguage == .markdown, !textView.hasMarkedText(), textView.selectedRanges.count == 1 else { return false }
+        let edit: EditorTextEdit?
+        switch commandSelector {
+        case #selector(NSResponder.insertNewline(_:)):
+            edit = MarkdownListContinuation.newlineEdit(in: textView.string as NSString, selectedRange: textView.selectedRange())
+        case #selector(NSResponder.insertTab(_:)):
+            edit = MarkdownListContinuation.indentEdit(in: textView.string as NSString, selectedRange: textView.selectedRange())
+        case #selector(NSResponder.deleteBackward(_:)):
+            edit = MarkdownListContinuation.deleteBackwardEdit(in: textView.string as NSString, selectedRange: textView.selectedRange())
+        default:
+            return false
+        }
+        guard let edit else { return false }
+
+        textView.insertText(edit.replacementText, replacementRange: edit.replacementRange)
+        return true
+    }
+
     func textView(
         _ textView: NSTextView,
         shouldChangeTextIn affectedCharRange: NSRange,
