@@ -122,6 +122,7 @@
 		A0000000000000000000020A /* SessionWorkflowTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000020B /* SessionWorkflowTests.swift */; };
 		A0000000000000000000020C /* SidebarAndPersistenceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000020D /* SidebarAndPersistenceTests.swift */; };
 		A0000000000000000000020E /* WorkspaceSessionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000020F /* WorkspaceSessionManager.swift */; };
+		B00000000000000000000017 /* TerminationDocumentReviewer.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000018 /* TerminationDocumentReviewer.swift */; };
 		A00000000000000000000211 /* SidebarFolderWatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000212 /* SidebarFolderWatcher.swift */; };
 		A00000000000000000000214 /* AppPerformanceProfiler.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000213 /* AppPerformanceProfiler.swift */; };
 		B00000000000000000000001 /* EditorSearchButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000002 /* EditorSearchButton.swift */; };
@@ -160,6 +161,7 @@
 		A0000000000000000000020B /* SessionWorkflowTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionWorkflowTests.swift; sourceTree = "<group>"; };
 		A0000000000000000000020D /* SidebarAndPersistenceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidebarAndPersistenceTests.swift; sourceTree = "<group>"; };
 		A0000000000000000000020F /* WorkspaceSessionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceSessionManager.swift; sourceTree = "<group>"; };
+		B00000000000000000000018 /* TerminationDocumentReviewer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TerminationDocumentReviewer.swift; sourceTree = "<group>"; };
 		A00000000000000000000212 /* SidebarFolderWatcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidebarFolderWatcher.swift; sourceTree = "<group>"; };
 		A00000000000000000000213 /* AppPerformanceProfiler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppPerformanceProfiler.swift; sourceTree = "<group>"; };
 		A00000000000000000000215 /* PerformanceCorpus */ = {isa = PBXFileReference; lastKnownFileType = folder; path = PerformanceCorpus; sourceTree = "<group>"; };
@@ -478,6 +480,7 @@
 				A00000000000000000000163 /* RestorableDocumentReference.swift */,
 				A00000000000000000000106 /* SessionRestorer.swift */,
 				A0000000000000000000020F /* WorkspaceSessionManager.swift */,
+				B00000000000000000000018 /* TerminationDocumentReviewer.swift */,
 			);
 			path = Documents;
 			sourceTree = "<group>";
@@ -781,6 +784,7 @@
 				A00000000000000000000162 /* RestorableDocumentReference.swift in Sources */,
 				A00000000000000000000116 /* SessionRestorer.swift in Sources */,
 				A0000000000000000000020E /* WorkspaceSessionManager.swift in Sources */,
+				B00000000000000000000017 /* TerminationDocumentReviewer.swift in Sources */,
 				A00000000000000000000117 /* EditorSettings.swift in Sources */,
 				A000000000000000000001CA /* EditorCommandController.swift in Sources */,
 				A00000000000000000000168 /* EditorFont.swift in Sources */,

@@ -10,7 +10,7 @@ final class WorkspaceSessionManager {
     private let persistence: WorkspacePersistence
     private let openDocumentsStore: OpenDocumentsStore
     private let documentRouter: WorkspaceDocumentRouting
-    private var isTerminationSnapshotLocked = false
+    private var terminationState: OpenDocumentsStore.State?
     private var pendingSaveTask: Task<Void, Never>?
 
     init(
@@ -26,7 +26,7 @@ final class WorkspaceSessionManager {
     func saveOpenFiles() {
         pendingSaveTask?.cancel()
         pendingSaveTask = nil
-        guard !isTerminationSnapshotLocked else { return }
+        guard terminationState == nil else { return }
 
         persist(
             SessionSnapshot(
@@ -37,7 +37,7 @@ final class WorkspaceSessionManager {
     }
 
     func scheduleSaveOpenFiles() {
-        guard !isTerminationSnapshotLocked else { return }
+        guard terminationState == nil else { return }
 
         pendingSaveTask?.cancel()
         pendingSaveTask = Task { [weak self] in
@@ -48,21 +48,25 @@ final class WorkspaceSessionManager {
     }
 
     func prepareForTermination() {
+        guard terminationState == nil else { return }
         saveOpenFiles()
-        isTerminationSnapshotLocked = true
+        terminationState = OpenDocumentsStore.State(
+            documents: openDocumentsStore.documents,
+            activeDocument: openDocumentsStore.activeDocument
+        )
     }
 
     func cancelTermination() {
-        isTerminationSnapshotLocked = false
+        terminationState = nil
         saveOpenFiles()
     }
 
     func refreshTerminationSnapshotIfNeeded() {
-        guard isTerminationSnapshotLocked else { return }
+        guard let terminationState else { return }
         persist(
             SessionSnapshot(
-                documentReferences: openDocumentsStore.documents.map(restorableReference(for:)),
-                activeDocumentReference: openDocumentsStore.activeDocument.map(restorableReference(for:))
+                documentReferences: terminationState.documents.map(restorableReference(for:)),
+                activeDocumentReference: terminationState.activeDocument.map(restorableReference(for:))
             )
         )
     }

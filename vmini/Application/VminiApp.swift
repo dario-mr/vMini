@@ -5,8 +5,10 @@ import AppKit
 enum VminiApp {
     static func main() {
         let app = NSApplication.shared
-        let delegate = AppDelegate()
+        // The delegate resolves workspace services that need our shared document controller.
         let documentController = DocumentController()
+        assert(NSDocumentController.shared === documentController)
+        let delegate = AppDelegate()
 
         app.setActivationPolicy(.regular)
         app.delegate = delegate
