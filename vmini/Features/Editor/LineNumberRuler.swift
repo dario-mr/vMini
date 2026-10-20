@@ -4,9 +4,12 @@ final class LineNumberRulerView: NSView {
     private enum Constants {
         static let minThickness: CGFloat = 42
         static let horizontalPadding: CGFloat = 14
+        static let editedLineMarkerWidth: CGFloat = 2
     }
 
     private weak var textView: NSTextView?
+    private var savedText = ""
+    private var editedLineStarts = Set<Int>()
     var onRuleThicknessChanged: ((CGFloat) -> Void)?
     private(set) var ruleThickness = Constants.minThickness
     private var lineStarts: [Int] = [0]
@@ -58,20 +61,53 @@ final class LineNumberRulerView: NSView {
         AppPerformanceProfiler.measure("LineNumberCacheBuild") {
             rebuildLineCache()
         }
+        savedText = textView?.string ?? ""
+        editedLineStarts.removeAll()
         invalidateLineNumbers()
     }
 
     func noteTextStorageDidEdit(_ textStorage: NSTextStorage, editedRange: NSRange, changeInLength: Int) {
+        let text = textStorage.string as NSString
         AppPerformanceProfiler.measure("LineNumberCacheUpdate") {
             updateLineCache(
-                text: textStorage.string as NSString,
+                text: text,
                 editedRange: editedRange,
                 changeInLength: changeInLength
             )
         }
+        editedLineStarts = Set(
+            Self.editedLineIndexes(currentText: text as String, savedText: savedText)
+                .map { lineStarts[$0] }
+        )
         synchronizeRuleThickness()
         lastSelectedLineStart = selectedLineStart()
         needsDisplay = true
+    }
+
+    func markChangesSaved() {
+        savedText = textView?.string ?? ""
+        editedLineStarts.removeAll()
+        needsDisplay = true
+    }
+
+    func hasUnsavedChanges(onLine lineNumber: Int) -> Bool {
+        guard lineStarts.indices.contains(lineNumber - 1) else { return false }
+        return editedLineStarts.contains(lineStarts[lineNumber - 1])
+    }
+
+    static func editedLineIndexes(currentText: String, savedText: String) -> Set<Int> {
+        let currentLines = currentText.components(separatedBy: "\n")
+        let savedLines = savedText.components(separatedBy: "\n")
+        return Set(currentLines.difference(from: savedLines).compactMap { change in
+            let lineIndex: Int
+            switch change {
+            case let .insert(offset, _, _):
+                lineIndex = offset
+            case let .remove(offset, _, _):
+                lineIndex = min(offset, currentLines.count - 1)
+            }
+            return (0..<currentLines.count).contains(lineIndex) ? lineIndex : nil
+        })
     }
 
     func currentCursorPosition() -> EditorCursorPosition {
@@ -150,6 +186,17 @@ final class LineNumberRulerView: NSView {
         if isSelected {
             AppColors.subtleSelectionFill.setFill()
             NSRect(x: 0, y: y, width: bounds.width, height: lineHeight).fill()
+        }
+
+        if hasUnsavedChanges(onLine: lineNumber) {
+            AppColors.primaryActionBackground.setFill()
+            NSRect(
+                x: ruleThickness - Constants.horizontalPadding
+                    + (Constants.horizontalPadding - Constants.editedLineMarkerWidth) / 2,
+                y: y,
+                width: Constants.editedLineMarkerWidth,
+                height: lineHeight
+            ).fill()
         }
 
         let attributes = lineNumberAttributes(isSelected: isSelected)

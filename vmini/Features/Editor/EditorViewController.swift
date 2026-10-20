@@ -117,6 +117,10 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
         textView.textStorage
     }
 
+    func markChangesSaved() {
+        lineNumberRulerView.markChangesSaved()
+    }
+
     override func loadView() {
         view = NSView()
         view.translatesAutoresizingMaskIntoConstraints = false
