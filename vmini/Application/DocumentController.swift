@@ -3,6 +3,30 @@ import Foundation
 import UniformTypeIdentifiers
 
 final class DocumentController: NSDocumentController {
+    override func reviewUnsavedDocuments(
+        withAlertTitle title: String?,
+        cancellable: Bool,
+        delegate: Any?,
+        didReviewAllSelector: Selector?,
+        contextInfo: UnsafeMutableRawPointer?
+    ) {
+        SessionRestorer.prepareForTermination()
+        Task { @MainActor in
+            let shouldTerminate = await TerminationDocumentReviewer().review(documents)
+            OpenDocumentsStore.shared.refresh()
+            if shouldTerminate {
+                SessionRestorer.refreshTerminationSnapshotIfNeeded()
+            } else {
+                SessionRestorer.cancelTermination()
+            }
+
+            guard let delegate = delegate as? NSObject, let selector = didReviewAllSelector else { return }
+            typealias ReviewCompletion = @convention(c) (AnyObject, Selector, NSDocumentController, Bool, UnsafeMutableRawPointer?) -> Void
+            let completion = unsafeBitCast(delegate.method(for: selector), to: ReviewCompletion.self)
+            completion(delegate, selector, self, shouldTerminate, contextInfo)
+        }
+    }
+
     override func beginOpenPanel(
         _ openPanel: NSOpenPanel,
         forTypes inTypes: [String]?,

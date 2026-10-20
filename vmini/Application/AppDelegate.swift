@@ -26,20 +26,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
-        let documentController = NSDocumentController.shared
-        guard documentController.hasEditedDocuments else {
-            SessionRestorer.prepareForTermination()
-            return .terminateNow
-        }
-
-        documentController.reviewUnsavedDocuments(
-            withAlertTitle: nil,
-            cancellable: true,
-            delegate: self,
-            didReviewAllSelector: #selector(documentController(_:didReviewAll:contextInfo:)),
-            contextInfo: nil
-        )
-        return .terminateLater
+        SessionRestorer.prepareForTermination()
+        return .terminateNow
     }
 
     func applicationSupportsSecureRestorableState(_ app: NSApplication) -> Bool {
@@ -72,20 +60,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func handleOpenDocumentsDidChange() {
         SessionRestorer.scheduleSaveOpenFiles()
-    }
-
-    @objc(documentController:didReviewAll:contextInfo:)
-    private func documentController(
-        _ documentController: NSDocumentController,
-        didReviewAll: Bool,
-        contextInfo: UnsafeMutableRawPointer?
-    ) {
-        if didReviewAll {
-            SessionRestorer.prepareForTermination()
-        } else {
-            SessionRestorer.cancelTermination()
-        }
-        NSApp.reply(toApplicationShouldTerminate: didReviewAll)
     }
 }
 

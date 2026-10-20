@@ -4,6 +4,69 @@ import XCTest
 
 @MainActor
 final class SessionWorkflowTests: XCTestCase {
+    func testTerminationReviewLeavesEveryDocumentOpenOnCancellationOrApproval() async {
+        for firstResult in [false, true] {
+            for secondResult in [false, true] {
+                let clean = TerminationReviewTestDocument(edited: false, shouldClose: true)
+                let first = TerminationReviewTestDocument(edited: true, shouldClose: firstResult)
+                let second = TerminationReviewTestDocument(edited: true, shouldClose: secondResult)
+                let documents = [clean, first, second]
+
+                let shouldTerminate = await TerminationDocumentReviewer().review(documents)
+
+                XCTAssertEqual(shouldTerminate, firstResult && secondResult)
+                XCTAssertEqual(documents.map(\.reviewCount), [0, 1, firstResult ? 1 : 0])
+                XCTAssertTrue(documents.allSatisfy { !$0.wasClosed })
+                XCTAssertTrue(first.isDocumentEdited)
+                XCTAssertTrue(second.isDocumentEdited)
+            }
+        }
+    }
+
+    func testTerminationReviewCanBeRetriedAfterCancellation() async {
+        let document = TerminationReviewTestDocument(edited: true, shouldClose: false)
+        let reviewer = TerminationDocumentReviewer()
+        let cancelled = await reviewer.review([document])
+        XCTAssertFalse(cancelled)
+
+        document.shouldClose = true
+        let approved = await reviewer.review([document])
+        XCTAssertTrue(approved)
+        XCTAssertEqual(document.reviewCount, 2)
+        XCTAssertFalse(document.wasClosed)
+    }
+
+    func testDocumentControllerQuitReviewReportsResultWithoutClosingDocuments() async {
+        defer { SessionRestorer.cancelTermination() }
+        for shouldTerminate in [false, true] {
+            let controller = DocumentController()
+            let clean = TerminationReviewTestDocument(edited: false, shouldClose: true)
+            let edited = TerminationReviewTestDocument(edited: true, shouldClose: shouldTerminate)
+            controller.addDocument(clean)
+            controller.addDocument(edited)
+            let completed = expectation(description: "Quit review completed")
+            let contextInfo = UnsafeMutableRawPointer(bitPattern: 1)
+            let delegate = TerminationReviewTestDelegate { reviewedController, result, context in
+                XCTAssertTrue(reviewedController === controller)
+                XCTAssertEqual(result, shouldTerminate)
+                XCTAssertEqual(context, contextInfo)
+                XCTAssertEqual(controller.documents.count, 2)
+                XCTAssertFalse(clean.wasClosed)
+                XCTAssertFalse(edited.wasClosed)
+                completed.fulfill()
+            }
+
+            controller.reviewUnsavedDocuments(
+                withAlertTitle: nil, cancellable: true, delegate: delegate,
+                didReviewAllSelector: #selector(TerminationReviewTestDelegate.documentController(_:didReviewAll:contextInfo:)),
+                contextInfo: contextInfo
+            )
+            await fulfillment(of: [completed], timeout: 2)
+            controller.removeDocument(clean)
+            controller.removeDocument(edited)
+        }
+    }
+
     func testBrowsingFilesReplacesOnlyPreviewAndExplicitOpenKeepsIt() async throws {
         let store = OpenDocumentsStore()
         let controller = DocumentController()
@@ -280,6 +343,49 @@ final class SessionWorkflowTests: XCTestCase {
 
         store.unregister(document)
         XCTAssertEqual(sessionManager.restoredDocumentReferences(), [.file(path: fileURL.standardizedFileURL.path)])
+    }
+
+    func testSavingDuringTerminationPreservesClosedTabsAndOriginalSelection() async throws {
+        for wasUntitled in [false, true] {
+            let persistence = WorkspacePersistence(userDefaults: makeUserDefaults(prefix: "SessionWorkflowTests.SaveDuringTermination"))
+            let store = OpenDocumentsStore()
+            let router = RecordingDocumentRouter()
+            let sessionManager = WorkspaceSessionManager(
+                persistence: persistence, openDocumentsStore: store, documentRouter: router
+            )
+            let firstDocument = makeDocument(store: store)
+            let editedDocument = makeDocument(store: store)
+            let activeDocument = makeDocument(store: store)
+            let firstURL = try makeTemporaryFile(named: "first.txt", contents: "one")
+            let savedURL = try makeTemporaryFile(named: "saved.txt", contents: "two")
+            let activeURL = try makeTemporaryFile(named: "active.txt", contents: "three")
+            firstDocument.fileURL = firstURL
+            if !wasUntitled { editedDocument.fileURL = savedURL }
+            activeDocument.fileURL = activeURL
+            store.register(firstDocument)
+            store.register(editedDocument)
+            store.register(activeDocument, makeActive: true)
+            sessionManager.prepareForTermination()
+
+            // AppKit can close clean documents before saving the edited document during quit.
+            firstDocument.close()
+            activeDocument.close()
+            editedDocument.fileURL = savedURL
+            sessionManager.refreshTerminationSnapshotIfNeeded()
+            editedDocument.close()
+            sessionManager.prepareForTermination()
+
+            let expectedReferences: [RestorableDocumentReference] = [firstURL, savedURL, activeURL].map {
+                .file(path: $0.standardizedFileURL.path)
+            }
+            let relaunchedSessionManager = WorkspaceSessionManager(
+                persistence: persistence, openDocumentsStore: OpenDocumentsStore(), documentRouter: router
+            )
+            let didRestore = await relaunchedSessionManager.reopenLastFiles()
+            XCTAssertTrue(didRestore)
+            XCTAssertEqual(router.restoredReferences, expectedReferences)
+            XCTAssertEqual(router.restoredActiveIdentifier, activeURL.standardizedFileURL.path)
+        }
     }
 
     func testSessionManagerPersistsDocumentOrderAfterReorder() async throws {
@@ -776,6 +882,51 @@ final class SessionWorkflowTests: XCTestCase {
             userDefaults.removePersistentDomain(forName: suiteName)
         }
         return userDefaults
+    }
+}
+
+@MainActor
+private final class TerminationReviewTestDelegate: NSObject {
+    let completion: (NSDocumentController, Bool, UnsafeMutableRawPointer?) -> Void
+
+    init(completion: @escaping (NSDocumentController, Bool, UnsafeMutableRawPointer?) -> Void) {
+        self.completion = completion
+        super.init()
+    }
+
+    @objc
+    func documentController(_ controller: NSDocumentController, didReviewAll: Bool, contextInfo: UnsafeMutableRawPointer?) {
+        completion(controller, didReviewAll, contextInfo)
+    }
+}
+
+@MainActor
+private final class TerminationReviewTestDocument: NSDocument {
+    private let edited: Bool
+    var shouldClose: Bool
+    private(set) var reviewCount = 0
+    private(set) var wasClosed = false
+
+    init(edited: Bool, shouldClose: Bool) {
+        self.edited = edited
+        self.shouldClose = shouldClose
+        super.init()
+    }
+
+    override var isDocumentEdited: Bool { edited }
+
+    override func canClose(withDelegate delegate: Any, shouldClose selector: Selector?, contextInfo: UnsafeMutableRawPointer?) {
+        reviewCount += 1
+        XCTAssertEqual(selector, #selector(TerminationDocumentReviewer.document(_:shouldClose:contextInfo:)))
+        guard let reviewer = delegate as? TerminationDocumentReviewer else {
+            XCTFail("Expected termination reviewer as the save prompt delegate")
+            return
+        }
+        reviewer.document(self, shouldClose: shouldClose, contextInfo: contextInfo)
+    }
+
+    override func close() {
+        wasClosed = true
     }
 }
 
