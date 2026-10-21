@@ -171,6 +171,7 @@ final class EditorSyntaxHighlightController {
         textStorage.applyFont(baseFont, range: targetRange)
         textStorage.applyForegroundColor(syntaxTheme.plainText, range: targetRange)
         textStorage.applyBackgroundColor(nil, range: targetRange)
+        textStorage.removeAttribute(.underlineStyle, range: targetRange)
         if let markdownHighlighter = highlighter as? MarkdownSyntaxHighlighter,
            let fenceCache = markdownFenceCache,
            let markdownLineStyles {
@@ -203,6 +204,12 @@ final class EditorSyntaxHighlightController {
                 theme: syntaxTheme,
                 registry: highlighterRegistry
             )
+        }
+        for link in WebLink.matches(in: textStorage.string, range: targetRange) {
+            textStorage.addAttributes([
+                .foregroundColor: NSColor.systemBlue,
+                .underlineStyle: NSUnderlineStyle.single.rawValue
+            ], range: link.range)
         }
         textStorage.endEditing()
         isApplyingHighlighting = false
