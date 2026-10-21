@@ -69,7 +69,7 @@ final class EditorMarkdownLinkTests: XCTestCase {
         textView.frame = NSRect(x: 0, y: 0, width: 600, height: 200)
         textView.setSelectedRange(NSRange(location: 0, length: 2))
         var opened: [URL] = []
-        editor.onOpenMarkdownURL = { opened.append($0) }
+        editor.onOpenURL = { opened.append($0) }
 
         for (label, expected) in [("local", "file:///tmp/project/aaa.md"), ("web", "https://www.google.com")] {
             let index = (editor.text as NSString).range(of: label).location
@@ -88,6 +88,9 @@ final class EditorMarkdownLinkTests: XCTestCase {
         XCTAssertEqual(textView.onCommandClick?(2), true)
         XCTAssertEqual(opened.last?.path, "/tmp/moved/different.md")
         XCTAssertEqual(opened.count, 4)
+        editor.text = "[https://example.com](https://destination.example.org)"
+        XCTAssertEqual(textView.onCommandClick?(2), true)
+        XCTAssertEqual(opened.last?.absoluteString, "https://destination.example.org")
     }
 
     func testCommandHoverTracksTargetsAndModifierChanges() throws {
@@ -96,14 +99,14 @@ final class EditorMarkdownLinkTests: XCTestCase {
         let initialCursor = NSCursor.current
         defer { initialCursor.set() }
         var opened = false
-        editor.onOpenMarkdownURL = { _ in opened = true }
+        editor.onOpenURL = { _ in opened = true }
 
         for (token, modifiers, expectedCursor) in [
             ("web", NSEvent.ModifierFlags.command, NSCursor.pointingHand),
             ("web", [], NSCursor.iBeam),
             ("local", .command, NSCursor.pointingHand),
             ("[", .command, NSCursor.iBeam),
-            ("https", .command, NSCursor.iBeam),
+            ("https", .command, NSCursor.pointingHand),
             ("code", .command, NSCursor.iBeam),
         ] {
             let index = (editor.text as NSString).range(of: token).location
@@ -151,6 +154,83 @@ final class EditorMarkdownLinkTests: XCTestCase {
         for x in stride(from: first.x, through: last.x, by: 0.25) {
             textView.mouseMoved(with: try mouseEvent(in: textView, at: NSPoint(x: x, y: first.y)))
             XCTAssertEqual(NSCursor.current, NSCursor.pointingHand)
+        }
+    }
+
+    func testWebURLDetectionHandlesPunctuationUnicodeAndOnlyWebSchemes() {
+        let source = "😀 (https://example.com/a?q=1#part), http://example.org.\nwww.example.net"
+        let matches = WebLink.matches(in: source, range: NSRange(location: 0, length: source.utf16.count))
+        XCTAssertEqual(matches.compactMap(\.url).map(\.absoluteString), [
+            "https://example.com/a?q=1#part", "http://example.org", "http://www.example.net"
+        ])
+        for match in matches {
+            XCTAssertEqual(WebLink.url(in: source, at: match.range.location), match.url)
+            XCTAssertEqual(WebLink.url(in: source, at: NSMaxRange(match.range) - 1), match.url)
+            XCTAssertNil(WebLink.url(in: source, at: match.range.location - 1))
+            XCTAssertNil(WebLink.url(in: source, at: NSMaxRange(match.range)))
+        }
+        for source in ["", "plain text", "mailto:user@example.com", "ftp://example.com", "file:///tmp/readme.md"] {
+            XCTAssertTrue(WebLink.matches(in: source, range: NSRange(location: 0, length: source.utf16.count)).isEmpty, source)
+        }
+        XCTAssertNil(WebLink.url(in: source, at: -1))
+        XCTAssertNil(WebLink.url(in: source, at: source.utf16.count))
+    }
+
+    func testWebURLsSupportCommandClickAndHandCursorInEveryLanguage() throws {
+        let (editor, textView, window) = try makeHoverEditor()
+        defer { window.close() }
+        let initialCursor = NSCursor.current
+        defer { initialCursor.set() }
+        editor.text = "😀 https://example.com/a?q=1#part plain"
+        let range = (editor.text as NSString).range(of: "https://example.com/a?q=1#part")
+        var opened: [URL] = []
+        editor.onOpenURL = { opened.append($0) }
+        for (languageIndex, language) in SyntaxLanguage.allCases.enumerated() {
+            editor.syntaxLanguage = language
+            textView.setSelectedRange(NSRange(location: 0, length: 2))
+            let linkPoint = try point(in: textView, at: range.location)
+            for modifiers: NSEvent.ModifierFlags in [[], .command, []] {
+                let event = try mouseEvent(in: textView, at: linkPoint, modifiers: modifiers)
+                let expectedCursor = modifiers.contains(.command) ? NSCursor.pointingHand : NSCursor.iBeam
+                textView.mouseMoved(with: event)
+                XCTAssertEqual(NSCursor.current, expectedCursor, language.rawValue)
+                textView.cursorUpdate(with: event)
+                XCTAssertEqual(NSCursor.current, expectedCursor, language.rawValue)
+            }
+            XCTAssertEqual(opened.count, languageIndex)
+            textView.mouseDown(with: try mouseEvent(in: textView, at: linkPoint, type: .leftMouseDown))
+            XCTAssertEqual(opened.last?.absoluteString, "https://example.com/a?q=1#part")
+            XCTAssertEqual(textView.selectedRange(), NSRange(location: 0, length: 2))
+            let plainPoint = try point(in: textView, at: (editor.text as NSString).range(of: "plain").location)
+            textView.mouseMoved(with: try mouseEvent(in: textView, at: plainPoint, modifiers: []))
+            XCTAssertEqual(NSCursor.current, NSCursor.iBeam)
+        }
+        editor.text = "plain text"
+        XCTAssertEqual(textView.onCommandClick?(range.location), false)
+    }
+
+    func testWebURLStylingSurvivesSyntaxChangesAndClearsAfterEditing() async throws {
+        let editor = EditorViewController()
+        editor.loadViewIfNeeded()
+        editor.text = "{\"url\": \"https://example.com\"}\n"
+        let storage = try XCTUnwrap(editor.textStorage)
+        let index = (editor.text as NSString).range(of: "https").location
+        let textView = try XCTUnwrap(findTextView(in: editor.view))
+        for language in SyntaxLanguage.allCases {
+            editor.syntaxLanguage = language
+            try await Task.sleep(nanoseconds: 150_000_000)
+            XCTAssertEqual(storage.attribute(.foregroundColor, at: index, effectiveRange: nil) as? NSColor, .systemBlue, language.rawValue)
+            XCTAssertEqual(storage.attribute(.underlineStyle, at: index, effectiveRange: nil) as? Int, NSUnderlineStyle.single.rawValue)
+            XCTAssertNil(storage.attribute(.underlineStyle, at: 0, effectiveRange: nil))
+            textView.insertText("plain", replacementRange: (editor.text as NSString).range(of: "https://example.com"))
+            XCTAssertEqual(textView.isCommandClickTarget?(index), false)
+            try await Task.sleep(nanoseconds: 150_000_000)
+            XCTAssertNil(storage.attribute(.underlineStyle, at: index, effectiveRange: nil))
+            XCTAssertNotEqual(storage.attribute(.foregroundColor, at: index, effectiveRange: nil) as? NSColor, .systemBlue)
+            textView.insertText("https://example.com", replacementRange: NSRange(location: index, length: 5))
+            try await Task.sleep(nanoseconds: 150_000_000)
+            XCTAssertEqual(storage.attribute(.foregroundColor, at: index, effectiveRange: nil) as? NSColor, .systemBlue)
+            XCTAssertEqual(storage.attribute(.underlineStyle, at: index, effectiveRange: nil) as? Int, NSUnderlineStyle.single.rawValue)
         }
     }
 

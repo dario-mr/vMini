@@ -9,7 +9,7 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
     var onTextChanged: (() -> Void)?
     var onFileSystemURLsDropped: (([URL]) -> Void)?
     var documentURLProvider: (() -> URL?)?
-    var onOpenMarkdownURL: (URL) -> Void = { url in
+    var onOpenURL: (URL) -> Void = { url in
         if url.isFileURL {
             WorkspaceDocumentCoordinator.shared.open(urls: [url], activate: url)
         } else {
@@ -356,10 +356,13 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
         scrollView.autohidesScrollers = true
     }
 
-    private func markdownURL(at index: Int) -> URL? {
-        guard syntaxLanguage == .markdown,
-              let destination = MarkdownLink.destination(in: textView.string, at: index) else { return nil }
-        return MarkdownLink.resolve(destination, relativeTo: documentURLProvider?())
+    private func linkURL(at index: Int) -> URL? {
+        if syntaxLanguage == .markdown,
+           let destination = MarkdownLink.destination(in: textView.string, at: index),
+           let url = MarkdownLink.resolve(destination, relativeTo: documentURLProvider?()) {
+            return url
+        }
+        return WebLink.url(in: textView.string, at: index)
     }
 
     private func configureTextView() {
@@ -371,11 +374,11 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
             self?.onNavigationCheckpoint?(before, after)
         }
         textView.isCommandClickTarget = { [weak self] index in
-            self?.markdownURL(at: index) != nil
+            self?.linkURL(at: index) != nil
         }
         textView.onCommandClick = { [weak self] index in
-            guard let self, let url = markdownURL(at: index) else { return false }
-            onOpenMarkdownURL(url)
+            guard let self, let url = linkURL(at: index) else { return false }
+            onOpenURL(url)
             return true
         }
         textView.onCancelSearch = { [weak self] in
