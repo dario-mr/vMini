@@ -137,12 +137,13 @@ final class LineNumberRulerView: NSView {
         bounds.fill()
 
         let visibleRect = textView.visibleRect
+        layoutManager.ensureLayout(forBoundingRect: visibleRect, in: textContainer)
         let glyphRange = layoutManager.glyphRange(forBoundingRect: visibleRect, in: textContainer)
         guard glyphRange.length > 0 else {
             drawLineNumber(
                 1,
                 atY: textView.textContainerInset.height - visibleRect.minY,
-                lineHeight: textView.font?.boundingRectForFont.height ?? 16,
+                lineHeight: lineNumberFont().boundingRectForFont.height,
                 isSelected: true
             )
             return
@@ -222,7 +223,7 @@ final class LineNumberRulerView: NSView {
     }
 
     private func lineNumberFont() -> NSFont {
-        let pointSize = textView?.font?.pointSize ?? 13
+        let pointSize = EditorSettings.currentFontSize()
         if let cachedLineNumberFont, abs(pointSize - cachedLineNumberFontPointSize) < 0.5 {
             return cachedLineNumberFont
         }

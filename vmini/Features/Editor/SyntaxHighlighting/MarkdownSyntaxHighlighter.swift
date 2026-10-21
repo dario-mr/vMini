@@ -34,7 +34,7 @@ final class MarkdownSyntaxHighlighter: SyntaxHighlighter {
         enum Kind: Sendable {
             case color(SyntaxColorRole)
             case headingText(level: Int)
-            case boldFont
+            case headingFont(level: Int)
         }
 
         let kind: Kind

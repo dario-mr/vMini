@@ -74,6 +74,10 @@ final class EditorFontTests: XCTestCase {
     }
 
     func testFontSizeChangePreservesSyntaxHighlighting() async throws {
+        let headingScale = MarkdownAttributeStyler.Constants.headingScales[0]
+        let markerColor = ThemeManager.shared.syntaxTheme.headingMarker.withAlphaComponent(
+            MarkdownAttributeStyler.Constants.headingMarkerAlpha
+        )
         let viewController = EditorViewController()
         viewController.loadViewIfNeeded()
         viewController.syntaxLanguage = .markdown
@@ -84,28 +88,22 @@ final class EditorFontTests: XCTestCase {
         try await waitForCondition {
             let highlightedColor = storage.attribute(.foregroundColor, at: location, effectiveRange: nil) as? NSColor
             let highlightedFont = storage.attribute(.font, at: location, effectiveRange: nil) as? NSFont
-            return highlightedColor?.isEqual(ThemeManager.shared.syntaxTheme.headingMarker) == true
-                && highlightedFont?.fontDescriptor.symbolicTraits.contains(.bold) == true
+            guard let highlightedFont else { return false }
+            return highlightedColor?.isEqual(markerColor) == true
+                && highlightedFont.fontDescriptor.symbolicTraits.contains(.bold)
+                && abs(highlightedFont.pointSize - EditorSettings.currentFontSize() * headingScale) < 0.001
         }
-
-        let highlightedColor = storage.attribute(.foregroundColor, at: location, effectiveRange: nil) as? NSColor
-        let highlightedFont = storage.attribute(.font, at: location, effectiveRange: nil) as? NSFont
-        XCTAssertTrue(highlightedColor?.isEqual(ThemeManager.shared.syntaxTheme.headingMarker) == true)
-        XCTAssertTrue(highlightedFont?.fontDescriptor.symbolicTraits.contains(.bold) == true)
 
         EditorSettings.increaseFontSize()
 
         try await waitForCondition {
             let updatedColor = storage.attribute(.foregroundColor, at: location, effectiveRange: nil) as? NSColor
             let updatedFont = storage.attribute(.font, at: location, effectiveRange: nil) as? NSFont
-            return updatedColor?.isEqual(ThemeManager.shared.syntaxTheme.headingMarker) == true
-                && updatedFont?.fontDescriptor.symbolicTraits.contains(.bold) == true
+            guard let updatedFont else { return false }
+            return updatedColor?.isEqual(markerColor) == true
+                && updatedFont.fontDescriptor.symbolicTraits.contains(.bold)
+                && abs(updatedFont.pointSize - EditorSettings.currentFontSize() * headingScale) < 0.001
         }
-
-        let updatedColor = storage.attribute(.foregroundColor, at: location, effectiveRange: nil) as? NSColor
-        let updatedFont = storage.attribute(.font, at: location, effectiveRange: nil) as? NSFont
-        XCTAssertTrue(updatedColor?.isEqual(ThemeManager.shared.syntaxTheme.headingMarker) == true)
-        XCTAssertTrue(updatedFont?.fontDescriptor.symbolicTraits.contains(.bold) == true)
     }
 
     func testFontChangeKeepsMarkdownHeadingsBoldAndBodyTextRegular() async throws {
@@ -153,6 +151,93 @@ final class EditorFontTests: XCTestCase {
         XCTAssertTrue(updatedHeadingFont?.fontDescriptor.symbolicTraits.contains(.bold) == true)
         XCTAssertFalse(updatedBodyFont?.fontDescriptor.symbolicTraits.contains(.bold) == true)
         XCTAssertEqual(updatedBodyFont?.fontName, EditorFontResolver.font(for: alternateFont, size: EditorSettings.currentFontSize()).fontName)
+    }
+
+    func testMarkdownHeadingEditsKeepGutterSize() async throws {
+        let viewController = EditorViewController()
+        viewController.loadViewIfNeeded()
+        viewController.syntaxLanguage = .markdown
+        viewController.text = "Heading\n" + Array(repeating: "body", count: 100).joined(separator: "\n")
+        let textView = try XCTUnwrap(findTextView(in: viewController.view))
+        let storage = try XCTUnwrap(textView.textStorage)
+        let ruler = try XCTUnwrap(viewController.view.subviews.compactMap { $0 as? LineNumberRulerView }.first)
+        let baseSize = EditorSettings.currentFontSize()
+        let initialWidth = ruler.ruleThickness
+        let scales: [CGFloat] = [1] + MarkdownAttributeStyler.Constants.headingScales + [1]
+
+        for level in Array(1...7) + Array((0...6).reversed()) {
+            let heading = String(repeating: "#", count: level) + (level > 0 ? " " : "") + "Heading"
+            let firstLine = (textView.string as NSString).lineRange(for: NSRange(location: 0, length: 0))
+            textView.insertText(heading, replacementRange: NSRange(location: 0, length: firstLine.length - 1))
+            try await waitForCondition {
+                let font = storage.attribute(.font, at: heading.count - 1, effectiveRange: nil) as? NSFont
+                guard let font else { return false }
+                return abs(font.pointSize - baseSize * scales[level]) < 0.001
+                    && font.fontDescriptor.symbolicTraits.contains(.bold) == (1...6).contains(level)
+            }
+            ruler.invalidateLineNumbers()
+            XCTAssertEqual(ruler.ruleThickness, initialWidth, "Heading level \(level) changed the gutter width")
+            let bodyFont = storage.attribute(.font, at: heading.count + 1, effectiveRange: nil) as? NSFont
+            XCTAssertEqual(bodyFont?.pointSize, baseSize)
+        }
+
+        EditorSettings.setFontSize(baseSize + 4)
+        try await waitForCondition {
+            let font = storage.attribute(.font, at: 0, effectiveRange: nil) as? NSFont
+            guard let font else { return false }
+            return abs(font.pointSize - EditorSettings.currentFontSize()) < 0.001
+        }
+        ruler.invalidateLineNumbers()
+        XCTAssertGreaterThan(ruler.ruleThickness, initialWidth)
+    }
+
+    func testDeletingBlankLineKeepsItsGutterNumberVisibleBeforeSaving() async throws {
+        let headingScale = MarkdownAttributeStyler.Constants.headingScales[1]
+        EditorSettings.setWordWrapEnabled(true)
+        let viewController = EditorViewController()
+        viewController.loadViewIfNeeded()
+        viewController.view.frame = NSRect(x: 0, y: 0, width: 700, height: 900)
+        viewController.syntaxLanguage = .markdown
+        viewController.text = "# Title\n" + String(repeating: "body\n", count: 11)
+            + "- " + String(repeating: "Wrapped paragraph. ", count: 25) + "\n\n## Next heading\nBody below"
+        viewController.view.layoutSubtreeIfNeeded()
+        let textView = try XCTUnwrap(findTextView(in: viewController.view))
+        let storage = try XCTUnwrap(textView.textStorage)
+        let layout = try XCTUnwrap(textView.layoutManager)
+        let container = try XCTUnwrap(textView.textContainer)
+        let ruler = try XCTUnwrap(viewController.view.subviews.compactMap { $0 as? LineNumberRulerView }.first)
+        let blankLocation = (textView.string as NSString).range(of: "\n\n##").location + 1
+        textView.setSelectedRange(NSRange(location: blankLocation, length: 0))
+        try await waitForCondition {
+            let headingLocation = (storage.string as NSString).range(of: "Next heading").location
+            guard let font = storage.attribute(.font, at: headingLocation, effectiveRange: nil) as? NSFont else { return false }
+            return font.fontDescriptor.symbolicTraits.contains(.bold)
+                && abs(font.pointSize - EditorSettings.currentFontSize() * headingScale) < 0.001
+        }
+        layout.ensureLayout(for: container)
+        let glyph = layout.glyphIndexForCharacter(at: blankLocation)
+        let lineRect = layout.lineFragmentRect(forGlyphAt: glyph, effectiveRange: nil)
+        let y = Int(lineRect.midY + textView.textContainerOrigin.y - textView.visibleRect.minY)
+        let initial = try gutterColor(ruler, atY: y)
+
+        textView.insertNewline(nil)
+        try await Task.sleep(nanoseconds: 150_000_000)
+        _ = try gutterColor(ruler, atY: y)
+        textView.deleteBackward(nil)
+        try await Task.sleep(nanoseconds: 150_000_000)
+
+        XCTAssertEqual(viewController.currentLineNumber(), 14)
+        XCTAssertEqual(try gutterColor(ruler, atY: y), initial)
+    }
+
+    private func gutterColor(_ ruler: LineNumberRulerView, atY y: Int) throws -> NSColor {
+        let image = NSImage(size: ruler.bounds.size, flipped: true) { _ in
+            ruler.draw(ruler.bounds)
+            return true
+        }
+        let data = try XCTUnwrap(image.tiffRepresentation)
+        let bitmap = try XCTUnwrap(NSBitmapImageRep(data: data))
+        return try XCTUnwrap(bitmap.colorAt(x: 2, y: y))
     }
 
     func testSettingsViewWritesFontSelectionBackToEditorSettings() throws {

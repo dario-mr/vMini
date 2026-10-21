@@ -254,6 +254,7 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
         )
 
         guard editedMask.contains(.editedCharacters) else {
+            lineNumberRulerView.needsDisplay = true
             return
         }
 
