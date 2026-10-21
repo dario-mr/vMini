@@ -8,6 +8,7 @@ final class Document: NSDocument {
     let sessionIdentifier: UUID
 
     private let contentController: DocumentContentController
+    private var savedText = ""
     private let editorSession = DocumentEditorSession()
     private let openDocumentsStore: OpenDocumentsStore
     private let fileLifecycleController: DocumentFileLifecycleController
@@ -260,6 +261,7 @@ final class Document: NSDocument {
             let currentText = contentController.currentText(editorText: editorSession.currentEditorText())
             contentController.updateText(currentText)
             try currentText.write(to: url, atomically: true, encoding: .utf8)
+            savedText = currentText
             editorSession.markChangesSaved()
         }
     }
@@ -280,6 +282,7 @@ final class Document: NSDocument {
     func installLoadedContent(_ text: String, ofType typeName: String) {
         contentRevision &+= 1
         contentController.updateRead(typeName: typeName, text: text)
+        savedText = text
         editorSession.update(text: text, syntaxLanguage: syntaxLanguage)
         notifySyntaxHighlightingDidChange()
     }
@@ -299,7 +302,7 @@ final class Document: NSDocument {
             contentRevision &+= 1
             contentController.updateText(editorViewController.text)
             let wasEdited = isDocumentEdited
-            updateChangeCount(.changeDone)
+            updateChangeCount(editorViewController.text.utf8.elementsEqual(savedText.utf8) ? .changeCleared : .changeDone)
 
             if wasEdited != isDocumentEdited {
                 openDocumentsStore.refresh()
