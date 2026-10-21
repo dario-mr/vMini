@@ -52,6 +52,87 @@ final class WorkspaceStateTests: XCTestCase {
         XCTAssertTrue(next.isPreview)
     }
 
+    func testRestoringOriginalTextClearsDocumentChangesAndNotifiesWorkspace() throws {
+        _ = NSApplication.shared
+        for original in ["", "original text"] {
+            let store = OpenDocumentsStore()
+            let document = makeDocument(openDocumentsStore: store)
+            if !original.isEmpty {
+                try document.read(from: Data(original.utf8), ofType: "public.plain-text")
+            }
+            store.registerPreview(document)
+            let editor = document.editorViewController(onFileSystemURLsDropped: { _ in })
+            let window = EditorWindow(contentRect: NSRect(x: 0, y: 0, width: 400, height: 300),
+                                      styleMask: [.titled], backing: .buffered, defer: false)
+            window.contentViewController = editor
+            defer { window.orderOut(nil) }
+            let scrollView = try XCTUnwrap(editor.view.subviews.compactMap { $0 as? NSScrollView }.first)
+            let textView = try XCTUnwrap(scrollView.documentView as? NSTextView)
+            window.makeFirstResponder(textView)
+            let undoManager = try XCTUnwrap(textView.undoManager)
+            var observedEditedStates: [Bool] = []
+            let token = store.observe { _ in observedEditedStates.append(document.isDocumentEdited) }
+            defer { _ = token }
+
+            textView.insertText("!", replacementRange: NSRange(location: original.utf16.count, length: 0))
+            XCTAssertTrue(document.isDocumentEdited)
+            XCTAssertTrue(document.shortDisplayTitle.hasPrefix("• "))
+
+            undoManager.undo()
+            XCTAssertEqual(editor.text, original)
+            XCTAssertFalse(document.isDocumentEdited)
+            XCTAssertEqual(observedEditedStates.last, false)
+            XCTAssertFalse(document.shortDisplayTitle.hasPrefix("• "))
+            XCTAssertFalse(document.isPreview)
+
+            undoManager.redo()
+            XCTAssertEqual(editor.text, original + "!")
+            XCTAssertTrue(document.isDocumentEdited)
+            XCTAssertEqual(observedEditedStates.last, true)
+
+            textView.setSelectedRange(NSRange(location: original.utf16.count + 1, length: 0))
+            textView.deleteBackward(nil)
+            XCTAssertEqual(editor.text, original)
+            XCTAssertFalse(document.isDocumentEdited)
+            XCTAssertEqual(observedEditedStates.last, false)
+        }
+    }
+
+    func testRestoringTextUsesLastSuccessfulSaveAsBaseline() async throws {
+        let document = makeDocument(openDocumentsStore: OpenDocumentsStore())
+        try document.read(from: Data("original".utf8), ofType: "public.plain-text")
+        let editor = document.editorViewController(onFileSystemURLsDropped: { _ in })
+        editor.text = "saved edit"
+        editor.onTextChanged?()
+        let directory = try makeTemporaryDirectory(name: "saved-baseline")
+        try await document.save(to: directory.appendingPathComponent("file.txt"), ofType: "public.plain-text", for: .saveOperation)
+        XCTAssertFalse(document.isDocumentEdited)
+
+        editor.text = "original"
+        editor.onTextChanged?()
+        XCTAssertTrue(document.isDocumentEdited)
+        XCTAssertThrowsError(try document.write(to: directory.appendingPathComponent("missing/file.txt"), ofType: "public.plain-text"))
+        editor.onTextChanged?()
+        XCTAssertTrue(document.isDocumentEdited)
+
+        editor.text = "saved edit"
+        editor.onTextChanged?()
+        XCTAssertFalse(document.isDocumentEdited)
+    }
+
+    func testUnicodeEncodingChangesRemainUnsavedUntilOriginalBytesAreRestored() throws {
+        let document = makeDocument(openDocumentsStore: OpenDocumentsStore())
+        try document.read(from: Data("\u{e9}".utf8), ofType: "public.plain-text")
+        let editor = document.editorViewController(onFileSystemURLsDropped: { _ in })
+        editor.textStorage?.replaceCharacters(in: NSRange(location: 0, length: 1), with: "e\u{301}")
+        editor.onTextChanged?()
+        XCTAssertTrue(document.isDocumentEdited)
+
+        editor.textStorage?.replaceCharacters(in: NSRange(location: 0, length: 2), with: "\u{e9}")
+        editor.onTextChanged?()
+        XCTAssertFalse(document.isDocumentEdited)
+    }
+
     func testKeepingAndPinningPreviewsPreventsReplacementAndClosingClearsPreview() {
         let store = OpenDocumentsStore(persistence: WorkspacePersistence(
             userDefaults: makeUserDefaults(prefix: "WorkspaceStateTests.PreviewPin")
