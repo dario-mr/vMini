@@ -222,15 +222,17 @@ final class SyntaxHighlightingTests: XCTestCase {
         let storage = makeHighlightedStorage(text, language: .markdown)
         let theme = ThemeCatalog.palette(for: .default).syntaxTheme
         let nsText = text as NSString
-        let h1Color = theme.headingMarker
-        let h2Color = theme.headingText.blended(withFraction: 0.5, of: theme.headingMarker) ?? theme.headingText
+        let headingColors = MarkdownAttributeStyler.Constants.headingColorStrengths.map {
+            theme.headingText.blended(withFraction: $0, of: theme.headingMarker) ?? theme.headingText
+        }
+        let markerColor = theme.headingMarker.withAlphaComponent(MarkdownAttributeStyler.Constants.headingMarkerAlpha)
 
-        assertColor(theme.headingMarker, at: nsText.range(of: "#").location, in: storage)
-        assertColor(h1Color, at: nsText.range(of: "Title").location, in: storage)
+        assertColor(markerColor, at: nsText.range(of: "#").location, in: storage)
+        assertColor(headingColors[0], at: nsText.range(of: "Title").location, in: storage)
         assertBoldFont(at: nsText.range(of: "#").location, in: storage)
         assertBoldFont(at: nsText.range(of: "Title").location, in: storage)
-        assertColor(h2Color, at: nsText.range(of: "Subtitle").location, in: storage)
-        assertColor(theme.headingText, at: nsText.range(of: "Section").location, in: storage)
+        assertColor(headingColors[1], at: nsText.range(of: "Subtitle").location, in: storage)
+        assertColor(headingColors[2], at: nsText.range(of: "Section").location, in: storage)
         assertColor(theme.listMarker, at: nsText.range(of: "- item").location, in: storage)
         assertColor(theme.listMarker, at: nsText.range(of: "1. ordered").location, in: storage)
         assertColor(theme.blockquoteMarker, at: nsText.range(of: "> quote").location, in: storage)
@@ -243,6 +245,66 @@ final class SyntaxHighlightingTests: XCTestCase {
         assertColor(theme.codeFence, at: nsText.range(of: "```sh").location, in: storage)
         assertColor(theme.builtin, at: nsText.range(of: "echo hi").location, in: storage)
         assertBackgroundColor(theme.codeBlockBackground, at: nsText.range(of: "echo hi").location, in: storage)
+    }
+
+    func testMarkdownHeadingHierarchyKeepsDimmedMarkersAndSourceText() throws {
+        let markerAlpha = MarkdownAttributeStyler.Constants.headingMarkerAlpha
+        let text = "# One\n## Two\n### Three\n#### Four\n##### Five\n###### Six\nBody\n```\n# Code\n```\n#hashtag\n####### Invalid"
+        let nsText = text as NSString
+        for themeID in ThemeID.allCases {
+            let theme = ThemeCatalog.palette(for: themeID).syntaxTheme
+            for size: CGFloat in [13, 20] {
+                let baseFont = EditorFontResolver.font(for: .fallback, size: size)
+                let storage = NSTextStorage(string: text, attributes: [.font: baseFont])
+                MarkdownSyntaxHighlighter().highlight(
+                    textStorage: storage, in: nil, baseFont: baseFont, theme: theme, registry: .shared
+                )
+
+                for (index, title) in ["One", "Two", "Three", "Four", "Five", "Six"].enumerated() {
+                    let marker = String(repeating: "#", count: index + 1)
+                    let markerRange = nsText.range(of: marker + " " + title)
+                    let titleLocation = nsText.range(of: title).location
+                    let titleFont = try XCTUnwrap(storage.attribute(.font, at: titleLocation, effectiveRange: nil) as? NSFont)
+                    let markerFont = try XCTUnwrap(storage.attribute(.font, at: markerRange.location, effectiveRange: nil) as? NSFont)
+                    XCTAssertEqual(titleFont.pointSize, size * MarkdownAttributeStyler.Constants.headingScales[index], accuracy: 0.001)
+                    XCTAssertEqual(titleFont.familyName, baseFont.familyName)
+                    XCTAssertEqual(markerFont, titleFont)
+                    assertBoldFont(at: titleLocation, in: storage)
+                    for offset in 0..<marker.count {
+                        assertColor(theme.headingMarker.withAlphaComponent(markerAlpha), at: markerRange.location + offset, in: storage)
+                    }
+                    let titleColor = try XCTUnwrap(storage.attribute(.foregroundColor, at: titleLocation, effectiveRange: nil) as? NSColor)
+                    XCTAssertGreaterThan(titleColor.alphaComponent, markerAlpha)
+                }
+                for ordinaryText in ["Body", "# Code", "#hashtag", "####### Invalid"] {
+                    let font = storage.attribute(.font, at: nsText.range(of: ordinaryText).location, effectiveRange: nil) as? NSFont
+                    XCTAssertEqual(font, baseFont)
+                }
+                XCTAssertEqual(storage.string, text)
+            }
+        }
+    }
+
+    func testMarkdownHeadingSizeUpdatesAndResetsAfterEditingMarkers() async throws {
+        let storage = unhighlightedStorage("# Heading\nBody")
+        let theme = ThemeCatalog.palette(for: .default).syntaxTheme
+        let baseFont = EditorFontResolver.font(for: .fallback, size: 13)
+        let controller = EditorSyntaxHighlightController(
+            highlighterRegistry: .shared,
+            textStorageProvider: { storage },
+            syntaxThemeProvider: { theme },
+            baseFontProvider: { baseFont }
+        )
+        controller.refresh(language: .markdown)
+        try await waitForCondition { self.highlightingMatchesFresh(storage, language: .markdown) }
+
+        applyEdit("##", replacing: NSRange(location: 0, length: 1), in: storage, controller: controller)
+        try await waitForCondition { self.highlightingMatchesFresh(storage, language: .markdown) }
+
+        applyEdit("", replacing: NSRange(location: 0, length: 3), in: storage, controller: controller)
+        try await waitForCondition { self.highlightingMatchesFresh(storage, language: .markdown) }
+        XCTAssertEqual(storage.attribute(.font, at: 0, effectiveRange: nil) as? NSFont, baseFont)
+        assertColor(theme.plainText, at: 0, in: storage)
     }
 
     func testKotlinHighlighterStylesCoreTokens() {
@@ -674,7 +736,8 @@ final class SyntaxHighlightingTests: XCTestCase {
             )
         )
 
-        let expectedColor = theme.headingText.blended(withFraction: 0.5, of: theme.headingMarker) ?? theme.headingText
+        let strength = MarkdownAttributeStyler.Constants.headingColorStrengths[1]
+        let expectedColor = theme.headingText.blended(withFraction: strength, of: theme.headingMarker) ?? theme.headingText
         assertColor(expectedColor, at: insertionLocation, in: storage)
     }
 
@@ -965,18 +1028,20 @@ final class SyntaxHighlightingTests: XCTestCase {
         let storage = try XCTUnwrap(viewController.textStorage)
         let nsText = viewController.text as NSString
         let syntaxTheme = ThemeManager.shared.syntaxTheme
-        let h1Color = syntaxTheme.headingMarker
+        let strength = MarkdownAttributeStyler.Constants.headingColorStrengths[0]
+        let h1Color = syntaxTheme.headingText.blended(withFraction: strength, of: syntaxTheme.headingMarker) ?? syntaxTheme.headingText
+        let expectedMarkerColor = syntaxTheme.headingMarker.withAlphaComponent(MarkdownAttributeStyler.Constants.headingMarkerAlpha)
         try await waitForCondition {
             let markerColor = storage.attribute(.foregroundColor, at: nsText.range(of: "#").location, effectiveRange: nil) as? NSColor
             let titleColor = storage.attribute(.foregroundColor, at: nsText.range(of: "Title").location, effectiveRange: nil) as? NSColor
             let markerFont = storage.attribute(.font, at: nsText.range(of: "#").location, effectiveRange: nil) as? NSFont
             let titleFont = storage.attribute(.font, at: nsText.range(of: "Title").location, effectiveRange: nil) as? NSFont
-            return markerColor?.isEqual(syntaxTheme.headingMarker) == true
+            return markerColor?.isEqual(expectedMarkerColor) == true
                 && titleColor?.isEqual(h1Color) == true
                 && markerFont?.fontDescriptor.symbolicTraits.contains(.bold) == true
                 && titleFont?.fontDescriptor.symbolicTraits.contains(.bold) == true
         }
-        assertColor(syntaxTheme.headingMarker, at: nsText.range(of: "#").location, in: storage)
+        assertColor(expectedMarkerColor, at: nsText.range(of: "#").location, in: storage)
         assertColor(h1Color, at: nsText.range(of: "Title").location, in: storage)
         assertBoldFont(at: nsText.range(of: "#").location, in: storage)
         assertBoldFont(at: nsText.range(of: "Title").location, in: storage)

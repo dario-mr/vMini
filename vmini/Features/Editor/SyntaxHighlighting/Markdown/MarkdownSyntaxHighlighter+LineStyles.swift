@@ -38,7 +38,7 @@ enum MarkdownLineStylePlanner {
                     break
                 case let .heading(level, markerRange, textRange):
                     let fullHeadingRange = NSUnionRange(markerRange, textRange)
-                    appendStyle(.boldFont, range: fullHeadingRange, targetRange: targetRange, to: &styles)
+                    appendStyle(.headingFont(level: level), range: fullHeadingRange, targetRange: targetRange, to: &styles)
                     appendStyle(.color(.headingMarker), range: markerRange, targetRange: targetRange, to: &styles)
                     appendStyle(.headingText(level: level), range: textRange, targetRange: targetRange, to: &styles)
                     appendInlineStyles(lineRange: contentRange, text: text, targetRange: targetRange, to: &styles)
