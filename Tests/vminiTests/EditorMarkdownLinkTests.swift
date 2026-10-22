@@ -63,7 +63,7 @@ final class EditorMarkdownLinkTests: XCTestCase {
         document.fileURL = URL(fileURLWithPath: "/tmp/project/readme.md")
         document.setSyntaxLanguageOverride(.markdown)
         let editor = document.editorViewController(onFileSystemURLsDropped: { _ in })
-        editor.loadViewIfNeeded()
+        _ = editor.view
         editor.text = "😀 [local](aaa.md) [web](https://www.google.com)"
         let textView = try XCTUnwrap(findTextView(in: editor.view))
         textView.frame = NSRect(x: 0, y: 0, width: 600, height: 200)
@@ -211,7 +211,7 @@ final class EditorMarkdownLinkTests: XCTestCase {
 
     func testWebURLStylingSurvivesSyntaxChangesAndClearsAfterEditing() async throws {
         let editor = EditorViewController()
-        editor.loadViewIfNeeded()
+        _ = editor.view
         editor.text = "{\"url\": \"https://example.com\"}\n"
         let storage = try XCTUnwrap(editor.textStorage)
         let index = (editor.text as NSString).range(of: "https").location
@@ -237,7 +237,7 @@ final class EditorMarkdownLinkTests: XCTestCase {
     private func makeHoverEditor() throws -> (EditorViewController, EditorTextView, LinkHoverTestWindow) {
         let editor = EditorViewController()
         editor.syntaxLanguage = .markdown
-        editor.loadViewIfNeeded()
+        _ = editor.view
         editor.text = "😀 [web](https://example.com) [local](aaa.md) `[code](https://example.com)`"
         editor.documentURLProvider = { URL(fileURLWithPath: "/tmp/readme.md") }
         let textView = try XCTUnwrap(findTextView(in: editor.view))

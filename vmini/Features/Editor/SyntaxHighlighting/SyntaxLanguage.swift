@@ -10,6 +10,7 @@ enum SyntaxLanguage: String, CaseIterable {
     case yaml
     case kotlin
     case java
+    case sql
 
     var displayName: String {
         switch self {
@@ -31,6 +32,8 @@ enum SyntaxLanguage: String, CaseIterable {
             "Kotlin"
         case .java:
             "Java"
+        case .sql:
+            "SQL"
         }
     }
 }

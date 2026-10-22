@@ -134,6 +134,23 @@ final class SyntaxHighlightingTests: XCTestCase {
         XCTAssertTrue(registry.highlighter(forFenceInfoString: "java") is JavaSyntaxHighlighter)
     }
 
+    func testLanguageResolverAndRegistryRecognizeSQL() {
+        XCTAssertEqual(
+            SyntaxLanguageResolver.resolve(
+                fileURL: URL(fileURLWithPath: "/tmp/query.SQL"),
+                typeIdentifier: UTType.plainText.identifier
+            ),
+            .sql
+        )
+
+        let registry = HighlighterRegistry.shared
+        XCTAssertTrue(registry.highlighter(for: .sql) is SQLSyntaxHighlighter)
+        for infoString in ["sql", "postgresql"] {
+            XCTAssertEqual(SyntaxLanguageResolver.resolveFenceInfoString(infoString), .sql)
+            XCTAssertTrue(registry.highlighter(forFenceInfoString: infoString) is SQLSyntaxHighlighter)
+        }
+    }
+
     func testLanguageResolverRecognizesDotenvFileNames() {
         for fileName in [".env", ".env.development", ".env.development.local", ".ENV.Production"] {
             XCTAssertEqual(
@@ -417,6 +434,107 @@ final class SyntaxHighlightingTests: XCTestCase {
         assertColor(theme.comment, at: nsText.range(of: "line comment").location, in: storage)
         assertColor(theme.comment, at: nsText.range(of: "block comment").location, in: storage)
         assertColor(theme.operator, at: nsText.range(of: ">", options: .backwards).location, in: storage)
+    }
+
+    func testSQLHighlighterStylesCoreTokens() {
+        let text = [
+            "SELECT COUNT(*) FROM \"user table\"",
+            "WHERE id = :id AND status = 'active' -- line comment",
+            "  AND total >= 42;",
+            "/* outer",
+            "   /* nested */ still comment",
+            "*/",
+            "SELECT $$dollar string$$;",
+            "SELECT CAST(score AS INTEGER) FROM users;",
+        ].joined(separator: "\n")
+        let storage = makeHighlightedStorage(text, language: .sql)
+        let theme = ThemeCatalog.palette(for: .default).syntaxTheme
+        let nsText = text as NSString
+
+        assertColor(theme.keyword, at: nsText.range(of: "SELECT").location, in: storage)
+        assertColor(theme.builtin, at: nsText.range(of: "COUNT").location, in: storage)
+        assertColor(theme.propertyKey, at: nsText.range(of: "user table").location, in: storage)
+        assertColor(theme.variable, at: nsText.range(of: ":id").location, in: storage)
+        assertColor(theme.string, at: nsText.range(of: "active").location, in: storage)
+        assertColor(theme.comment, at: nsText.range(of: "line comment").location, in: storage)
+        assertColor(theme.operator, at: nsText.range(of: ">=").location, in: storage)
+        assertColor(theme.variable, at: nsText.range(of: "42").location, in: storage)
+        assertColor(theme.comment, at: nsText.range(of: "still comment").location, in: storage)
+        assertColor(theme.string, at: nsText.range(of: "dollar string").location, in: storage)
+        assertColor(theme.builtin, at: nsText.range(of: "INTEGER").location, in: storage)
+    }
+
+    func testMarkdownSQLFenceStylesSQLTokens() {
+        let text = """
+        ```sql
+        UPDATE food_actions original
+        SET deleted_at = NULL
+        WHERE original.promotion_item_id = 'FOOD_ACTION'
+          AND BTRIM(original.promotion_item_id) <> ''
+        ```
+        """
+        let storage = makeHighlightedStorage(text, language: .markdown)
+        let theme = ThemeCatalog.palette(for: .default).syntaxTheme
+        let nsText = text as NSString
+
+        assertColor(theme.keyword, at: nsText.range(of: "UPDATE").location, in: storage)
+        assertColor(theme.keyword, at: nsText.range(of: "WHERE").location, in: storage)
+        assertColor(theme.keyword, at: nsText.range(of: "AND").location, in: storage)
+        assertColor(theme.builtin, at: nsText.range(of: "BTRIM").location, in: storage)
+        assertColor(theme.plainText, at: nsText.range(of: "food_actions").location, in: storage)
+        assertColor(theme.string, at: nsText.range(of: "FOOD_ACTION").location, in: storage)
+        assertColor(theme.operator, at: nsText.range(of: "<>").location, in: storage)
+    }
+
+    func testSQLHighlighterExpandsForLexicalBoundariesAndMultilineTokens() {
+        let highlighter = SQLSyntaxHighlighter()
+        let source = "SELECT 1;\n/* multiline\n comment */\nSELECT 2;" as NSString
+        let commentLocation = source.range(of: "comment").location
+        let commentEdit = SyntaxHighlightEditContext(
+            replacementRange: NSRange(location: commentLocation, length: 1),
+            replacementString: "M",
+            replacedText: "m"
+        )
+
+        XCTAssertEqual(
+            highlighter.expandedHighlightRange(
+                for: NSRange(location: commentLocation, length: 1),
+                editContext: commentEdit,
+                in: source
+            ),
+            source.range(of: "/* multiline\n comment */")
+        )
+
+        let changedText = "SELECT *1;\nSELECT 2;" as NSString
+        let boundaryEdit = SyntaxHighlightEditContext(
+            replacementRange: NSRange(location: 7, length: 0),
+            replacementString: "*",
+            replacedText: ""
+        )
+        XCTAssertEqual(
+            highlighter.expandedHighlightRange(
+                for: NSRange(location: 7, length: 1),
+                editContext: boundaryEdit,
+                in: changedText
+            ),
+            NSRange(location: 0, length: changedText.length)
+        )
+
+        let ordinaryEdit = SyntaxHighlightEditContext(
+            replacementRange: NSRange(location: 7, length: 5),
+            replacementString: "column",
+            replacedText: "value"
+        )
+        let ordinaryText = "SELECT value;\nSELECT next;" as NSString
+        let valueLocation = ordinaryText.range(of: "value").location
+        XCTAssertEqual(
+            highlighter.expandedHighlightRange(
+                for: NSRange(location: valueLocation, length: 5),
+                editContext: ordinaryEdit,
+                in: ordinaryText
+            ),
+            ordinaryText.lineRange(for: NSRange(location: valueLocation, length: 5))
+        )
     }
 
     func testJavaHighlighterExpandsForDelimiterEditsAndKeepsOrdinaryEditsLocal() {
@@ -1021,7 +1139,7 @@ final class SyntaxHighlightingTests: XCTestCase {
 
     func testEditorViewControllerAppliesAndClearsMarkdownHighlighting() async throws {
         let viewController = EditorViewController()
-        viewController.loadViewIfNeeded()
+        _ = viewController.view
         viewController.syntaxLanguage = .markdown
         viewController.text = "# Title"
 
@@ -1059,7 +1177,7 @@ final class SyntaxHighlightingTests: XCTestCase {
 
     func testEditorViewControllerUsesSlashSlashCommentPrefixForJava() throws {
         let viewController = EditorViewController()
-        viewController.loadViewIfNeeded()
+        _ = viewController.view
         viewController.syntaxLanguage = .java
         viewController.text = "class Demo {}"
 
@@ -1072,7 +1190,7 @@ final class SyntaxHighlightingTests: XCTestCase {
 
     func testEditorViewControllerUsesShellCommentPrefixForBash() throws {
         let viewController = EditorViewController()
-        viewController.loadViewIfNeeded()
+        _ = viewController.view
         viewController.syntaxLanguage = .bash
         viewController.text = "echo hi"
 
@@ -1085,7 +1203,7 @@ final class SyntaxHighlightingTests: XCTestCase {
 
     func testEditorViewControllerUsesShellCommentPrefixForSSHConfig() throws {
         let viewController = EditorViewController()
-        viewController.loadViewIfNeeded()
+        _ = viewController.view
         viewController.syntaxLanguage = .sshconfig
         viewController.text = "Host github"
 
@@ -1098,7 +1216,7 @@ final class SyntaxHighlightingTests: XCTestCase {
 
     func testEditorViewControllerUsesHashCommentPrefixForYAML() throws {
         let viewController = EditorViewController()
-        viewController.loadViewIfNeeded()
+        _ = viewController.view
         viewController.syntaxLanguage = .yaml
         viewController.text = "name: value"
 

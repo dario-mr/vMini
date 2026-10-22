@@ -203,7 +203,7 @@ final class EditorCommandTests: XCTestCase {
 
     func testFormatJSONReportsInvalidJSONWithoutChangingText() {
         let viewController = EditorViewController()
-        viewController.loadViewIfNeeded()
+        _ = viewController.view
         viewController.text = "{\"name\": }"
 
         var receivedError: (String, String)?
@@ -220,7 +220,7 @@ final class EditorCommandTests: XCTestCase {
 
     func testInlineFormattingErrorClearsAfterNextEdit() throws {
         let viewController = EditorViewController()
-        viewController.loadViewIfNeeded()
+        _ = viewController.view
         viewController.text = "{\"name\": }"
 
         let textView = try XCTUnwrap(findTextView(in: viewController.view))
@@ -235,7 +235,7 @@ final class EditorCommandTests: XCTestCase {
 
     func testInlineFormattingErrorCanBeDismissedWithoutEditing() {
         let viewController = EditorViewController()
-        viewController.loadViewIfNeeded()
+        _ = viewController.view
         viewController.text = "{\"name\": }"
 
         viewController.formatJSONSelectionOrDocument()
@@ -281,7 +281,7 @@ final class EditorCommandTests: XCTestCase {
                                    ("(", ")"), ("[", "]"), ("{", "}"),
                                    ("*", "*"), ("_", "_"), ("~", "~")] {
             let editor = EditorViewController()
-            editor.loadViewIfNeeded()
+            _ = editor.view
             let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 400, height: 300),
                                   styleMask: [.titled], backing: .buffered, defer: false)
             window.contentViewController = editor
