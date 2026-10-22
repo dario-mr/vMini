@@ -217,6 +217,16 @@ final class EditorTextEditingTests: XCTestCase {
         XCTAssertEqual(edit.selectedRange, NSRange(location: 1, length: 0))
     }
 
+    func testToggleLineCommentUsesDoubleDashForSQL() throws {
+        let text = "SELECT 1" as NSString
+
+        let edit = try XCTUnwrap(
+            EditorTextEditing.toggleLineComment(in: text, selectedRange: NSRange(location: 0, length: 0), syntaxLanguage: .sql)
+        )
+
+        XCTAssertEqual(edit.replacementText, "--SELECT 1")
+    }
+
     func testDuplicateSelectedLinesAtEndOfFileAddsLeadingNewline() {
         let text = "one\ntwo" as NSString
         let edit = EditorTextEditing.duplicateSelectedLines(in: text, selectedRange: NSRange(location: 4, length: 0))

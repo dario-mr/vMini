@@ -31,6 +31,10 @@ enum SyntaxLanguageResolver {
         "java": .java,
     ]
 
+    private static let sqlFileExtensionMap: [String: SyntaxLanguage] = [
+        "sql": .sql,
+    ]
+
     private static let fileNameMap: [String: SyntaxLanguage] = [
         "config": .sshconfig,
         ".zshenv": .bash,
@@ -58,6 +62,13 @@ enum SyntaxLanguageResolver {
         "kts": .kotlin,
         "kotlin": .kotlin,
         "java": .java,
+        "sql": .sql,
+        "mysql": .sql,
+        "postgres": .sql,
+        "postgresql": .sql,
+        "sqlite": .sql,
+        "plsql": .sql,
+        "tsql": .sql,
     ]
 
     static func resolve(fileURL: URL?, typeIdentifier: String?, content: String? = nil) -> SyntaxLanguage {
@@ -97,6 +108,11 @@ enum SyntaxLanguageResolver {
 
         if let fileExtension = fileURL?.pathExtension.lowercased(),
            let language = javaFileExtensionMap[fileExtension] {
+            return language
+        }
+
+        if let fileExtension = fileURL?.pathExtension.lowercased(),
+           let language = sqlFileExtensionMap[fileExtension] {
             return language
         }
 
@@ -309,6 +325,7 @@ final class HighlighterRegistry {
             YAMLSyntaxHighlighter(),
             KotlinSyntaxHighlighter(),
             JavaSyntaxHighlighter(),
+            SQLSyntaxHighlighter(),
         ])
     }
 

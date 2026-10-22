@@ -184,7 +184,7 @@ final class WorkspaceNavigationTests: XCTestCase {
             openDocumentsStore: store, closedDocumentHistory: ClosedDocumentHistory(), documentController: controller
         )
         let workspace = EditorContentViewController(documentStore: store, documentRouter: router)
-        workspace.loadViewIfNeeded()
+        _ = workspace.view
         return (workspace, store)
     }
 

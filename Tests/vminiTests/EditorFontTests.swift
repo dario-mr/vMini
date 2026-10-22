@@ -61,7 +61,7 @@ final class EditorFontTests: XCTestCase {
         EditorSettings.setFontID(initialFont)
 
         let viewController = EditorViewController()
-        viewController.loadViewIfNeeded()
+        _ = viewController.view
 
         let textView = try XCTUnwrap(findTextView(in: viewController.view))
         XCTAssertEqual(textView.font?.fontName, EditorFontResolver.font(for: initialFont, size: EditorSettings.currentFontSize()).fontName)
@@ -79,7 +79,7 @@ final class EditorFontTests: XCTestCase {
             MarkdownAttributeStyler.Constants.headingMarkerAlpha
         )
         let viewController = EditorViewController()
-        viewController.loadViewIfNeeded()
+        _ = viewController.view
         viewController.syntaxLanguage = .markdown
         viewController.text = "# Title"
 
@@ -112,7 +112,7 @@ final class EditorFontTests: XCTestCase {
         EditorSettings.setFontID(initialFont)
 
         let viewController = EditorViewController()
-        viewController.loadViewIfNeeded()
+        _ = viewController.view
         viewController.syntaxLanguage = .markdown
         viewController.text = "# Title\nbody"
 
@@ -155,7 +155,7 @@ final class EditorFontTests: XCTestCase {
 
     func testMarkdownHeadingEditsKeepGutterSize() async throws {
         let viewController = EditorViewController()
-        viewController.loadViewIfNeeded()
+        _ = viewController.view
         viewController.syntaxLanguage = .markdown
         viewController.text = "Heading\n" + Array(repeating: "body", count: 100).joined(separator: "\n")
         let textView = try XCTUnwrap(findTextView(in: viewController.view))
@@ -195,7 +195,7 @@ final class EditorFontTests: XCTestCase {
         let headingScale = MarkdownAttributeStyler.Constants.headingScales[1]
         EditorSettings.setWordWrapEnabled(true)
         let viewController = EditorViewController()
-        viewController.loadViewIfNeeded()
+        _ = viewController.view
         viewController.view.frame = NSRect(x: 0, y: 0, width: 700, height: 900)
         viewController.syntaxLanguage = .markdown
         viewController.text = "# Title\n" + String(repeating: "body\n", count: 11)
@@ -245,7 +245,7 @@ final class EditorFontTests: XCTestCase {
         let selectedFont = try XCTUnwrap(availableFonts.last)
 
         let viewController = SettingsViewController()
-        viewController.loadViewIfNeeded()
+        _ = viewController.view
 
         let popUpButton = try XCTUnwrap(findFontPopUpButton(in: viewController.view))
         XCTAssertEqual(popUpButton.itemTitles, availableFonts.map(\.displayName))

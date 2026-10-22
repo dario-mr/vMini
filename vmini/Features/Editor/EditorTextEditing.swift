@@ -199,6 +199,8 @@ enum EditorTextEditing {
         switch syntaxLanguage {
         case .bash, .dotenv, .sshconfig, .yaml:
             "#"
+        case .sql:
+            "--"
         case .plaintext, .markdown, .json, .kotlin, .java:
             "//"
         }
