@@ -3,6 +3,21 @@ import AppKit
 /// A compact search action with a two-tone keyboard hint.
 @MainActor
 final class EditorSearchButton: NSButton {
+    @MainActor
+    private enum Constants {
+        static let fontSize: CGFloat = 12
+        static let rowSpacing: CGFloat = 12
+        static let horizontalPadding: CGFloat = 10
+        static let verticalPadding: CGFloat = 8
+        static let cornerRadius: CGFloat = 6
+        static let borderWidth: CGFloat = 0.5
+        static let buttonGap: CGFloat = 6
+        static var titleColor: NSColor { AppColors.primaryText }
+        static var shortcutColor: NSColor { .secondaryLabelColor }
+        static var backgroundColor: NSColor { AppColors.appBackground }
+        static var borderColor: NSColor { AppColors.inactiveControlTint }
+    }
+
     let actionTitle: String
     let shortcut: String
     private var hoverArea: NSTrackingArea?
@@ -42,35 +57,38 @@ final class EditorSearchButton: NSButton {
         guard let window else { return }
         let title = NSTextField(labelWithString: actionTitle)
         let key = NSTextField(labelWithString: shortcut)
-        title.font = .systemFont(ofSize: 11)
-        title.textColor = AppColors.primaryText
-        key.font = .systemFont(ofSize: 11)
-        key.textColor = .secondaryLabelColor
+        title.font = .systemFont(ofSize: Constants.fontSize)
+        title.textColor = Constants.titleColor
+        key.font = .systemFont(ofSize: Constants.fontSize)
+        key.textColor = Constants.shortcutColor
         let row = NSStackView(views: [title, key])
-        row.spacing = 12
+        row.spacing = Constants.rowSpacing
         row.alignment = .centerY
         row.translatesAutoresizingMaskIntoConstraints = false
-        let size = NSSize(width: row.fittingSize.width + 20, height: row.fittingSize.height + 16)
+        let size = NSSize(
+            width: row.fittingSize.width + 2 * Constants.horizontalPadding,
+            height: row.fittingSize.height + 2 * Constants.verticalPadding
+        )
         let content = NSView(frame: NSRect(origin: .zero, size: size))
         content.wantsLayer = true
-        content.layer?.backgroundColor = AppColors.appBackground.cgColor
-        content.layer?.cornerRadius = 6
-        content.layer?.borderWidth = 0.5
-        content.layer?.borderColor = AppColors.inactiveControlTint.cgColor
+        content.layer?.backgroundColor = Constants.backgroundColor.cgColor
+        content.layer?.cornerRadius = Constants.cornerRadius
+        content.layer?.borderWidth = Constants.borderWidth
+        content.layer?.borderColor = Constants.borderColor.cgColor
         content.addSubview(row)
         NSLayoutConstraint.activate([
-            row.leadingAnchor.constraint(equalTo: content.leadingAnchor, constant: 10),
-            row.trailingAnchor.constraint(equalTo: content.trailingAnchor, constant: -10),
-            row.topAnchor.constraint(equalTo: content.topAnchor, constant: 8),
-            row.bottomAnchor.constraint(equalTo: content.bottomAnchor, constant: -8),
+            row.leadingAnchor.constraint(equalTo: content.leadingAnchor, constant: Constants.horizontalPadding),
+            row.trailingAnchor.constraint(equalTo: content.trailingAnchor, constant: -Constants.horizontalPadding),
+            row.topAnchor.constraint(equalTo: content.topAnchor, constant: Constants.verticalPadding),
+            row.bottomAnchor.constraint(equalTo: content.bottomAnchor, constant: -Constants.verticalPadding),
         ])
         hint.contentView = content
         hint.setContentSize(size)
         let anchor = window.convertToScreen(convert(bounds, to: nil))
         let screen = window.screen?.visibleFrame ?? anchor
         let x = min(max(anchor.midX - size.width / 2, screen.minX), screen.maxX - size.width)
-        let below = anchor.minY - size.height - 6
-        hint.setFrameOrigin(NSPoint(x: x, y: below >= screen.minY ? below : anchor.maxY + 6))
+        let below = anchor.minY - size.height - Constants.buttonGap
+        hint.setFrameOrigin(NSPoint(x: x, y: below >= screen.minY ? below : anchor.maxY + Constants.buttonGap))
         window.addChildWindow(hint, ordered: .above)
         hint.orderFront(nil)
     }
