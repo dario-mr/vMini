@@ -1,9 +1,10 @@
 import AppKit
+import OSLog
 
 @MainActor
 final class EditorSyntaxHighlightController {
     typealias MarkdownWorkProvider = (
-        MarkdownSyntaxHighlighter, String, NSRange, MarkdownSyntaxHighlighter.FenceCache?
+        MarkdownSyntaxHighlighter, String, NSRange, MarkdownSyntaxHighlighter.FenceCache?, OSSignpostID?
     ) -> Task<MarkdownSyntaxHighlighter.HighlightWork?, Never>
 
     private let highlighterRegistry: HighlighterRegistry
@@ -121,6 +122,7 @@ final class EditorSyntaxHighlightController {
 
         pendingRefreshTask?.cancel()
         let scheduledRevision = textRevision
+        let signpostID = AppPerformanceProfiler.makeSignpostID()
         pendingRefreshTask = Task { @MainActor [weak self] in
             guard let self else { return }
 
@@ -142,8 +144,10 @@ final class EditorSyntaxHighlightController {
             case .full:
                 highlightRange = nil
             }
-            await AppPerformanceProfiler.measure("SyntaxHighlight") {
-                await self.applyHighlighting(in: highlightRange, language: targetLanguage, revision: scheduledRevision)
+            await AppPerformanceProfiler.measure("SyntaxHighlight", id: signpostID) {
+                await self.applyHighlighting(
+                    in: highlightRange, language: targetLanguage, revision: scheduledRevision, signpostID: signpostID
+                )
             }
             // Keep the dirty range available for rebasing if an edit cancels in-flight work.
             guard scheduledRevision == self.textRevision, !Task.isCancelled else { return }
@@ -153,7 +157,9 @@ final class EditorSyntaxHighlightController {
         }
     }
 
-    private func applyHighlighting(in highlightRange: NSRange?, language: SyntaxLanguage, revision: UInt64) async {
+    private func applyHighlighting(
+        in highlightRange: NSRange?, language: SyntaxLanguage, revision: UInt64, signpostID: OSSignpostID?
+    ) async {
         guard revision == textRevision, !Task.isCancelled else { return }
         guard let textStorage = textStorageProvider() else { return }
 
@@ -176,7 +182,8 @@ final class EditorSyntaxHighlightController {
             treeSitterSubmittedRevision = revision
             guard let result = await session.highlight(
                 text: textStorage.string, range: highlightRange, edits: edits,
-                baseRevision: baseRevision, appliedRevision: treeSitterAppliedRevision, revision: revision
+                baseRevision: baseRevision, appliedRevision: treeSitterAppliedRevision, revision: revision,
+                signpostID: signpostID
             ) else { return }
             guard revision == textRevision, !Task.isCancelled else { return }
             treeSitterWork = result
@@ -186,7 +193,7 @@ final class EditorSyntaxHighlightController {
         if let markdownHighlighter = highlighter as? MarkdownSyntaxHighlighter {
             let snapshot = textStorage.string
             let cachedFenceCache = markdownFenceCache.flatMap { $0.textLength == textStorage.length ? $0 : nil }
-            let work = markdownWorkProvider(markdownHighlighter, snapshot, targetRange, cachedFenceCache)
+            let work = markdownWorkProvider(markdownHighlighter, snapshot, targetRange, cachedFenceCache, signpostID)
             markdownHighlightWorkTask = work
             guard let result = await work.value else { return }
             guard revision == textRevision, !Task.isCancelled else { return }
@@ -196,43 +203,45 @@ final class EditorSyntaxHighlightController {
         }
 
         isApplyingHighlighting = true
-        textStorage.beginEditing()
-        textStorage.applyFont(baseFont, range: targetRange)
-        textStorage.applyForegroundColor(syntaxTheme.plainText, range: targetRange)
-        textStorage.applyBackgroundColor(nil, range: targetRange)
-        textStorage.removeAttribute(.underlineStyle, range: targetRange)
-        if let markdownHighlighter = highlighter as? MarkdownSyntaxHighlighter,
-           let fenceCache = markdownFenceCache,
-           let markdownWork {
-            markdownHighlighter.highlight(
-                textStorage: textStorage,
-                in: targetRange,
-                baseFont: baseFont,
-                theme: syntaxTheme,
-                registry: highlighterRegistry,
-                fenceCache: fenceCache,
-                lineStyles: markdownWork.lineStyles,
-                fenceHighlights: markdownWork.fenceHighlights,
-                treeSitterWork: treeSitterWork
-            )
-        } else if let treeSitterWork {
-            TreeSitterSyntaxHighlighter.apply(treeSitterWork, to: textStorage, theme: syntaxTheme)
-        } else {
-            highlighter.highlight(
-                textStorage: textStorage,
-                in: targetRange,
-                baseFont: baseFont,
-                theme: syntaxTheme,
-                registry: highlighterRegistry
-            )
+        AppPerformanceProfiler.measure("SyntaxAttributeApplication", id: signpostID) {
+            textStorage.beginEditing()
+            textStorage.applyFont(baseFont, range: targetRange)
+            textStorage.applyForegroundColor(syntaxTheme.plainText, range: targetRange)
+            textStorage.applyBackgroundColor(nil, range: targetRange)
+            textStorage.removeAttribute(.underlineStyle, range: targetRange)
+            if let markdownHighlighter = highlighter as? MarkdownSyntaxHighlighter,
+               let fenceCache = markdownFenceCache,
+               let markdownWork {
+                markdownHighlighter.highlight(
+                    textStorage: textStorage,
+                    in: targetRange,
+                    baseFont: baseFont,
+                    theme: syntaxTheme,
+                    registry: highlighterRegistry,
+                    fenceCache: fenceCache,
+                    lineStyles: markdownWork.lineStyles,
+                    fenceHighlights: markdownWork.fenceHighlights,
+                    treeSitterWork: treeSitterWork
+                )
+            } else if let treeSitterWork {
+                TreeSitterSyntaxHighlighter.apply(treeSitterWork, to: textStorage, theme: syntaxTheme)
+            } else {
+                highlighter.highlight(
+                    textStorage: textStorage,
+                    in: targetRange,
+                    baseFont: baseFont,
+                    theme: syntaxTheme,
+                    registry: highlighterRegistry
+                )
+            }
+            for link in WebLink.matches(in: textStorage.string, range: targetRange) {
+                textStorage.addAttributes([
+                    .foregroundColor: NSColor.systemBlue,
+                    .underlineStyle: NSUnderlineStyle.single.rawValue
+                ], range: link.range)
+            }
+            textStorage.endEditing()
         }
-        for link in WebLink.matches(in: textStorage.string, range: targetRange) {
-            textStorage.addAttributes([
-                .foregroundColor: NSColor.systemBlue,
-                .underlineStyle: NSUnderlineStyle.single.rawValue
-            ], range: link.range)
-        }
-        textStorage.endEditing()
         isApplyingHighlighting = false
         if treeSitterWork != nil { treeSitterAppliedRevision = revision }
     }
@@ -241,24 +250,27 @@ final class EditorSyntaxHighlightController {
         highlighter: MarkdownSyntaxHighlighter,
         snapshot: String,
         targetRange: NSRange,
-        cachedFenceCache: MarkdownSyntaxHighlighter.FenceCache?
+        cachedFenceCache: MarkdownSyntaxHighlighter.FenceCache?,
+        signpostID: OSSignpostID?
     ) -> Task<MarkdownSyntaxHighlighter.HighlightWork?, Never> {
         Task.detached(priority: .userInitiated) {
-            guard let fenceCache = cachedFenceCache ?? highlighter.makeFenceCache(
-                in: snapshot as NSString,
-                isCancelled: { Task.isCancelled }
-            ), let lineStyles = highlighter.lineStylePlan(
-                in: snapshot,
-                targetRange: targetRange,
-                fences: fenceCache.blocks,
-                isCancelled: { Task.isCancelled }
-            ), let fenceHighlights = MarkdownFenceHighlighter.highlights(
-                in: snapshot, targetRange: targetRange, fences: fenceCache.blocks,
-                isCancelled: { Task.isCancelled }
-            ) else { return nil }
-            return MarkdownSyntaxHighlighter.HighlightWork(
-                fenceCache: fenceCache, lineStyles: lineStyles, fenceHighlights: fenceHighlights
-            )
+            AppPerformanceProfiler.measure("MarkdownHighlightWork", id: signpostID) {
+                guard let fenceCache = cachedFenceCache ?? highlighter.makeFenceCache(
+                    in: snapshot as NSString,
+                    isCancelled: { Task.isCancelled }
+                ), let lineStyles = highlighter.lineStylePlan(
+                    in: snapshot,
+                    targetRange: targetRange,
+                    fences: fenceCache.blocks,
+                    isCancelled: { Task.isCancelled }
+                ), let fenceHighlights = MarkdownFenceHighlighter.highlights(
+                    in: snapshot, targetRange: targetRange, fences: fenceCache.blocks,
+                    isCancelled: { Task.isCancelled }, signpostID: signpostID
+                ) else { return nil }
+                return MarkdownSyntaxHighlighter.HighlightWork(
+                    fenceCache: fenceCache, lineStyles: lineStyles, fenceHighlights: fenceHighlights
+                )
+            }
         }
     }
 

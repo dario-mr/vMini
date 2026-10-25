@@ -1,4 +1,5 @@
 import Foundation
+import OSLog
 import SwiftTreeSitter
 
 struct TreeSitterHighlightWork: Sendable {
@@ -25,14 +26,17 @@ actor TreeSitterSyntaxSession {
         edits: [SyntaxHighlightEditContext]?,
         baseRevision: UInt64,
         appliedRevision: UInt64,
-        revision: UInt64
+        revision: UInt64,
+        signpostID: OSSignpostID? = nil
     ) -> TreeSitterHighlightWork? {
         guard !Task.isCancelled, revision > self.revision else { return nil }
         let mustReset = baseRevision != self.revision || edits == nil
         // A parsed revision may have been discarded before its colors reached the editor.
         let mustRecolor = mustReset || appliedRevision != self.revision
         if mustReset { parser.reset() }
-        let work = parser.highlight(text: text, in: mustRecolor ? nil : range, edits: edits ?? [])
+        let work = AppPerformanceProfiler.measure("TreeSitterParse", id: signpostID) {
+            parser.highlight(text: text, in: mustRecolor ? nil : range, edits: edits ?? [])
+        }
         self.revision = revision
         return work
     }

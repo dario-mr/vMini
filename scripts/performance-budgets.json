@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "classes": {
+    "warm-edit": {
+      "classification": "warm-edit",
+      "metrics": {
+        "medianMilliseconds": { "relativeAllowance": 0.2, "absoluteAllowanceMilliseconds": 5, "ceilingMilliseconds": 40 },
+        "p95Milliseconds": { "relativeAllowance": 0.2, "absoluteAllowanceMilliseconds": 5, "ceilingMilliseconds": 75 }
+      }
+    },
+    "large-edit": {
+      "classification": "warm-edit",
+      "metrics": {
+        "medianMilliseconds": { "relativeAllowance": 0.2, "absoluteAllowanceMilliseconds": 5, "ceilingMilliseconds": 110 },
+        "p95Milliseconds": { "relativeAllowance": 0.2, "absoluteAllowanceMilliseconds": 5, "ceilingMilliseconds": 125 }
+      }
+    },
+    "very-large-edit": {
+      "classification": "warm-edit",
+      "metrics": {
+        "medianMilliseconds": { "relativeAllowance": 0.2, "absoluteAllowanceMilliseconds": 5, "ceilingMilliseconds": 200 },
+        "p95Milliseconds": { "relativeAllowance": 0.2, "absoluteAllowanceMilliseconds": 5, "ceilingMilliseconds": 225 }
+      }
+    },
+    "full-corpus-edit": {
+      "classification": "warm-edit",
+      "metrics": {
+        "medianMilliseconds": { "relativeAllowance": 0.2, "absoluteAllowanceMilliseconds": 20, "ceilingMilliseconds": 1500 },
+        "p95Milliseconds": { "relativeAllowance": 0.2, "absoluteAllowanceMilliseconds": 20, "ceilingMilliseconds": 1750 }
+      }
+    },
+    "warm-full-document": {
+      "classification": "warm-full-document",
+      "metrics": {
+        "medianMilliseconds": { "relativeAllowance": 0.2, "absoluteAllowanceMilliseconds": 20, "ceilingMilliseconds": 2500 }
+      }
+    },
+    "cold-initialization": {
+      "classification": "cold-initialization",
+      "metrics": {
+        "medianMilliseconds": { "relativeAllowance": 0.2, "absoluteAllowanceMilliseconds": 20, "ceilingMilliseconds": 500 }
+      }
+    }
+  },
+  "scenarios": {
+    "edit.plain-markdown": "warm-edit",
+    "edit.markdown-sql": "warm-edit",
+    "edit.several-fences": "warm-edit",
+    "edit.large-document.markdown": "full-corpus-edit",
+    "edit.large-document.java": "very-large-edit",
+    "edit.rapid-typing": "large-edit",
+    "edit.unicode-incomplete-syntax": "warm-edit",
+    "edit.replace-undo-redo.replace": "warm-edit",
+    "edit.replace-undo-redo.undo": "warm-edit",
+    "edit.replace-undo-redo.redo": "warm-edit",
+    "edit.java.100-methods": "warm-edit",
+    "edit.java.2000-methods": "very-large-edit",
+    "full.java.100-methods": "warm-full-document",
+    "full.java.2000-methods": "warm-full-document",
+    "full.token-dense-json": "warm-full-document",
+    "full.multiline-bash": "warm-full-document",
+    "full.large-markdown": "warm-full-document",
+    "cold.markdown-sql-first-highlight": "cold-initialization"
+  }
+}
