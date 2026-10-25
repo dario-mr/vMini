@@ -298,7 +298,7 @@ struct SyntaxCharacterIndex {
     }
 }
 
-struct SyntaxHighlightEditContext {
+struct SyntaxHighlightEditContext: Sendable {
     let replacementRange: NSRange
     let replacementString: String
     let replacedText: String

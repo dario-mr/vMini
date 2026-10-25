@@ -537,7 +537,7 @@ final class SyntaxHighlightingTests: XCTestCase {
         )
     }
 
-    func testJavaHighlighterExpandsForDelimiterEditsAndKeepsOrdinaryEditsLocal() {
+    func testJavaHighlighterLeavesRangeExpansionToTheIncrementalParser() {
         let highlighter = JavaSyntaxHighlighter()
 
         for (delimiter, replacement) in [("/*", "//"), ("\"\"\"", "\"")] {
@@ -556,7 +556,7 @@ final class SyntaxHighlightingTests: XCTestCase {
                 in: updatedText
             )
 
-            XCTAssertEqual(expandedRange, NSRange(location: 0, length: updatedText.length))
+            XCTAssertEqual(expandedRange, updatedText.lineRange(for: editedRange))
         }
 
         let text = "one\ntwo\nthree" as NSString

@@ -10,7 +10,6 @@ xcuserdata/
 # SwiftPM
 .build/
 .swiftpm/
-Package.resolved
 
 # Xcode
 DerivedData/

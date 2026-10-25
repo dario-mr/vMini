@@ -139,6 +139,11 @@
 		B00000000000000000000015 /* WorkspaceNavigationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000016 /* WorkspaceNavigationTests.swift */; };
 		B00000000000000000000019 /* MarkdownListContinuation.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000000000000000000001A /* MarkdownListContinuation.swift */; };
 		B0000000000000000000001B /* WebLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000000000000000000001C /* WebLink.swift */; };
+		C00000000000000000000001 /* JavaSyntaxParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = C00000000000000000000002 /* JavaSyntaxParser.swift */; };
+		C00000000000000000000003 /* JavaHighlightingPerformanceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C00000000000000000000004 /* JavaHighlightingPerformanceTests.swift */; };
+		C00000000000000000000005 /* JavaSyntaxHighlightingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C00000000000000000000006 /* JavaSyntaxHighlightingTests.swift */; };
+		C00000000000000000000007 /* SwiftTreeSitter in Frameworks */ = {isa = PBXBuildFile; productRef = C00000000000000000000009 /* SwiftTreeSitter */; };
+		C00000000000000000000008 /* TreeSitterJava in Frameworks */ = {isa = PBXBuildFile; productRef = C0000000000000000000000A /* TreeSitterJava */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -285,6 +290,9 @@
 		B00000000000000000000016 /* WorkspaceNavigationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceNavigationTests.swift; sourceTree = "<group>"; };
 		B0000000000000000000001A /* MarkdownListContinuation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownListContinuation.swift; sourceTree = "<group>"; };
 		B0000000000000000000001C /* WebLink.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebLink.swift; sourceTree = "<group>"; };
+		C00000000000000000000002 /* JavaSyntaxParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JavaSyntaxParser.swift; sourceTree = "<group>"; };
+		C00000000000000000000004 /* JavaHighlightingPerformanceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JavaHighlightingPerformanceTests.swift; sourceTree = "<group>"; };
+		C00000000000000000000006 /* JavaSyntaxHighlightingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JavaSyntaxHighlightingTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -293,6 +301,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				A00000000000000000000016 /* Cocoa.framework in Frameworks */,
+				C00000000000000000000007 /* SwiftTreeSitter in Frameworks */,
+				C00000000000000000000008 /* TreeSitterJava in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -532,6 +542,7 @@
 				A000000000000000000001A1 /* YAMLSyntaxHighlighter.swift */,
 				A0000000000000000000022C /* KotlinSyntaxHighlighter.swift */,
 				A0000000000000000000022E /* JavaSyntaxHighlighter.swift */,
+				C00000000000000000000002 /* JavaSyntaxParser.swift */,
 				A00000000000000000000241 /* SQLSyntaxHighlighter.swift */,
 				A00000000000000000000229 /* DotenvSyntaxHighlighter.swift */,
 				A00000000000000000000141 /* MarkdownSyntaxHighlighter.swift */,
@@ -646,6 +657,8 @@
 				A00000000000000000000233 /* EditorSelectionOccurrenceTests.swift */,
 				A0000000000000000000017C /* EditorFontTests.swift */,
 				A0000000000000000000017E /* SyntaxHighlightingTests.swift */,
+				C00000000000000000000006 /* JavaSyntaxHighlightingTests.swift */,
+				C00000000000000000000004 /* JavaHighlightingPerformanceTests.swift */,
 				A00000000000000000000180 /* ThemeSystemTests.swift */,
 				A00000000000000000000209 /* WorkspaceStateTests.swift */,
 				A0000000000000000000020B /* SessionWorkflowTests.swift */,
@@ -671,6 +684,10 @@
 			dependencies = (
 			);
 			name = vMini;
+			packageProductDependencies = (
+				C00000000000000000000009 /* SwiftTreeSitter */,
+				C0000000000000000000000A /* TreeSitterJava */,
+			);
 			productName = vMini;
 			productReference = A00000000000000000000007 /* vMini.app */;
 			productType = "com.apple.product-type.application";
@@ -722,6 +739,10 @@
 			minimizedProjectReferenceProxies = 1;
 			preferredProjectObjectVersion = 77;
 			productRefGroup = A00000000000000000000034 /* Products */;
+			packageReferences = (
+				C0000000000000000000000B /* SwiftTreeSitter */,
+				C0000000000000000000000C /* tree-sitter-java */,
+			);
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
@@ -826,6 +847,7 @@
 				A000000000000000000001A0 /* YAMLSyntaxHighlighter.swift in Sources */,
 				A0000000000000000000022B /* KotlinSyntaxHighlighter.swift in Sources */,
 				A0000000000000000000022D /* JavaSyntaxHighlighter.swift in Sources */,
+				C00000000000000000000001 /* JavaSyntaxParser.swift in Sources */,
 				A00000000000000000000240 /* SQLSyntaxHighlighter.swift in Sources */,
 				A0000000000000000000022A /* DotenvSyntaxHighlighter.swift in Sources */,
 				A00000000000000000000140 /* MarkdownSyntaxHighlighter.swift in Sources */,
@@ -876,6 +898,8 @@
 				A00000000000000000000232 /* EditorSelectionOccurrenceTests.swift in Sources */,
 				A0000000000000000000017B /* EditorFontTests.swift in Sources */,
 				A0000000000000000000017D /* SyntaxHighlightingTests.swift in Sources */,
+				C00000000000000000000005 /* JavaSyntaxHighlightingTests.swift in Sources */,
+				C00000000000000000000003 /* JavaHighlightingPerformanceTests.swift in Sources */,
 				A0000000000000000000017F /* ThemeSystemTests.swift in Sources */,
 				A00000000000000000000210 /* WorkspaceStateTests.swift in Sources */,
 				A0000000000000000000020A /* SessionWorkflowTests.swift in Sources */,
@@ -1020,6 +1044,32 @@
 			name = Release;
 		};
 /* End XCBuildConfiguration section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+        C0000000000000000000000B /* SwiftTreeSitter */ = {
+            isa = XCRemoteSwiftPackageReference;
+            repositoryURL = "https://github.com/ChimeHQ/SwiftTreeSitter";
+            requirement = { kind = exactVersion; version = 0.25.0; };
+        };
+        C0000000000000000000000C /* tree-sitter-java */ = {
+            isa = XCRemoteSwiftPackageReference;
+            repositoryURL = "https://github.com/tree-sitter/tree-sitter-java";
+            requirement = { kind = exactVersion; version = 0.23.5; };
+        };
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+        C00000000000000000000009 /* SwiftTreeSitter */ = {
+            isa = XCSwiftPackageProductDependency;
+            package = C0000000000000000000000B /* SwiftTreeSitter */;
+            productName = SwiftTreeSitter;
+        };
+        C0000000000000000000000A /* TreeSitterJava */ = {
+            isa = XCSwiftPackageProductDependency;
+            package = C0000000000000000000000C /* tree-sitter-java */;
+            productName = TreeSitterJava;
+        };
+/* End XCSwiftPackageProductDependency section */
 
 /* Begin XCConfigurationList section */
 		A00000000000000000000051 /* Build configuration list for PBXNativeTarget "vMini" */ = {
