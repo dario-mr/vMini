@@ -13,9 +13,7 @@ enum MarkdownAttributeStyler {
         text: NSString,
         fences: [MarkdownSyntaxHighlighter.FenceBlock],
         targetRange: NSRange,
-        baseFont: NSFont,
-        theme: SyntaxTheme,
-        registry: HighlighterRegistry
+        theme: SyntaxTheme
     ) {
         var index = MarkdownFenceCache.firstFenceIndex(intersectingOrAfter: targetRange.location, fences: fences)
         while index < fences.count, fences[index].openingLineRange.location < targetRange.upperBound {
@@ -40,26 +38,6 @@ enum MarkdownAttributeStyler {
                closingRange.intersects(targetRange) {
                 textStorage.applyForegroundColor(theme.color(for: .codeFence), range: closingRange)
             }
-
-            guard let infoString = fence.infoString,
-                  !infoString.isEmpty,
-                  let nestedHighlighter = registry.highlighter(forFenceInfoString: infoString),
-                  nestedHighlighter.language != .markdown else {
-                continue
-            }
-
-            let nestedRange = NSIntersectionRange(fence.contentRange, targetRange)
-            guard nestedRange.length > 0 else {
-                continue
-            }
-
-            nestedHighlighter.highlight(
-                textStorage: textStorage,
-                in: nestedRange,
-                baseFont: baseFont,
-                theme: theme,
-                registry: registry
-            )
         }
     }
 

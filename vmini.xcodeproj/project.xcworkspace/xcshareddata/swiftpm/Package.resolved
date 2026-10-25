@@ -1,6 +1,15 @@
 {
-  "originHash" : "1c4b1e1286dc153e5df024668a5ce79fcfd9b90bdb0fc4b192da8ac3cd3cb561",
+  "originHash" : "957f7a46fa76488e91e4fbb30225b9c1332fe3c1575a1fc41491ea194c7d8038",
   "pins" : [
+    {
+      "identity" : "runestone",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/simonbs/Runestone",
+      "state" : {
+        "revision" : "1884b67110ce35d830a73b34827d3cd1f50418c5",
+        "version" : "0.4.2"
+      }
+    },
     {
       "identity" : "swifttreesitter",
       "kind" : "remoteSourceControl",
@@ -20,12 +29,30 @@
       }
     },
     {
-      "identity" : "tree-sitter-java",
+      "identity" : "tree-sitter-kotlin",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/tree-sitter/tree-sitter-java",
+      "location" : "https://github.com/fwcd/tree-sitter-kotlin",
       "state" : {
-        "revision" : "94703d5a6bed02b98e438d7cad1136c01a60ba2c",
-        "version" : "0.23.5"
+        "revision" : "e1a2d5ad1f61f5740677183cd4125bb071cd2f30",
+        "version" : "0.3.8"
+      }
+    },
+    {
+      "identity" : "tree-sitter-ssh-config",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/tree-sitter-grammars/tree-sitter-ssh-config",
+      "state" : {
+        "revision" : "b7db80ee4c8a29543904f14fb3ae3eb24f047925",
+        "version" : "0.5.0"
+      }
+    },
+    {
+      "identity" : "treesitterlanguages",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/simonbs/TreeSitterLanguages",
+      "state" : {
+        "revision" : "15cf3a9ec3ab95e0d058b7df9f35619123c9e02d",
+        "version" : "0.1.10"
       }
     }
   ],

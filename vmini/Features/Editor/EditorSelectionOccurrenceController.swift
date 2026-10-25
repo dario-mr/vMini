@@ -19,6 +19,16 @@ final class EditorSelectionOccurrenceController {
         pendingRefreshTask?.cancel()
     }
 
+    func handleTextStorageDidEdit() {
+        pendingRefreshTask?.cancel()
+        // Layout still has the old glyph ranges inside NSTextStorage's editing callback.
+        pendingRefreshTask = Task { @MainActor [weak self] in
+            await Task.yield()
+            guard !Task.isCancelled else { return }
+            self?.refresh()
+        }
+    }
+
     func refresh() {
         pendingRefreshTask?.cancel()
         clearHighlights()
