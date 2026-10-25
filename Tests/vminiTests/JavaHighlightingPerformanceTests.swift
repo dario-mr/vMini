@@ -6,14 +6,16 @@ import XCTest
 final class JavaHighlightingPerformanceTests: XCTestCase {
     func testReleaseJavaHighlighting() async throws {
         guard ProcessInfo.processInfo.environment["VMINI_RUN_PERFORMANCE_BENCHMARK"] == "1" else {
-            throw XCTSkip("Run scripts/benchmark-performance.sh to measure highlighting")
+            throw XCTSkip("Run scripts/benchmark-performance.sh to measure the Release corpus")
         }
+
         let theme = ThemeCatalog.palette(for: .default).syntaxTheme
         let font = EditorFontResolver.font(for: .fallback, size: 13)
         for methodCount in [100, 2_000] {
             let text = "class Example {\n" + (0..<methodCount).map {
                 "    // Method \($0): Unicode 😀\n    String value\($0)() { return \"hello \($0)\"; }\n"
             }.joined() + "}\n"
+            let returnRange = (text as NSString).range(of: "return")
             var fullSamples: [Double] = []
             for sample in 0..<6 {
                 let storage = NSTextStorage(string: text)
@@ -21,63 +23,58 @@ final class JavaHighlightingPerformanceTests: XCTestCase {
                 JavaSyntaxHighlighter().highlight(
                     textStorage: storage, in: nil, baseFont: font, theme: theme, registry: .shared
                 )
-                if sample > 0 { fullSamples.append(milliseconds(since: start)) }
+                if sample > 0 { fullSamples.append(PerformanceBenchmark.elapsedMilliseconds(since: start)) }
                 XCTAssertEqual(storage.string, text)
+                let actualColor = storage.attribute(.foregroundColor, at: returnRange.location, effectiveRange: nil) as? NSColor
+                XCTAssertTrue(actualColor?.isEqual(theme.keyword) == true, "Expected a Java return keyword color")
             }
+            PerformanceBenchmark.emit(
+                "full.java.\(methodCount)-methods", classification: "warm-full-document",
+                boundary: "highlight-call", inputUTF16Length: (text as NSString).length,
+                samples: fullSamples
+            )
 
             let storage = NSTextStorage(string: text)
-            let controller = EditorSyntaxHighlightController(
-                highlighterRegistry: .shared, textStorageProvider: { storage },
-                syntaxThemeProvider: { theme }, baseFontProvider: { font }
+            let controller = PerformanceBenchmark.makeController(storage: storage, language: .java)
+            let token = try PerformanceBenchmark.range(of: "return", in: text, scenarioID: "edit.java.\(methodCount)-methods")
+            try await PerformanceBenchmark.waitForColor(
+                theme.keyword, at: token.location, storage: storage,
+                scenarioID: "edit.java.\(methodCount)-methods", revision: 0, expectation: "return keyword"
             )
-            controller.refresh(language: .java)
-            let keyword = (text as NSString).range(of: "return", options: .backwards)
-            try await waitForColor(theme.keyword, at: keyword.location, in: storage)
-            var editSamples: [Double] = []
-            for sample in 0..<21 {
-                let replacement = sample.isMultiple(of: 2) ? "X" : ""
-                let range = NSRange(location: NSMaxRange(keyword), length: replacement.isEmpty ? 1 : 0)
-                let edit = SyntaxHighlightEditContext(
-                    replacementRange: range, replacementString: replacement,
-                    replacedText: (storage.string as NSString).substring(with: range)
-                )
+            var samples: [Double] = []
+            var isComment = false
+            for sample in 0..<(PerformanceBenchmark.warmSampleCount + 3) {
+                let nextIsComment = !isComment
+                let replacement = nextIsComment ? "//" : "re"
+                let expected = nextIsComment ? theme.comment : theme.keyword
                 let start = DispatchTime.now().uptimeNanoseconds
-                storage.replaceCharacters(in: range, with: replacement)
-                controller.handleProcessedEditing(
-                    editedMask: .editedCharacters,
-                    editedRange: NSRange(location: range.location, length: replacement.utf16.count),
-                    language: .java, editContext: edit
+                let submission = try PerformanceBenchmark.submit(
+                    "edit.java.\(methodCount)-methods", revision: sample + 1,
+                    range: NSRange(location: token.location, length: 2), replacement: replacement,
+                    storage: storage, controller: controller, language: .java
                 )
-                try await waitForColor(
-                    sample.isMultiple(of: 2) ? theme.plainText : theme.keyword,
-                    at: keyword.location, in: storage
+                try await PerformanceBenchmark.waitForChangedColor(
+                    expected, at: token.location + 2, storage: storage,
+                    scenarioID: "edit.java.\(methodCount)-methods", revision: sample + 1,
+                    expectation: replacement == "//" ? "line comment" : "return keyword"
                 )
-                if sample > 0 { editSamples.append(milliseconds(since: start)) }
+                if sample >= 3 { samples.append(PerformanceBenchmark.elapsedMilliseconds(since: start)) }
+                guard storage.string == submission.expectedText else {
+                    throw PerformanceBenchmark.Failure.incorrectText("edit.java.\(methodCount)-methods", sample + 1)
+                }
+                isComment = nextIsComment
+                let active = expected.isEqual(theme.keyword)
+                try PerformanceBenchmark.check(
+                    expected, at: token.location, in: storage,
+                    scenarioID: "edit.java.\(methodCount)-methods", revision: sample + 1,
+                    expectation: active ? "return keyword" : "line comment"
+                )
             }
-            print(String(
-                format: "PERF_JAVA utf16=%d full_median_ms=%.3f edit_median_ms=%.3f edit_p95_ms=%.3f",
-                (text as NSString).length, median(fullSamples), median(editSamples),
-                editSamples.sorted()[Int(ceil(Double(editSamples.count) * 0.95)) - 1]
-            ))
+            PerformanceBenchmark.emit(
+                "edit.java.\(methodCount)-methods", classification: "warm-edit",
+                boundary: "edit-to-attribute", inputUTF16Length: (text as NSString).length,
+                samples: samples, includeP95: true
+            )
         }
-    }
-
-    private func waitForColor(_ color: NSColor, at location: Int, in storage: NSTextStorage) async throws {
-        let deadline = DispatchTime.now().uptimeNanoseconds + 5_000_000_000
-        while storage.attribute(.foregroundColor, at: location, effectiveRange: nil) as? NSColor != color {
-            guard DispatchTime.now().uptimeNanoseconds < deadline else {
-                XCTFail("Highlighting did not finish")
-                throw CancellationError()
-            }
-            try await Task.sleep(nanoseconds: 100_000)
-        }
-    }
-
-    private func milliseconds(since start: UInt64) -> Double {
-        Double(DispatchTime.now().uptimeNanoseconds - start) / 1_000_000
-    }
-
-    private func median(_ samples: [Double]) -> Double {
-        samples.sorted()[samples.count / 2]
     }
 }

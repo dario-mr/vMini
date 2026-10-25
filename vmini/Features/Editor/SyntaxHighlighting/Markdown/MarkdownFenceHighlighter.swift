@@ -1,4 +1,5 @@
 import Foundation
+import OSLog
 
 enum MarkdownFenceHighlighter {
     struct Highlight: Sendable {
@@ -10,7 +11,8 @@ enum MarkdownFenceHighlighter {
         in source: String,
         targetRange: NSRange,
         fences: [MarkdownSyntaxHighlighter.FenceBlock],
-        isCancelled: @Sendable () -> Bool = { false }
+        isCancelled: @Sendable () -> Bool = { false },
+        signpostID: OSSignpostID? = nil
     ) -> [Highlight]? {
         let text = source as NSString
         var highlights: [Highlight] = []
@@ -26,9 +28,11 @@ enum MarkdownFenceHighlighter {
             let nestedRange = NSIntersectionRange(contentRange, targetRange)
             guard nestedRange.length > 0 else { continue }
             let relativeRange = NSRange(location: nestedRange.location - contentRange.location, length: nestedRange.length)
-            let work = TreeSitterSyntaxParser(language: language).highlight(
-                text: text.substring(with: contentRange), in: relativeRange
-            )
+            let work = AppPerformanceProfiler.measure("TreeSitterParse", id: signpostID) {
+                TreeSitterSyntaxParser(language: language).highlight(
+                    text: text.substring(with: contentRange), in: relativeRange
+                )
+            }
             highlights.append(Highlight(
                 offset: contentRange.location,
                 work: TreeSitterHighlightWork(range: relativeRange, tokens: work.tokens)

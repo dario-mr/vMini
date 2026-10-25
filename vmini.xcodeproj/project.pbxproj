@@ -118,6 +118,7 @@
 		A00000000000000000000179 /* EditorCommandTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000017A /* EditorCommandTests.swift */; };
 		A0000000000000000000017B /* EditorFontTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000017C /* EditorFontTests.swift */; };
 		A0000000000000000000017D /* SyntaxHighlightingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000017E /* SyntaxHighlightingTests.swift */; };
+		F3C7A0B1D9E2456A8B0C0001 /* SyntaxHighlightingPerformanceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3C7A0B1D9E2456A8B0C0002 /* SyntaxHighlightingPerformanceTests.swift */; };
 		A0000000000000000000017F /* ThemeSystemTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000180 /* ThemeSystemTests.swift */; };
 		A00000000000000000000210 /* WorkspaceStateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000209 /* WorkspaceStateTests.swift */; };
 		A0000000000000000000020A /* SessionWorkflowTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000020B /* SessionWorkflowTests.swift */; };
@@ -141,6 +142,8 @@
 		B0000000000000000000001B /* WebLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000000000000000000001C /* WebLink.swift */; };
 		C00000000000000000000003 /* JavaHighlightingPerformanceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C00000000000000000000004 /* JavaHighlightingPerformanceTests.swift */; };
 		C00000000000000000000005 /* JavaSyntaxHighlightingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C00000000000000000000006 /* JavaSyntaxHighlightingTests.swift */; };
+		E00000000000000000000001 /* EditorEditingPerformanceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E00000000000000000000002 /* EditorEditingPerformanceTests.swift */; };
+		E00000000000000000000003 /* PerformanceBenchmark.swift in Sources */ = {isa = PBXBuildFile; fileRef = E00000000000000000000004 /* PerformanceBenchmark.swift */; };
 		C00000000000000000000007 /* SwiftTreeSitter in Frameworks */ = {isa = PBXBuildFile; productRef = C00000000000000000000009 /* SwiftTreeSitter */; };
 		C00000000000000000000008 /* TreeSitterJava in Frameworks */ = {isa = PBXBuildFile; productRef = C0000000000000000000000A /* TreeSitterJava */; };
 		C00000000000000000000010 /* TreeSitterSyntaxGrammar.swift in Sources */ = {isa = PBXBuildFile; fileRef = C00000000000000000000013 /* TreeSitterSyntaxGrammar.swift */; };
@@ -179,6 +182,7 @@
 		A0000000000000000000017A /* EditorCommandTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorCommandTests.swift; sourceTree = "<group>"; };
 		A0000000000000000000017C /* EditorFontTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorFontTests.swift; sourceTree = "<group>"; };
 		A0000000000000000000017E /* SyntaxHighlightingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyntaxHighlightingTests.swift; sourceTree = "<group>"; };
+		F3C7A0B1D9E2456A8B0C0002 /* SyntaxHighlightingPerformanceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyntaxHighlightingPerformanceTests.swift; sourceTree = "<group>"; };
 		A00000000000000000000180 /* ThemeSystemTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeSystemTests.swift; sourceTree = "<group>"; };
 		A00000000000000000000209 /* WorkspaceStateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceStateTests.swift; sourceTree = "<group>"; };
 		A0000000000000000000020B /* SessionWorkflowTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionWorkflowTests.swift; sourceTree = "<group>"; };
@@ -307,6 +311,8 @@
 		B0000000000000000000001C /* WebLink.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebLink.swift; sourceTree = "<group>"; };
 		C00000000000000000000004 /* JavaHighlightingPerformanceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JavaHighlightingPerformanceTests.swift; sourceTree = "<group>"; };
 		C00000000000000000000006 /* JavaSyntaxHighlightingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JavaSyntaxHighlightingTests.swift; sourceTree = "<group>"; };
+		E00000000000000000000002 /* EditorEditingPerformanceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorEditingPerformanceTests.swift; sourceTree = "<group>"; };
+		E00000000000000000000004 /* PerformanceBenchmark.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PerformanceBenchmark.swift; sourceTree = "<group>"; };
 		C00000000000000000000013 /* TreeSitterSyntaxGrammar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TreeSitterSyntaxGrammar.swift; sourceTree = "<group>"; };
 		C00000000000000000000014 /* TreeSitterSyntaxParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TreeSitterSyntaxParser.swift; sourceTree = "<group>"; };
 		C00000000000000000000015 /* TreeSitterSyntaxHighlighter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TreeSitterSyntaxHighlighter.swift; sourceTree = "<group>"; };
@@ -691,9 +697,12 @@
 				A00000000000000000000233 /* EditorSelectionOccurrenceTests.swift */,
 				A0000000000000000000017C /* EditorFontTests.swift */,
 				A0000000000000000000017E /* SyntaxHighlightingTests.swift */,
+				F3C7A0B1D9E2456A8B0C0002 /* SyntaxHighlightingPerformanceTests.swift */,
 				C00000000000000000000006 /* JavaSyntaxHighlightingTests.swift */,
 				D00000000000000000000006 /* TreeSitterSyntaxRegressionTests.swift */,
 				C00000000000000000000004 /* JavaHighlightingPerformanceTests.swift */,
+				E00000000000000000000002 /* EditorEditingPerformanceTests.swift */,
+				E00000000000000000000004 /* PerformanceBenchmark.swift */,
 				A00000000000000000000180 /* ThemeSystemTests.swift */,
 				A00000000000000000000209 /* WorkspaceStateTests.swift */,
 				A0000000000000000000020B /* SessionWorkflowTests.swift */,
@@ -949,9 +958,12 @@
 				A00000000000000000000232 /* EditorSelectionOccurrenceTests.swift in Sources */,
 				A0000000000000000000017B /* EditorFontTests.swift in Sources */,
 				A0000000000000000000017D /* SyntaxHighlightingTests.swift in Sources */,
+				F3C7A0B1D9E2456A8B0C0001 /* SyntaxHighlightingPerformanceTests.swift in Sources */,
 				C00000000000000000000005 /* JavaSyntaxHighlightingTests.swift in Sources */,
 				D00000000000000000000005 /* TreeSitterSyntaxRegressionTests.swift in Sources */,
 				C00000000000000000000003 /* JavaHighlightingPerformanceTests.swift in Sources */,
+				E00000000000000000000001 /* EditorEditingPerformanceTests.swift in Sources */,
+				E00000000000000000000003 /* PerformanceBenchmark.swift in Sources */,
 				A0000000000000000000017F /* ThemeSystemTests.swift in Sources */,
 				A00000000000000000000210 /* WorkspaceStateTests.swift in Sources */,
 				A0000000000000000000020A /* SessionWorkflowTests.swift in Sources */,
