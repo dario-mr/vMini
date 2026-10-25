@@ -151,15 +151,19 @@ final class LineNumberRulerView: NSView {
 
         let selectedLineStart = selectedLineStart()
         var glyphIndex = glyphRange.location
-        while glyphIndex < NSMaxRange(glyphRange) {
+        while glyphIndex < NSMaxRange(glyphRange), glyphIndex < layoutManager.numberOfGlyphs {
             var effectiveRange = NSRange()
             let lineRect = layoutManager.lineFragmentRect(
                 forGlyphAt: glyphIndex,
                 effectiveRange: &effectiveRange,
-                withoutAdditionalLayout: true
+                withoutAdditionalLayout: false
             )
+            guard effectiveRange.location != NSNotFound, NSMaxRange(effectiveRange) > glyphIndex else { break }
             let characterIndex = layoutManager.characterIndexForGlyph(at: glyphIndex)
-            let lineStart = (textView.string as NSString).lineRange(
+            let text = textView.string as NSString
+            // Undo can leave glyph positions outside the shortened text while layout catches up.
+            guard characterIndex >= 0, characterIndex < text.length else { break }
+            let lineStart = text.lineRange(
                 for: NSRange(location: characterIndex, length: 0)
             ).location
 

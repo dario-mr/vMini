@@ -421,6 +421,8 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
 
     private func refreshSyntaxHighlighting() {
         guard isViewLoaded else { return }
+        // Java and Markdown font edits need stable glyph positions while scrolled, including fenced code.
+        textView.layoutManager?.allowsNonContiguousLayout = syntaxLanguage != .java && syntaxLanguage != .markdown
         syntaxHighlightController.refresh(language: syntaxLanguage)
         selectionOccurrenceController.refresh()
         bracketHighlightController.refresh()

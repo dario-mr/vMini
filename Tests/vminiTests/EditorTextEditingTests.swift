@@ -29,6 +29,19 @@ private final class UndoableTextView: NSTextView {
     }
 }
 
+private final class StaleGlyphLayoutManager: NSLayoutManager {
+    var staleCharacterIndex: Int?
+    private(set) var staleGlyphQueries = 0
+
+    override func characterIndexForGlyph(at glyphIndex: Int) -> Int {
+        if let staleCharacterIndex {
+            staleGlyphQueries += 1
+            return staleCharacterIndex
+        }
+        return super.characterIndexForGlyph(at: glyphIndex)
+    }
+}
+
 final class EditorTextEditingTests: XCTestCase {
     func testCurrentCursorPositionUsesOneBasedLineAndColumn() {
         let text = "alpha\nbeta\ngamma" as NSString
@@ -109,6 +122,41 @@ final class EditorTextEditingTests: XCTestCase {
         textView.undoManager?.redo()
         XCTAssertEqual(textView.string, "a")
         XCTAssertTrue(ruler.hasUnsavedChanges(onLine: 1))
+    }
+
+    @MainActor
+    func testLineNumberRulerIgnoresStaleGlyphPositionsAfterUndo() throws {
+        let storage = NSTextStorage()
+        let layoutManager = StaleGlyphLayoutManager()
+        let container = NSTextContainer(size: NSSize(width: 600, height: CGFloat.greatestFiniteMagnitude))
+        storage.addLayoutManager(layoutManager)
+        layoutManager.addTextContainer(container)
+        let textView = UndoableTextView(frame: NSRect(x: 0, y: 0, width: 600, height: 200), textContainer: container)
+        textView.string = "class Example {\n}\n"
+        let ruler = LineNumberRulerView(textView: textView)
+        ruler.frame = NSRect(x: 0, y: 0, width: 42, height: 200)
+        ruler.resetLineCache()
+        let delegate = LineNumberRulerStorageDelegate(ruler: ruler)
+        storage.delegate = delegate
+
+        textView.insertText("    int value = 1;\n", replacementRange: NSRange(location: 16, length: 0))
+        layoutManager.ensureLayout(for: container)
+        let oldLength = storage.length
+        let undoManager = try XCTUnwrap(textView.undoManager)
+        XCTAssertTrue(undoManager.canUndo)
+        undoManager.undo()
+        XCTAssertEqual(textView.string, "class Example {\n}\n")
+
+        for staleIndex in [oldLength, NSNotFound] {
+            layoutManager.staleCharacterIndex = staleIndex
+            let queriesBeforeDrawing = layoutManager.staleGlyphQueries
+            let image = NSImage(size: ruler.bounds.size, flipped: true) { _ in
+                ruler.draw(ruler.bounds)
+                return true
+            }
+            XCTAssertNotNil(image.tiffRepresentation)
+            XCTAssertGreaterThan(layoutManager.staleGlyphQueries, queriesBeforeDrawing)
+        }
     }
 
     @MainActor

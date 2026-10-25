@@ -22,6 +22,9 @@ final class EditorSyntaxHighlightController {
     private var markdownFenceCache: MarkdownSyntaxHighlighter.FenceCache?
     private var markdownHighlightWorkTask: Task<MarkdownSyntaxHighlighter.HighlightWork?, Never>?
     private var textRevision: UInt64 = 0
+    private var javaSession: JavaSyntaxSession?
+    private var javaPendingEdits: [SyntaxHighlightEditContext]? = []
+    private var javaSubmittedRevision: UInt64 = 0
 
     private enum PendingHighlight {
         case none
@@ -44,7 +47,7 @@ final class EditorSyntaxHighlightController {
     }
 
     func refresh(language: SyntaxLanguage) {
-        scheduleHighlightingRefresh(around: nil, language: language, debounceNanoseconds: 0)
+        scheduleHighlightingRefresh(around: nil, language: language)
     }
 
     func handleProcessedEditing(
@@ -61,20 +64,26 @@ final class EditorSyntaxHighlightController {
         scheduleHighlightingRefresh(
             around: editedRange,
             language: language,
-            editContext: editContext,
-            debounceNanoseconds: 75_000_000
+            editContext: editContext
         )
     }
 
     private func scheduleHighlightingRefresh(
         around editedRange: NSRange?,
         language: SyntaxLanguage,
-        editContext: SyntaxHighlightEditContext? = nil,
-        debounceNanoseconds: UInt64
+        editContext: SyntaxHighlightEditContext? = nil
     ) {
         markdownHighlightWorkTask?.cancel()
         markdownHighlightWorkTask = nil
         textRevision &+= 1
+        if language == .java {
+            if let editContext { javaPendingEdits?.append(editContext) }
+            else { javaPendingEdits = nil }
+        } else {
+            javaSession = nil
+            javaPendingEdits = []
+            javaSubmittedRevision = 0
+        }
         let textLength = textStorageProvider()?.length ?? 0
         if pendingLanguage != language, !isPendingHighlightEmpty {
             pendingHighlight = .full
@@ -111,11 +120,8 @@ final class EditorSyntaxHighlightController {
         pendingRefreshTask = Task { @MainActor [weak self] in
             guard let self else { return }
 
-            if debounceNanoseconds > 0 {
-                try? await Task.sleep(nanoseconds: debounceNanoseconds)
-            } else {
-                await Task.yield()
-            }
+            // Leave the text-storage editing callback before changing attributes.
+            await Task.yield()
 
             guard !Task.isCancelled else { return }
 
@@ -147,12 +153,28 @@ final class EditorSyntaxHighlightController {
 
         let highlighter = highlighterRegistry.highlighter(for: language)
         let fullRange = NSRange(location: 0, length: textStorage.length)
-        let targetRange = (highlightRange ?? fullRange).clamped(toLength: textStorage.length)
+        var targetRange = (highlightRange ?? fullRange).clamped(toLength: textStorage.length)
 
         guard targetRange.length > 0 else { return }
 
         let syntaxTheme = syntaxThemeProvider()
         let baseFont = baseFontProvider()
+        var javaWork: JavaHighlightWork?
+        if highlighter is JavaSyntaxHighlighter {
+            let session = javaSession ?? JavaSyntaxSession()
+            javaSession = session
+            let edits = javaPendingEdits
+            let baseRevision = javaSubmittedRevision
+            javaPendingEdits = []
+            javaSubmittedRevision = revision
+            guard let result = await session.highlight(
+                text: textStorage.string, range: highlightRange, edits: edits,
+                baseRevision: baseRevision, revision: revision
+            ) else { return }
+            guard revision == textRevision, !Task.isCancelled else { return }
+            javaWork = result
+            targetRange = result.range
+        }
         var markdownLineStyles: [MarkdownSyntaxHighlighter.LineStyle]?
         if let markdownHighlighter = highlighter as? MarkdownSyntaxHighlighter {
             let snapshot = textStorage.string
@@ -172,7 +194,9 @@ final class EditorSyntaxHighlightController {
         textStorage.applyForegroundColor(syntaxTheme.plainText, range: targetRange)
         textStorage.applyBackgroundColor(nil, range: targetRange)
         textStorage.removeAttribute(.underlineStyle, range: targetRange)
-        if let markdownHighlighter = highlighter as? MarkdownSyntaxHighlighter,
+        if let javaHighlighter = highlighter as? JavaSyntaxHighlighter, let javaWork {
+            javaHighlighter.apply(javaWork, to: textStorage, theme: syntaxTheme)
+        } else if let markdownHighlighter = highlighter as? MarkdownSyntaxHighlighter,
            let fenceCache = markdownFenceCache,
            let markdownLineStyles {
             markdownHighlighter.highlight(
