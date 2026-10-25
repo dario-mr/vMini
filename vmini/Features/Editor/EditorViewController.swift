@@ -259,7 +259,7 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
         }
 
         pendingSyntaxHighlightEditContext = nil
-        selectionOccurrenceController.refresh()
+        selectionOccurrenceController.handleTextStorageDidEdit()
         viewportController.handleTextStorageDidEdit(
             textStorage,
             editedRange: editedRange,

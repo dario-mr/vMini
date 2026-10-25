@@ -17,14 +17,14 @@ final class EditorSyntaxHighlightController {
     private var pendingHighlight: PendingHighlight = .none
     private var pendingTextLength: Int?
     private var pendingLanguage: SyntaxLanguage = .plaintext
-    private var bashMultilineTokenRanges: [NSRange]?
-    private var bashCacheTextLength: Int?
     private var markdownFenceCache: MarkdownSyntaxHighlighter.FenceCache?
     private var markdownHighlightWorkTask: Task<MarkdownSyntaxHighlighter.HighlightWork?, Never>?
     private var textRevision: UInt64 = 0
-    private var javaSession: JavaSyntaxSession?
-    private var javaPendingEdits: [SyntaxHighlightEditContext]? = []
-    private var javaSubmittedRevision: UInt64 = 0
+    private var treeSitterSession: TreeSitterSyntaxSession?
+    private var treeSitterSessionLanguage: SyntaxLanguage?
+    private var treeSitterPendingEdits: [SyntaxHighlightEditContext]? = []
+    private var treeSitterSubmittedRevision: UInt64 = 0
+    private var treeSitterAppliedRevision: UInt64 = 0
 
     private enum PendingHighlight {
         case none
@@ -60,7 +60,6 @@ final class EditorSyntaxHighlightController {
             return
         }
 
-        applyTypingAttributes(for: editContext)
         scheduleHighlightingRefresh(
             around: editedRange,
             language: language,
@@ -76,13 +75,22 @@ final class EditorSyntaxHighlightController {
         markdownHighlightWorkTask?.cancel()
         markdownHighlightWorkTask = nil
         textRevision &+= 1
-        if language == .java {
-            if let editContext { javaPendingEdits?.append(editContext) }
-            else { javaPendingEdits = nil }
+        if TreeSitterSyntaxGrammar.name(for: language) != nil {
+            if treeSitterSessionLanguage != language {
+                treeSitterSession = nil
+                treeSitterSessionLanguage = language
+                treeSitterPendingEdits = []
+                treeSitterSubmittedRevision = 0
+                treeSitterAppliedRevision = 0
+            }
+            if let editContext { treeSitterPendingEdits?.append(editContext) }
+            else { treeSitterPendingEdits = nil }
         } else {
-            javaSession = nil
-            javaPendingEdits = []
-            javaSubmittedRevision = 0
+            treeSitterSession = nil
+            treeSitterSessionLanguage = nil
+            treeSitterPendingEdits = []
+            treeSitterSubmittedRevision = 0
+            treeSitterAppliedRevision = 0
         }
         let textLength = textStorageProvider()?.length ?? 0
         if pendingLanguage != language, !isPendingHighlightEmpty {
@@ -93,10 +101,6 @@ final class EditorSyntaxHighlightController {
         }
 
         pendingLanguage = language
-        if language != .bash {
-            bashMultilineTokenRanges = nil
-            bashCacheTextLength = nil
-        }
         if language != .markdown {
             markdownFenceCache = nil
         }
@@ -123,7 +127,9 @@ final class EditorSyntaxHighlightController {
             // Leave the text-storage editing callback before changing attributes.
             await Task.yield()
 
-            guard !Task.isCancelled else { return }
+            guard scheduledRevision == self.textRevision, !Task.isCancelled else { return }
+
+            self.applyTypingAttributes(for: editContext)
 
             let target = self.pendingHighlight
             let targetLanguage = self.pendingLanguage
@@ -159,23 +165,24 @@ final class EditorSyntaxHighlightController {
 
         let syntaxTheme = syntaxThemeProvider()
         let baseFont = baseFontProvider()
-        var javaWork: JavaHighlightWork?
-        if highlighter is JavaSyntaxHighlighter {
-            let session = javaSession ?? JavaSyntaxSession()
-            javaSession = session
-            let edits = javaPendingEdits
-            let baseRevision = javaSubmittedRevision
-            javaPendingEdits = []
-            javaSubmittedRevision = revision
+        var treeSitterWork: TreeSitterHighlightWork?
+        if TreeSitterSyntaxGrammar.name(for: language) != nil {
+            let session = treeSitterSession ?? TreeSitterSyntaxSession(language: language)
+            treeSitterSession = session
+            treeSitterSessionLanguage = language
+            let edits = treeSitterPendingEdits
+            let baseRevision = treeSitterSubmittedRevision
+            treeSitterPendingEdits = []
+            treeSitterSubmittedRevision = revision
             guard let result = await session.highlight(
                 text: textStorage.string, range: highlightRange, edits: edits,
-                baseRevision: baseRevision, revision: revision
+                baseRevision: baseRevision, appliedRevision: treeSitterAppliedRevision, revision: revision
             ) else { return }
             guard revision == textRevision, !Task.isCancelled else { return }
-            javaWork = result
+            treeSitterWork = result
             targetRange = result.range
         }
-        var markdownLineStyles: [MarkdownSyntaxHighlighter.LineStyle]?
+        var markdownWork: MarkdownSyntaxHighlighter.HighlightWork?
         if let markdownHighlighter = highlighter as? MarkdownSyntaxHighlighter {
             let snapshot = textStorage.string
             let cachedFenceCache = markdownFenceCache.flatMap { $0.textLength == textStorage.length ? $0 : nil }
@@ -185,7 +192,7 @@ final class EditorSyntaxHighlightController {
             guard revision == textRevision, !Task.isCancelled else { return }
             markdownHighlightWorkTask = nil
             markdownFenceCache = result.fenceCache
-            markdownLineStyles = result.lineStyles
+            markdownWork = result
         }
 
         isApplyingHighlighting = true
@@ -194,11 +201,9 @@ final class EditorSyntaxHighlightController {
         textStorage.applyForegroundColor(syntaxTheme.plainText, range: targetRange)
         textStorage.applyBackgroundColor(nil, range: targetRange)
         textStorage.removeAttribute(.underlineStyle, range: targetRange)
-        if let javaHighlighter = highlighter as? JavaSyntaxHighlighter, let javaWork {
-            javaHighlighter.apply(javaWork, to: textStorage, theme: syntaxTheme)
-        } else if let markdownHighlighter = highlighter as? MarkdownSyntaxHighlighter,
+        if let markdownHighlighter = highlighter as? MarkdownSyntaxHighlighter,
            let fenceCache = markdownFenceCache,
-           let markdownLineStyles {
+           let markdownWork {
             markdownHighlighter.highlight(
                 textStorage: textStorage,
                 in: targetRange,
@@ -206,20 +211,12 @@ final class EditorSyntaxHighlightController {
                 theme: syntaxTheme,
                 registry: highlighterRegistry,
                 fenceCache: fenceCache,
-                lineStyles: markdownLineStyles
+                lineStyles: markdownWork.lineStyles,
+                fenceHighlights: markdownWork.fenceHighlights,
+                treeSitterWork: treeSitterWork
             )
-        } else if let bashHighlighter = highlighter as? BashSyntaxHighlighter {
-            bashHighlighter.highlight(
-                textStorage: textStorage,
-                in: targetRange,
-                baseFont: baseFont,
-                theme: syntaxTheme,
-                registry: highlighterRegistry,
-                onFullTextScan: { [weak self] ranges in
-                    self?.bashMultilineTokenRanges = ranges
-                    self?.bashCacheTextLength = textStorage.length
-                }
-            )
+        } else if let treeSitterWork {
+            TreeSitterSyntaxHighlighter.apply(treeSitterWork, to: textStorage, theme: syntaxTheme)
         } else {
             highlighter.highlight(
                 textStorage: textStorage,
@@ -237,6 +234,7 @@ final class EditorSyntaxHighlightController {
         }
         textStorage.endEditing()
         isApplyingHighlighting = false
+        if treeSitterWork != nil { treeSitterAppliedRevision = revision }
     }
 
     nonisolated private static func makeMarkdownHighlightWork(
@@ -254,8 +252,13 @@ final class EditorSyntaxHighlightController {
                 targetRange: targetRange,
                 fences: fenceCache.blocks,
                 isCancelled: { Task.isCancelled }
+            ), let fenceHighlights = MarkdownFenceHighlighter.highlights(
+                in: snapshot, targetRange: targetRange, fences: fenceCache.blocks,
+                isCancelled: { Task.isCancelled }
             ) else { return nil }
-            return MarkdownSyntaxHighlighter.HighlightWork(fenceCache: fenceCache, lineStyles: lineStyles)
+            return MarkdownSyntaxHighlighter.HighlightWork(
+                fenceCache: fenceCache, lineStyles: lineStyles, fenceHighlights: fenceHighlights
+            )
         }
     }
 
@@ -285,9 +288,13 @@ final class EditorSyntaxHighlightController {
         }
 
         let attributes = textStorage.attributes(at: adjacentLocation, effectiveRange: nil)
+        let insertedWhitespace = editContext.replacementString.first?.isWhitespace == true
+        let insertedColor = textStorage.attribute(.foregroundColor, at: insertedRange.location, effectiveRange: nil) as? NSColor
+        let keepPlainWhitespace = insertedWhitespace && insertedColor?.isEqual(syntaxThemeProvider().plainText) == true
         isApplyingHighlighting = true
         textStorage.beginEditing()
         for key: NSAttributedString.Key in [.foregroundColor, .font, .backgroundColor] {
+            if key == .foregroundColor, keepPlainWhitespace { continue }
             if let value = attributes[key] {
                 textStorage.addAttribute(key, value: value, range: insertedRange)
             } else {
@@ -318,28 +325,6 @@ final class EditorSyntaxHighlightController {
             }
             self.markdownFenceCache = update.cache
             return update.highlightRange.clamped(toLength: text.length)
-        }
-
-        if let bashHighlighter = highlighter as? BashSyntaxHighlighter {
-            if let editContext,
-               let cachedRanges = bashMultilineTokenRanges,
-               let cachedTextLength = bashCacheTextLength,
-               let updatedRanges = bashHighlighter.updatedMultilineTokenRanges(
-                   cachedRanges,
-                   cachedTextLength: cachedTextLength,
-                   editContext: editContext,
-                   in: text
-                ) {
-                bashMultilineTokenRanges = updatedRanges
-            } else {
-                bashMultilineTokenRanges = bashHighlighter.multilineTokenRanges(in: text as String)
-            }
-            bashCacheTextLength = text.length
-            return bashHighlighter.expandedHighlightRange(
-                for: editedRange,
-                cachedMultilineTokenRanges: bashMultilineTokenRanges ?? [],
-                in: text
-            ).clamped(toLength: text.length)
         }
 
         return highlighter.expandedHighlightRange(

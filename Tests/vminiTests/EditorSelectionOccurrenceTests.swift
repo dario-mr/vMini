@@ -176,6 +176,54 @@ final class EditorSelectionOccurrenceTests: XCTestCase {
         XCTAssertNil(background(in: textView, at: 0))
     }
 
+    func testReplacingSelectedMarkdownListWithNewlineCanDraw() async throws {
+        let editor = EditorViewController()
+        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 1100, height: 800),
+                              styleMask: [.titled, .resizable], backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        window.contentViewController = editor
+        defer { window.close() }
+        editor.syntaxLanguage = .markdown
+        let prefix = "# Notes\n\n## TODO\n" + String(repeating: "- A task with `inline code`\n", count: 10)
+            + "\n## Query\n\n```sql\nSELECT * FROM items\nWHERE id = 42;\n```\n"
+        let selected = "1. ddd\n2. dasdsa\n3. dsada\n4. safdd"
+        editor.text = prefix + selected
+        editor.view.layoutSubtreeIfNeeded()
+        let textView = try XCTUnwrap(editor.view.subviews.compactMap { ($0 as? NSScrollView)?.documentView as? NSTextView }.first)
+        window.orderFront(nil)
+        window.makeFirstResponder(textView)
+        try await Task.sleep(nanoseconds: 200_000_000)
+        let range = NSRange(location: prefix.utf16.count, length: selected.utf16.count)
+        textView.setSelectedRange(range)
+        textView.scrollRangeToVisible(range)
+        try await waitForHighlight(in: textView, at: range.location)
+        window.displayIfNeeded()
+        textView.insertNewline(nil)
+        XCTAssertEqual(editor.text, prefix + "\n")
+        window.displayIfNeeded()
+        let image = NSImage(size: textView.bounds.size, flipped: true) { _ in
+            textView.draw(textView.bounds)
+            return true
+        }
+        XCTAssertNotNil(image.tiffRepresentation)
+        try await Task.sleep(nanoseconds: 200_000_000)
+        window.displayIfNeeded()
+        XCTAssertNil(background(in: textView, at: range.location))
+
+        textView.breakUndoCoalescing()
+        let undoManager = try XCTUnwrap(textView.undoManager)
+        XCTAssertTrue(undoManager.canUndo)
+        undoManager.undo()
+        XCTAssertEqual(editor.text, prefix + selected)
+        textView.setSelectedRange(range)
+        try await waitForHighlight(in: textView, at: range.location)
+        window.displayIfNeeded()
+        XCTAssertTrue(undoManager.canRedo)
+        undoManager.redo()
+        XCTAssertEqual(editor.text, prefix + "\n")
+        window.displayIfNeeded()
+    }
+
     private func background(in textView: NSTextView, at location: Int) -> NSColor? {
         textView.layoutManager?.temporaryAttribute(.backgroundColor, atCharacterIndex: location, effectiveRange: nil) as? NSColor
     }

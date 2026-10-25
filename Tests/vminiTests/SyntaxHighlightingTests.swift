@@ -1,6 +1,7 @@
 import AppKit
 import UniformTypeIdentifiers
 import XCTest
+import SwiftTreeSitter
 @testable import vmini
 
 @MainActor
@@ -207,6 +208,100 @@ final class SyntaxHighlightingTests: XCTestCase {
         XCTAssertEqual(SyntaxLanguageResolver.resolveFenceInfoString("yml"), .yaml)
     }
 
+    func testTreeSitterGrammarSelectionAndHighlightingForEverySyntax() {
+        let cases: [(language: SyntaxLanguage, grammar: String, text: String, token: String, role: SyntaxColorRole, editToken: String, replacement: String)] = [
+            (.bash, "bash", "echo $HOME", "$HOME", .variable, "$HOME", "$USER"),
+            (.dotenv, "bash", "NAME=hello", "hello", .string, "hello", "world"),
+            (.sshconfig, "ssh_config", "Host example.com", "Host", .keyword, "example.com", "example.org"),
+            (.markdown, "markdown", "# Heading", "#", .headingMarker, "Heading", "Changed"),
+            (.json, "json", "{\"name\": 1}", "\"name\"", .propertyKey, "name", "kind"),
+            (.yaml, "yaml", "enabled: false", "false", .keyword, "false", "true"),
+            (.kotlin, "kotlin", "fun main() {}", "fun", .keyword, "main", "test"),
+            (.java, "java", "class Example {}", "class", .keyword, "Example", "Example2"),
+            (.sql, "sql", "SELECT 1 FROM users", "SELECT", .keyword, "users", "accounts"),
+        ]
+        let theme = ThemeCatalog.palette(for: .default).syntaxTheme
+
+        for sample in cases {
+            XCTAssertEqual(TreeSitterSyntaxGrammar.name(for: sample.language), sample.grammar)
+            guard let definition = TreeSitterSyntaxGrammar.definition(for: sample.language) else {
+                XCTFail("Missing Tree-sitter definition for \(sample.language)")
+                continue
+            }
+            XCTAssertTrue(definition.highlightsQuery === TreeSitterSyntaxGrammar.definition(for: sample.language)?.highlightsQuery)
+            if sample.language == .markdown {
+                XCTAssertNotNil(definition.inlineHighlightsQuery)
+                XCTAssertNotNil(definition.inlineRangesQuery)
+                XCTAssertTrue(definition.inlineHighlightsQuery === TreeSitterSyntaxGrammar.definition(for: .markdown)?.inlineHighlightsQuery)
+                XCTAssertTrue(definition.inlineRangesQuery === TreeSitterSyntaxGrammar.definition(for: .markdown)?.inlineRangesQuery)
+            }
+            let storage = makeHighlightedStorage(sample.text, language: sample.language)
+            let tokenRange = (sample.text as NSString).range(of: sample.token)
+            XCTAssertNotEqual(tokenRange.location, NSNotFound, "Missing test token for \(sample.language)")
+            let actualColor = storage.attribute(.foregroundColor, at: tokenRange.location, effectiveRange: nil) as? NSColor
+            let expectedColor = sample.language == .markdown && sample.role == .headingMarker
+                ? theme.headingMarker.withAlphaComponent(MarkdownAttributeStyler.Constants.headingMarkerAlpha)
+                : theme.color(for: sample.role)
+            XCTAssertTrue(
+                actualColor?.isEqual(expectedColor) == true,
+                "Expected \(sample.role) on \(sample.language) token \(sample.token)"
+            )
+
+            let source = sample.text as NSString
+            let editRange = source.range(of: sample.editToken)
+            let edit = SyntaxHighlightEditContext(
+                replacementRange: editRange,
+                replacementString: sample.replacement,
+                replacedText: source.substring(with: editRange)
+            )
+            let editedText = source.replacingCharacters(in: editRange, with: sample.replacement)
+            let parser = TreeSitterSyntaxParser(language: sample.language)
+            _ = parser.highlight(text: sample.text, in: nil)
+            let incremental = parser.highlight(text: editedText, in: nil, edits: [edit])
+            let fresh = TreeSitterSyntaxParser(language: sample.language).highlight(text: editedText, in: nil)
+            XCTAssertEqual(
+                incremental.tokens.map { "\($0.range.location):\($0.range.length):\(String(describing: $0.role))" },
+                fresh.tokens.map { "\($0.range.location):\($0.range.length):\(String(describing: $0.role))" },
+                "Incremental parse diverged for \(sample.language)"
+            )
+        }
+
+        XCTAssertNil(TreeSitterSyntaxGrammar.name(for: .plaintext))
+        assertColor(theme.plainText, at: 0, in: makeHighlightedStorage("plain text", language: .plaintext))
+    }
+
+    func testMarkdownInlineAndCodeFenceUseTreeSitterHighlighting() {
+        let text = "# Inline `code`\n\n```json\n{\"name\": 1}\n```"
+        let storage = makeHighlightedStorage(text, language: .markdown)
+        let theme = ThemeCatalog.palette(for: .default).syntaxTheme
+        let nsText = text as NSString
+
+        assertColor(theme.inlineCode, at: nsText.range(of: "`code`").location, in: storage)
+        assertColor(theme.propertyKey, at: nsText.range(of: "\"name\"").location, in: storage)
+    }
+
+    func testMarkdownCodeFencesDispatchEveryTreeSitterSyntax() {
+        let samples: [(info: String, code: String, token: String, role: SyntaxColorRole)] = [
+            ("sh", "echo $HOME", "$HOME", .variable),
+            ("dotenv", "NAME=hello", "hello", .string),
+            ("sshconfig", "Host example.com", "Host", .keyword),
+            ("json", "{\"name\": 1}", "\"name\"", .propertyKey),
+            ("yaml", "enabled: true", "true", .keyword),
+            ("kotlin", "fun main() {}", "fun", .keyword),
+            ("java", "class Example {}", "class", .keyword),
+            ("sql", "SELECT 1", "SELECT", .keyword),
+            ("markdown", "# Nested heading", "#", .headingMarker),
+        ]
+        let theme = ThemeCatalog.palette(for: .default).syntaxTheme
+
+        for sample in samples {
+            let text = "```\(sample.info)\n\(sample.code)\n```"
+            let storage = makeHighlightedStorage(text, language: .markdown)
+            let tokenLocation = (text as NSString).range(of: sample.token).location
+            assertColor(theme.color(for: sample.role), at: tokenLocation, in: storage)
+        }
+    }
+
     func testLanguageResolverDefaultsOtherTextFilesToPlaintext() {
         XCTAssertEqual(
             SyntaxLanguageResolver.resolve(fileURL: URL(fileURLWithPath: "/tmp/notes.txt"), typeIdentifier: UTType.plainText.identifier),
@@ -352,46 +447,12 @@ final class SyntaxHighlightingTests: XCTestCase {
         assertColor(theme.operator, at: nsText.range(of: "->").location, in: storage)
     }
 
-    func testKotlinHighlighterExpandsForDelimiterEditsAndKeepsOrdinaryEditsLocal() {
-        let highlighter = KotlinSyntaxHighlighter()
-
-        for (delimiter, replacement) in [("/*", "//"), ("\"\"\"", "\"")] {
-            let oldText = "before\n\(delimiter) content\nend" as NSString
-            let replacedRange = oldText.range(of: delimiter)
-            let editContext = SyntaxHighlightEditContext(
-                replacementRange: replacedRange,
-                replacementString: replacement,
-                replacedText: delimiter
-            )
-            let updatedText = oldText.replacingCharacters(in: replacedRange, with: replacement) as NSString
-            let editedRange = NSRange(location: replacedRange.location, length: (replacement as NSString).length)
-
-            let expandedRange = highlighter.expandedHighlightRange(
-                for: editedRange,
-                editContext: editContext,
-                in: updatedText
-            )
-
-            XCTAssertEqual(expandedRange, NSRange(location: 0, length: updatedText.length))
-        }
-
-        let oldText = "one\ntwo\nthree" as NSString
-        let replacedRange = oldText.range(of: "two")
-        let editContext = SyntaxHighlightEditContext(
-            replacementRange: replacedRange,
-            replacementString: "TWO",
-            replacedText: "two"
+    func testKotlinTreeSitterIncrementalEditsMatchFreshHighlighting() {
+        assertIncrementalHighlightingMatchesFresh(
+            language: .kotlin,
+            source: "/* outer\nval hidden = 1\n*/\nval shown = 2",
+            edits: [("/*", "//"), ("//", "/*")]
         )
-        let updatedText = oldText.replacingCharacters(in: replacedRange, with: "TWO") as NSString
-        let editedRange = updatedText.range(of: "TWO")
-        let expandedRange = highlighter.expandedHighlightRange(
-            for: editedRange,
-            editContext: editContext,
-            in: updatedText
-        )
-
-        XCTAssertEqual(expandedRange, updatedText.lineRange(for: editedRange))
-        XCTAssertLessThan(expandedRange.length, updatedText.length)
     }
 
     func testJavaHighlighterStylesJava25AndCoreTokens() {
@@ -413,6 +474,7 @@ final class SyntaxHighlightingTests: XCTestCase {
             "  void run() { // line comment",
             "    /* block comment */ if (value > 0) return;",
             "    case String item when item.length() > 0 -> item;",
+            "    RoomEntity room = roomRepository.createRoom(roomId);",
             "  }",
             "}",
         ].joined(separator: "\n")
@@ -427,6 +489,11 @@ final class SyntaxHighlightingTests: XCTestCase {
         assertColor(theme.builtin, at: nsText.range(of: "org.example.RequestMapping").location, in: storage)
         assertColor(theme.keyword, at: nsText.range(of: "interface", options: .backwards).location, in: storage)
         assertColor(theme.builtin, at: nsText.range(of: "String").location, in: storage)
+        assertColor(theme.builtin, at: nsText.range(of: "Demo {").location, in: storage)
+        assertColor(theme.builtin, at: nsText.range(of: "createRoom").location, in: storage)
+        for identifier in ["room", "roomRepository", "roomId"] {
+            assertColor(theme.plainText, at: nsText.range(of: identifier).location, in: storage)
+        }
         assertColor(theme.string, at: nsText.range(of: "hi").location, in: storage)
         assertColor(theme.string, at: nsText.range(of: "text block class").location, in: storage)
         assertColor(theme.string, at: nsText.range(of: "J").location, in: storage)
@@ -438,7 +505,7 @@ final class SyntaxHighlightingTests: XCTestCase {
 
     func testSQLHighlighterStylesCoreTokens() {
         let text = [
-            "SELECT COUNT(*) FROM \"user table\"",
+            "SELECT COUNT(*) FROM \"user table\" JOIN users ON users.id = users.id",
             "WHERE id = :id AND status = 'active' -- line comment",
             "  AND total >= 42;",
             "/* outer",
@@ -446,14 +513,17 @@ final class SyntaxHighlightingTests: XCTestCase {
             "*/",
             "SELECT $$dollar string$$;",
             "SELECT CAST(score AS INTEGER) FROM users;",
+            "SELECT ?;",
         ].joined(separator: "\n")
         let storage = makeHighlightedStorage(text, language: .sql)
         let theme = ThemeCatalog.palette(for: .default).syntaxTheme
         let nsText = text as NSString
 
         assertColor(theme.keyword, at: nsText.range(of: "SELECT").location, in: storage)
+        assertColor(theme.keyword, at: nsText.range(of: "ON").location, in: storage)
         assertColor(theme.builtin, at: nsText.range(of: "COUNT").location, in: storage)
         assertColor(theme.propertyKey, at: nsText.range(of: "user table").location, in: storage)
+        assertColor(theme.plainText, at: nsText.range(of: "id =").location, in: storage)
         assertColor(theme.variable, at: nsText.range(of: ":id").location, in: storage)
         assertColor(theme.string, at: nsText.range(of: "active").location, in: storage)
         assertColor(theme.comment, at: nsText.range(of: "line comment").location, in: storage)
@@ -462,78 +532,54 @@ final class SyntaxHighlightingTests: XCTestCase {
         assertColor(theme.comment, at: nsText.range(of: "still comment").location, in: storage)
         assertColor(theme.string, at: nsText.range(of: "dollar string").location, in: storage)
         assertColor(theme.builtin, at: nsText.range(of: "INTEGER").location, in: storage)
+        assertColor(theme.variable, at: nsText.range(of: "?").location, in: storage)
     }
 
     func testMarkdownSQLFenceStylesSQLTokens() {
         let text = """
         ```sql
-        UPDATE food_actions original
-        SET deleted_at = NULL
-        WHERE original.promotion_item_id = 'FOOD_ACTION'
-          AND BTRIM(original.promotion_item_id) <> ''
+        SELECT origin.item_code
+        FROM entities AS origin
+        WHERE origin.item_code IS NOT NULL
+          AND origin.item_code = 'alpha'
+          AND origin.item_code IN ('alpha', 'beta');
         ```
         """
         let storage = makeHighlightedStorage(text, language: .markdown)
         let theme = ThemeCatalog.palette(for: .default).syntaxTheme
         let nsText = text as NSString
 
-        assertColor(theme.keyword, at: nsText.range(of: "UPDATE").location, in: storage)
+        assertColor(theme.keyword, at: nsText.range(of: "SELECT").location, in: storage)
         assertColor(theme.keyword, at: nsText.range(of: "WHERE").location, in: storage)
         assertColor(theme.keyword, at: nsText.range(of: "AND").location, in: storage)
-        assertColor(theme.builtin, at: nsText.range(of: "BTRIM").location, in: storage)
-        assertColor(theme.plainText, at: nsText.range(of: "food_actions").location, in: storage)
-        assertColor(theme.string, at: nsText.range(of: "FOOD_ACTION").location, in: storage)
-        assertColor(theme.operator, at: nsText.range(of: "<>").location, in: storage)
+        let isRange = nsText.range(of: "IS NOT")
+        XCTAssertNotEqual(isRange.location, NSNotFound)
+        assertColor(theme.keyword, throughout: NSRange(location: isRange.location, length: 2), in: storage)
+        assertColor(theme.keyword, throughout: NSRange(location: isRange.location + 3, length: 3), in: storage)
+        assertColor(theme.string, at: nsText.range(of: "alpha").location, in: storage)
+        assertColor(theme.builtin, at: nsText.range(of: "NULL").location, in: storage)
+        assertColor(theme.operator, at: nsText.range(of: "= 'alpha'").location, in: storage)
+        for identifier in [
+            "origin", "item_code", "entities",
+        ] {
+            var searchRange = NSRange(location: 0, length: nsText.length)
+            while searchRange.length > 0 {
+                let identifierRange = nsText.range(of: identifier, range: searchRange)
+                guard identifierRange.location != NSNotFound else { break }
+                assertColor(theme.plainText, throughout: identifierRange, in: storage)
+                searchRange = NSRange(
+                    location: NSMaxRange(identifierRange),
+                    length: nsText.length - NSMaxRange(identifierRange)
+                )
+            }
+        }
     }
 
-    func testSQLHighlighterExpandsForLexicalBoundariesAndMultilineTokens() {
-        let highlighter = SQLSyntaxHighlighter()
-        let source = "SELECT 1;\n/* multiline\n comment */\nSELECT 2;" as NSString
-        let commentLocation = source.range(of: "comment").location
-        let commentEdit = SyntaxHighlightEditContext(
-            replacementRange: NSRange(location: commentLocation, length: 1),
-            replacementString: "M",
-            replacedText: "m"
-        )
-
-        XCTAssertEqual(
-            highlighter.expandedHighlightRange(
-                for: NSRange(location: commentLocation, length: 1),
-                editContext: commentEdit,
-                in: source
-            ),
-            source.range(of: "/* multiline\n comment */")
-        )
-
-        let changedText = "SELECT *1;\nSELECT 2;" as NSString
-        let boundaryEdit = SyntaxHighlightEditContext(
-            replacementRange: NSRange(location: 7, length: 0),
-            replacementString: "*",
-            replacedText: ""
-        )
-        XCTAssertEqual(
-            highlighter.expandedHighlightRange(
-                for: NSRange(location: 7, length: 1),
-                editContext: boundaryEdit,
-                in: changedText
-            ),
-            NSRange(location: 0, length: changedText.length)
-        )
-
-        let ordinaryEdit = SyntaxHighlightEditContext(
-            replacementRange: NSRange(location: 7, length: 5),
-            replacementString: "column",
-            replacedText: "value"
-        )
-        let ordinaryText = "SELECT value;\nSELECT next;" as NSString
-        let valueLocation = ordinaryText.range(of: "value").location
-        XCTAssertEqual(
-            highlighter.expandedHighlightRange(
-                for: NSRange(location: valueLocation, length: 5),
-                editContext: ordinaryEdit,
-                in: ordinaryText
-            ),
-            ordinaryText.lineRange(for: NSRange(location: valueLocation, length: 5))
+    func testSQLTreeSitterIncrementalEditsMatchFreshHighlighting() {
+        assertIncrementalHighlightingMatchesFresh(
+            language: .sql,
+            source: "SELECT 1; -- trailing comment\nSELECT 2;",
+            edits: [("--", "/*"), ("/*", "--")]
         )
     }
 
@@ -736,7 +782,7 @@ final class SyntaxHighlightingTests: XCTestCase {
         XCTAssertEqual(highlighter.ranges[0], NSRange(location: 1, length: 8))
     }
 
-    func testCancelledMarkdownWorkRetainsAndRebasesItsDirtyRange() async throws {
+    func testCancelledMarkdownWorkRecolorsAndRejectsStaleResults() async throws {
         let storage = unhighlightedStorage("# Initial\nfirst\nsecond\nthird\nordinary\nfifth\nsixth\n")
         let theme = ThemeCatalog.palette(for: .default).syntaxTheme
         let font = EditorFontResolver.font(for: .fallback, size: 13)
@@ -751,7 +797,8 @@ final class SyntaxHighlightingTests: XCTestCase {
                 let cache = cachedFenceCache ?? highlighter.makeFenceCache(in: snapshot as NSString)
                 let result = MarkdownSyntaxHighlighter.HighlightWork(
                     fenceCache: cache,
-                    lineStyles: highlighter.lineStylePlan(in: snapshot, targetRange: range, fences: cache.blocks)
+                    lineStyles: highlighter.lineStylePlan(in: snapshot, targetRange: range, fences: cache.blocks),
+                    fenceHighlights: MarkdownFenceHighlighter.highlights(in: snapshot, targetRange: range, fences: cache.blocks) ?? []
                 )
                 return Task { @MainActor in
                     if holdWork {
@@ -785,7 +832,7 @@ final class SyntaxHighlightingTests: XCTestCase {
         XCTAssertTrue(highlightingMatchesFresh(storage, language: .markdown))
         let heading = (storage.string as NSString).range(of: "Heading")
         XCTAssertEqual(NSIntersectionRange(workRanges[1], heading), heading)
-        XCTAssertLessThan(workRanges[1].length, storage.length, "Retain incremental highlighting")
+        XCTAssertEqual(workRanges[1], NSRange(location: 0, length: storage.length), "Repaint the discarded parser result")
     }
 
     func testMarkdownIncrementalStylesMatchFreshHighlightAfterRapidEditsAndUndo() async throws {
@@ -827,7 +874,7 @@ final class SyntaxHighlightingTests: XCTestCase {
         try await waitForCondition { self.highlightingMatchesFresh(storage, language: .markdown) }
     }
 
-    func testTypingInMarkdownHeadingUsesAdjacentSyntaxAttributesImmediately() {
+    func testTypingInMarkdownHeadingCopiesAdjacentAttributesAfterEditCallback() async throws {
         let text = "## Title"
         let storage = makeHighlightedStorage(text, language: .markdown)
         let theme = ThemeCatalog.palette(for: .default).syntaxTheme
@@ -836,7 +883,8 @@ final class SyntaxHighlightingTests: XCTestCase {
             highlighterRegistry: .shared,
             textStorageProvider: { storage },
             syntaxThemeProvider: { theme },
-            baseFontProvider: { baseFont }
+            baseFontProvider: { baseFont },
+            markdownWorkProvider: { _, _, _, _ in Task { nil } }
         )
         let insertionLocation = storage.length
         let insertedRange = NSRange(location: insertionLocation, length: 1)
@@ -856,6 +904,12 @@ final class SyntaxHighlightingTests: XCTestCase {
 
         let strength = MarkdownAttributeStyler.Constants.headingColorStrengths[1]
         let expectedColor = theme.headingText.blended(withFraction: strength, of: theme.headingMarker) ?? theme.headingText
+
+        assertColor(theme.plainText, at: insertionLocation, in: storage)
+        try await waitForCondition {
+            (storage.attribute(.foregroundColor, at: insertionLocation, effectiveRange: nil) as? NSColor)
+                .map { $0.isEqual(expectedColor) } == true
+        }
         assertColor(expectedColor, at: insertionLocation, in: storage)
     }
 
@@ -969,12 +1023,10 @@ final class SyntaxHighlightingTests: XCTestCase {
         assertColor(theme.string, at: nsText.range(of: "$VAR").location, in: storage)
     }
 
-    func testBashMultilineRangeCacheTracksOrdinaryUnicodeEdits() throws {
-        let highlighter = BashSyntaxHighlighter()
+    func testBashTreeSitterHighlightsMultilineStringsAfterUnicodeEdits() {
         let original = "echo done\nprintf \"first\nmiddle\nlast\"\necho end"
-        let originalNSString = original as NSString
-        var ranges = highlighter.multilineTokenRanges(in: original)
-        XCTAssertEqual(ranges, [originalNSString.range(of: "\"first\nmiddle\nlast\"")])
+        let parser = TreeSitterSyntaxParser(language: .bash)
+        _ = parser.highlight(text: original, in: nil)
 
         let prefixEdit = SyntaxHighlightEditContext(
             replacementRange: NSRange(location: 0, length: 0),
@@ -982,12 +1034,7 @@ final class SyntaxHighlightingTests: XCTestCase {
             replacedText: ""
         )
         var updatedText = "🌟 \(original)"
-        ranges = try XCTUnwrap(highlighter.updatedMultilineTokenRanges(
-            ranges,
-            cachedTextLength: originalNSString.length,
-            editContext: prefixEdit,
-            in: updatedText as NSString
-        ))
+        _ = parser.highlight(text: updatedText, in: nil, edits: [prefixEdit])
 
         let middleRange = (updatedText as NSString).range(of: "middle")
         let lineEdit = SyntaxHighlightEditContext(
@@ -996,37 +1043,12 @@ final class SyntaxHighlightingTests: XCTestCase {
             replacedText: "middle"
         )
         updatedText = (updatedText as NSString).replacingCharacters(in: middleRange, with: lineEdit.replacementString)
-        ranges = try XCTUnwrap(highlighter.updatedMultilineTokenRanges(
-            ranges,
-            cachedTextLength: ("🌟 \(original)" as NSString).length,
-            editContext: lineEdit,
-            in: updatedText as NSString
-        ))
-
+        let work = parser.highlight(text: updatedText, in: nil, edits: [lineEdit])
         let expected = (updatedText as NSString).range(of: "\"first\nmiddle expanded\nlast\"")
-        XCTAssertEqual(ranges, [expected])
-        XCTAssertEqual(
-            highlighter.expandedHighlightRange(
-                for: (updatedText as NSString).range(of: "middle expanded"),
-                cachedMultilineTokenRanges: ranges,
-                in: updatedText as NSString
-            ),
-            expected
-        )
-
-        let structuralRange = (updatedText as NSString).range(of: "middle expanded")
-        let structuralEdit = SyntaxHighlightEditContext(
-            replacementRange: structuralRange,
-            replacementString: "'",
-            replacedText: "middle expanded"
-        )
-        let structurallyUpdatedText = (updatedText as NSString).replacingCharacters(in: structuralRange, with: "'")
-        XCTAssertNil(highlighter.updatedMultilineTokenRanges(
-            ranges,
-            cachedTextLength: (updatedText as NSString).length,
-            editContext: structuralEdit,
-            in: structurallyUpdatedText as NSString
-        ))
+        let theme = ThemeCatalog.palette(for: .default).syntaxTheme
+        XCTAssertTrue(work.tokens.contains {
+            $0.range == expected && theme.color(for: $0.role).isEqual(theme.string)
+        })
     }
 
     func testBashAndJSONTokenRangesUseUTF16OffsetsWithUnicode() {
@@ -1291,6 +1313,35 @@ final class SyntaxHighlightingTests: XCTestCase {
         XCTAssertEqual(reopenedDocument.syntaxLanguage, .markdown)
     }
 
+    private func assertIncrementalHighlightingMatchesFresh(
+        language: SyntaxLanguage,
+        source: String,
+        edits: [(replaced: String, replacement: String)]
+    ) {
+        var text = source
+        let parser = TreeSitterSyntaxParser(language: language)
+        _ = parser.highlight(text: text, in: nil)
+
+        for edit in edits {
+            let oldText = text as NSString
+            let range = oldText.range(of: edit.replaced)
+            XCTAssertNotEqual(range.location, NSNotFound)
+            let context = SyntaxHighlightEditContext(
+                replacementRange: range,
+                replacementString: edit.replacement,
+                replacedText: oldText.substring(with: range)
+            )
+            text = oldText.replacingCharacters(in: range, with: edit.replacement)
+            let incremental = parser.highlight(text: text, in: nil, edits: [context])
+            let fresh = TreeSitterSyntaxParser(language: language).highlight(text: text, in: nil)
+            XCTAssertEqual(
+                incremental.tokens.map { "\($0.range.location):\($0.range.length):\(String(describing: $0.role))" },
+                fresh.tokens.map { "\($0.range.location):\($0.range.length):\(String(describing: $0.role))" },
+                "Incremental parse diverged for \(language) after replacing \(edit.replaced)"
+            )
+        }
+    }
+
     private func makeHighlightedStorage(_ text: String, language: SyntaxLanguage) -> NSTextStorage {
         let storage = NSTextStorage(string: text)
         let theme = ThemeCatalog.palette(for: .default).syntaxTheme
@@ -1414,7 +1465,13 @@ final class SyntaxHighlightingTests: XCTestCase {
     private func assertColor(_ expected: NSColor, at location: Int, in storage: NSTextStorage, file: StaticString = #filePath, line: UInt = #line) {
         let actual = storage.attribute(.foregroundColor, at: location, effectiveRange: nil) as? NSColor
         XCTAssertNotNil(actual, file: file, line: line)
-        XCTAssertTrue(actual?.isEqual(expected) == true, file: file, line: line)
+        XCTAssertTrue(actual?.isEqual(expected) == true, "Expected \(expected), got \(String(describing: actual)) at UTF-16 offset \(location)", file: file, line: line)
+    }
+
+    private func assertColor(_ expected: NSColor, throughout range: NSRange, in storage: NSTextStorage, file: StaticString = #filePath, line: UInt = #line) {
+        for location in range.location..<NSMaxRange(range) {
+            assertColor(expected, at: location, in: storage, file: file, line: line)
+        }
     }
 
     private func assertBackgroundColor(_ expected: NSColor, at location: Int, in storage: NSTextStorage, file: StaticString = #filePath, line: UInt = #line) {

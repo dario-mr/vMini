@@ -53,6 +53,7 @@ enum SyntaxLanguageResolver {
         "shell": .bash,
         "env": .dotenv,
         "dotenv": .dotenv,
+        "sshconfig": .sshconfig,
         "md": .markdown,
         "markdown": .markdown,
         "json": .json,

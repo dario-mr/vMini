@@ -28,6 +28,7 @@ final class MarkdownSyntaxHighlighter: SyntaxHighlighter {
     struct HighlightWork: Sendable {
         let fenceCache: FenceCache
         let lineStyles: [LineStyle]
+        let fenceHighlights: [MarkdownFenceHighlighter.Highlight]
     }
 
     struct LineStyle: Sendable {
@@ -103,7 +104,10 @@ final class MarkdownSyntaxHighlighter: SyntaxHighlighter {
             theme: theme,
             registry: registry,
             fenceCache: fenceCache,
-            lineStyles: lineStylePlan(in: textStorage.string, targetRange: targetRange, fences: fenceCache.blocks)
+            lineStyles: lineStylePlan(in: textStorage.string, targetRange: targetRange, fences: fenceCache.blocks),
+            fenceHighlights: MarkdownFenceHighlighter.highlights(
+                in: textStorage.string, targetRange: targetRange, fences: fenceCache.blocks
+            ) ?? []
         )
     }
 
@@ -114,21 +118,26 @@ final class MarkdownSyntaxHighlighter: SyntaxHighlighter {
         theme: SyntaxTheme,
         registry: HighlighterRegistry,
         fenceCache: FenceCache,
-        lineStyles: [LineStyle]
+        lineStyles: [LineStyle],
+        fenceHighlights: [MarkdownFenceHighlighter.Highlight],
+        treeSitterWork: TreeSitterHighlightWork? = nil
     ) {
         let text = textStorage.string as NSString
         let targetRange = range.clamped(toLength: text.length)
         guard text.length > 0, targetRange.length > 0 else { return }
 
+        let syntaxWork = treeSitterWork ?? TreeSitterSyntaxParser(language: .markdown).highlight(text: textStorage.string, in: targetRange)
+        TreeSitterSyntaxHighlighter.apply(syntaxWork, to: textStorage, theme: theme)
         MarkdownAttributeStyler.applyFenceStyling(
             textStorage: textStorage,
             text: text,
             fences: fenceCache.blocks,
             targetRange: targetRange,
-            baseFont: baseFont,
-            theme: theme,
-            registry: registry
+            theme: theme
         )
+        for highlight in fenceHighlights {
+            TreeSitterSyntaxHighlighter.apply(highlight.work, to: textStorage, theme: theme, offset: highlight.offset)
+        }
         MarkdownAttributeStyler.applyLineStyles(lineStyles, textStorage: textStorage, baseFont: baseFont, theme: theme)
     }
 

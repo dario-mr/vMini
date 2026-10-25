@@ -9,7 +9,7 @@ final class JavaSyntaxHighlightingTests: XCTestCase {
 
     func testIncrementalEditsMatchFreshHighlighting() {
         let storage = NSTextStorage(string: "class Example {\r\n String text = \"😀 café\";\r\n /* comment\r\n end */\r\n int value() { return 42; }\r\n}\r\n")
-        let parser = JavaSyntaxParser()
+        let parser = TreeSitterSyntaxParser(language: .java)
         apply(parser.highlight(text: storage.string, in: nil), to: storage)
         for (old, replacement) in [
             ("😀", "😀🙂"), ("String", "Object"), ("return", "returX"), ("returX", "return"),
@@ -30,7 +30,7 @@ final class JavaSyntaxHighlightingTests: XCTestCase {
 
     func testBatchedEditsAndIncompleteCodeMatchFreshHighlighting() {
         let storage = NSTextStorage(string: "class Example { String text = \"😀\"; int number = 42; }\n")
-        let parser = JavaSyntaxParser()
+        let parser = TreeSitterSyntaxParser(language: .java)
         apply(parser.highlight(text: storage.string, in: nil), to: storage)
         var state: UInt64 = 7
         let fragments = ["/*", "*/", "\"", "\n", "😀", "\r\n", "String", "return", "", "x"]
@@ -53,21 +53,21 @@ final class JavaSyntaxHighlightingTests: XCTestCase {
     }
 
     func testSessionRecoversAfterSkippedRequestsAndRejectsOldResults() async {
-        let session = JavaSyntaxSession()
-        _ = await session.highlight(text: "class First {}", range: nil, edits: nil, baseRevision: 0, revision: 1)
+        let session = TreeSitterSyntaxSession(language: .java)
+        _ = await session.highlight(text: "class First {}", range: nil, edits: nil, baseRevision: 0, appliedRevision: 0, revision: 1)
         let source = "class Second { String text = \"😀\"; }"
-        let work = await session.highlight(text: source, range: nil, edits: [], baseRevision: 2, revision: 3)
+        let work = await session.highlight(text: source, range: nil, edits: [], baseRevision: 2, appliedRevision: 1, revision: 3)
         let storage = NSTextStorage(string: source)
         apply(work!, to: storage)
         XCTAssertTrue(matchesFresh(storage))
-        let stale = await session.highlight(text: "class Old {}", range: nil, edits: nil, baseRevision: 1, revision: 2)
+        let stale = await session.highlight(text: "class Old {}", range: nil, edits: nil, baseRevision: 1, appliedRevision: 1, revision: 2)
         XCTAssertNil(stale)
     }
 
     func testUnicodeAcrossParserChunkBoundaries() {
         let text = "//" + String(repeating: " ", count: 2_045) + "😀\nclass Last { String value = \"café\"; }"
         let storage = NSTextStorage(string: text)
-        apply(JavaSyntaxParser().highlight(text: text, in: nil), to: storage)
+        apply(TreeSitterSyntaxParser(language: .java).highlight(text: text, in: nil), to: storage)
         for (word, color) in [("😀", theme.comment), ("class", theme.keyword), ("String", theme.builtin), ("café", theme.string)] {
             XCTAssertEqual(storage.attribute(.foregroundColor, at: (text as NSString).range(of: word).location,
                                              effectiveRange: nil) as? NSColor, color)
@@ -221,9 +221,9 @@ final class JavaSyntaxHighlightingTests: XCTestCase {
         )
     }
 
-    private func apply(_ work: JavaHighlightWork, to storage: NSTextStorage) {
+    private func apply(_ work: TreeSitterHighlightWork, to storage: NSTextStorage) {
         storage.addAttribute(.foregroundColor, value: theme.plainText, range: work.range)
-        JavaSyntaxHighlighter().apply(work, to: storage, theme: theme)
+        TreeSitterSyntaxHighlighter.apply(work, to: storage, theme: theme)
     }
 
     private func matchesFresh(_ storage: NSTextStorage, language: SyntaxLanguage = .java) -> Bool {
