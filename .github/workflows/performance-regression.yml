@@ -47,6 +47,14 @@ jobs:
         with:
           xcode-version: "26.4.1"
 
+      - name: Cache dependencies
+        uses: actions/cache@v6
+        with:
+          path: ~/Library/Caches/org.swift.swiftpm/repositories
+          key: ${{ runner.os }}-swiftpm-${{ hashFiles('candidate/Package.swift', 'candidate/Package.resolved') }}
+          restore-keys: |
+            ${{ runner.os }}-swiftpm-
+
       - name: Overlay identical benchmark harness and fixtures on base
         run: |
           cp candidate/Tests/vminiTests/EditorEditingPerformanceTests.swift base/Tests/vminiTests/

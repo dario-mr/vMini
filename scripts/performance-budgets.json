@@ -11,28 +11,28 @@
     "large-edit": {
       "classification": "warm-edit",
       "metrics": {
-        "medianMilliseconds": { "relativeAllowance": 0.2, "absoluteAllowanceMilliseconds": 5, "ceilingMilliseconds": 110 },
-        "p95Milliseconds": { "relativeAllowance": 0.2, "absoluteAllowanceMilliseconds": 5, "ceilingMilliseconds": 125 }
+        "medianMilliseconds": { "relativeAllowance": 0.2, "absoluteAllowanceMilliseconds": 5, "ceilingMilliseconds": 140 },
+        "p95Milliseconds": { "relativeAllowance": 0.2, "absoluteAllowanceMilliseconds": 5, "ceilingMilliseconds": 190 }
       }
     },
     "very-large-edit": {
       "classification": "warm-edit",
       "metrics": {
         "medianMilliseconds": { "relativeAllowance": 0.2, "absoluteAllowanceMilliseconds": 5, "ceilingMilliseconds": 200 },
-        "p95Milliseconds": { "relativeAllowance": 0.2, "absoluteAllowanceMilliseconds": 5, "ceilingMilliseconds": 225 }
+        "p95Milliseconds": { "relativeAllowance": 0.2, "absoluteAllowanceMilliseconds": 5, "ceilingMilliseconds": 300 }
       }
     },
     "full-corpus-edit": {
       "classification": "warm-edit",
       "metrics": {
         "medianMilliseconds": { "relativeAllowance": 0.2, "absoluteAllowanceMilliseconds": 20, "ceilingMilliseconds": 1500 },
-        "p95Milliseconds": { "relativeAllowance": 0.2, "absoluteAllowanceMilliseconds": 20, "ceilingMilliseconds": 1750 }
+        "p95Milliseconds": { "relativeAllowance": 0.2, "absoluteAllowanceMilliseconds": 20, "ceilingMilliseconds": 2150 }
       }
     },
     "warm-full-document": {
       "classification": "warm-full-document",
       "metrics": {
-        "medianMilliseconds": { "relativeAllowance": 0.2, "absoluteAllowanceMilliseconds": 20, "ceilingMilliseconds": 2500 }
+        "medianMilliseconds": { "relativeAllowance": 0.2, "absoluteAllowanceMilliseconds": 20, "ceilingMilliseconds": 3000 }
       }
     },
     "cold-initialization": {

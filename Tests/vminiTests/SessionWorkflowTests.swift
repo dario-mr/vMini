@@ -669,12 +669,13 @@ final class SessionWorkflowTests: XCTestCase {
         var revision: UInt64 = 1
         var didInstallPayload = false
         var didPromptForConflict = false
+        let startingRevision = revision
         let reload = Task {
             await lifecycle.reloadFromDiskAfterExternalChange(
                 fileURL: fileURL,
                 currentFileURL: { fileURL },
                 contentRevision: { revision },
-                startingRevision: revision,
+                startingRevision: startingRevision,
                 restartWatcher: false,
                 isDocumentEdited: false,
                 isDocumentCurrentlyEdited: { true },
