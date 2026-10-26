@@ -21,5 +21,13 @@ jobs:
         with:
           xcode-version: "26.4.1"
 
+      - name: Cache dependencies
+        uses: actions/cache@v6
+        with:
+          path: ~/Library/Caches/org.swift.swiftpm/repositories
+          key: ${{ runner.os }}-swiftpm-${{ hashFiles('Package.swift', 'Package.resolved') }}
+          restore-keys: |
+            ${{ runner.os }}-swiftpm-
+
       - name: Build and test
         run: swift test
