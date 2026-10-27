@@ -57,6 +57,7 @@ final class TreeSitterSyntaxParser {
     private let inlineQuery: Query?
     private let inlineRangesQuery: Query?
     private var tree: MutableTree?
+    private var inlineTrees: [MutableTree] = []
     private var textLength = 0
     private var lineStarts = [0]
     private var hadNestedSQLComments = false
@@ -86,6 +87,7 @@ final class TreeSitterSyntaxParser {
 
     func reset() {
         tree = nil
+        inlineTrees = []
         parser.reset()
         inlineParser?.reset()
         textLength = 0
@@ -135,7 +137,6 @@ final class TreeSitterSyntaxParser {
             }
         }
 
-        var inlineTokens: [TreeSitterHighlightWork.Token] = []
         if let inlineParser, let inlineRangesQuery, let inlineQuery {
             // A newline edit can create a block immediately after the edited range.
             let boundaryRange = NSRange(location: range.location, length: min(range.length + 1, source.length - range.location))
@@ -143,19 +144,71 @@ final class TreeSitterSyntaxParser {
             let inlineRanges = inlineRangesQuery.execute(in: tree).flatMap { match in
                 match.captures.map(\.node.tsRange).filter { $0.bytes.lowerBound < $0.bytes.upperBound }
             }
-            // Inline delimiters may span lines, but must never pair across Markdown blocks.
-            for inlineRange in inlineRanges where inlineRange.bytes.range.intersects(range) {
+            var updatedTrees: [MutableTree] = []
+            var reusedIndices: Set<Int> = []
+            var firstCandidate = 0
+            // Reuse the largest overlapping tree when an edit splits or merges Markdown blocks.
+            for inlineRange in inlineRanges {
                 let blockRange = inlineRange.bytes.range
-                range = NSUnionRange(range, blockRange)
+                while firstCandidate < inlineTrees.count,
+                      (inlineTrees[firstCandidate].rootNode?.range.upperBound ?? 0) <= blockRange.location {
+                    firstCandidate += 1
+                }
+                var candidate = firstCandidate
+                var bestIndex: Int?
+                var bestOverlap = 0
+                while candidate < inlineTrees.count, let oldRange = inlineTrees[candidate].rootNode?.range,
+                      oldRange.location < blockRange.upperBound {
+                    let overlap = NSIntersectionRange(oldRange, blockRange).length
+                    if overlap > bestOverlap { bestIndex = candidate; bestOverlap = overlap }
+                    candidate += 1
+                }
+                let previousTree = bestIndex.map { inlineTrees[$0] }
+                if let bestIndex { reusedIndices.insert(bestIndex) }
+                if let previousTree, let root = previousTree.rootNode,
+                   root.range == blockRange, !root.hasChanges {
+                    updatedTrees.append(previousTree)
+                    continue
+                }
+                // Changed node ranges alone can omit the start of a removed multiline code span.
+                if let previousTree {
+                    for token in captures(from: inlineQuery, in: previousTree, range: range, source: source)
+                        where token.range.intersects(range) {
+                        range = NSUnionRange(range, token.range.clamped(toLength: source.length))
+                    }
+                }
+                // Inline delimiters may span lines, but must never pair across Markdown blocks.
                 inlineParser.includedRanges = [inlineRange]
-                guard let inlineTree = parse(inlineParser, oldTree: nil, source: source) else { continue }
-                inlineTokens.append(contentsOf: captures(from: inlineQuery, in: inlineTree, range: blockRange, source: source))
+                guard let inlineTree = parse(inlineParser, oldTree: previousTree, source: source) else { continue }
+                updatedTrees.append(inlineTree)
+                if let previousTree {
+                    for change in inlineTree.changedRanges(from: previousTree) {
+                        let changedRange = NSIntersectionRange(change.bytes.range, blockRange)
+                        if changedRange.length > 0 { range = NSUnionRange(range, changedRange) }
+                    }
+                } else {
+                    range = NSUnionRange(range, blockRange)
+                }
+                for token in captures(from: inlineQuery, in: inlineTree, range: range, source: source)
+                    where token.range.intersects(range) {
+                    range = NSUnionRange(range, token.range)
+                }
             }
+            for index in inlineTrees.indices where !reusedIndices.contains(index) {
+                if let oldRange = inlineTrees[index].rootNode?.range {
+                    range = NSUnionRange(range, oldRange.clamped(toLength: source.length))
+                }
+            }
+            inlineTrees = updatedTrees
         }
 
         range = source.lineRange(for: range.clamped(toLength: source.length)).clamped(toLength: source.length)
         var tokens = captures(from: query, in: tree, range: range, source: source)
-        tokens.append(contentsOf: inlineTokens)
+        if let inlineQuery {
+            for inlineTree in inlineTrees where inlineTree.rootNode?.range.intersects(range) == true {
+                tokens.append(contentsOf: captures(from: inlineQuery, in: inlineTree, range: range, source: source))
+            }
+        }
         tokens.append(contentsOf: (nestedComments?.ranges ?? []).map {
             TreeSitterHighlightWork.Token(range: $0, role: .comment)
         })
@@ -285,6 +338,7 @@ final class TreeSitterSyntaxParser {
             newEndPoint: newEnd
         )
         tree?.edit(inputEdit)
+        for inlineTree in inlineTrees { inlineTree.edit(inputEdit) }
 
         let delta = replacement.count - range.length
         lineStarts = Array(lineStarts.prefix(Int(start.row) + 1)) + newLineStarts

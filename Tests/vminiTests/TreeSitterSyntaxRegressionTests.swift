@@ -153,6 +153,62 @@ final class TreeSitterSyntaxRegressionTests: XCTestCase {
         }
     }
 
+    func testMarkdownHeadingEditsKeepLongParagraphRepaintLocal() {
+        let body = String(repeating: "Paragraph with **bold** and `code`.\n", count: 1_000)
+        let storage = NSTextStorage(string: "# Header\n" + body + "\nTail\n")
+        let parser = TreeSitterSyntaxParser(language: .markdown)
+        apply(parser.highlight(text: storage.string, in: nil), to: storage)
+        for replacement in ["x", "#", "x", "#"] {
+            let range = NSRange(location: 0, length: 1)
+            let old = (storage.string as NSString).substring(with: range)
+            storage.replaceCharacters(in: range, with: replacement)
+            let work = parser.highlight(text: storage.string, in: range,
+                edits: [.init(replacementRange: range, replacementString: replacement, replacedText: old)])
+            XCTAssertLessThan(work.range.length, 200, "Changing the heading must not repaint the long adjacent paragraph")
+            apply(work, to: storage)
+            assertMatchesFresh(storage, language: .markdown)
+        }
+    }
+
+    func testMarkdownInlineTreesFollowShiftedAndChangedBlocks() {
+        let storage = NSTextStorage(string: "# Notes\n\n- `shared` text\n\n> `shared` text\n\n`shared` text\n")
+        let parser = TreeSitterSyntaxParser(language: .markdown)
+        apply(parser.highlight(text: storage.string, in: nil), to: storage)
+        for (old, replacement) in [
+            ("# Notes", "😀 intro\n\n# Notes"),
+            ("- `shared`", "- `changed"),
+            ("changed text", "changed\n\ntext"),
+            ("😀 intro\n\n", ""),
+        ] {
+            let range = (storage.string as NSString).range(of: old)
+            XCTAssertNotEqual(range.location, NSNotFound)
+            storage.replaceCharacters(in: range, with: replacement)
+            let edit = SyntaxHighlightEditContext(replacementRange: range, replacementString: replacement, replacedText: old)
+            apply(parser.highlight(text: storage.string,
+                in: NSRange(location: range.location, length: replacement.utf16.count), edits: [edit]), to: storage)
+            assertMatchesFresh(storage, language: .markdown)
+            apply(parser.highlight(text: storage.string, in: nil), to: storage)
+            assertMatchesFresh(storage, language: .markdown)
+            let unchangedCode = (storage.string as NSString).range(of: "`shared`", options: .backwards)
+            XCTAssertEqual(color(at: unchangedCode.location, in: storage), theme.inlineCode)
+        }
+    }
+
+    func testMarkdownInlineTreesPreserveUnicodeCodeUnitOffsets() {
+        let storage = NSTextStorage(string: "`é` rest\n\n`e\u{301}` rest\n")
+        let parser = TreeSitterSyntaxParser(language: .markdown)
+        for _ in 0..<2 {
+            apply(parser.highlight(text: storage.string, in: nil), to: storage)
+            for code in ["`é`", "`e\u{301}`"] {
+                let range = (storage.string as NSString).range(of: code, options: .literal)
+                for offset in range.location..<NSMaxRange(range) {
+                    XCTAssertEqual(color(at: offset, in: storage), theme.inlineCode)
+                }
+                XCTAssertEqual(color(at: NSMaxRange(range), in: storage), theme.plainText)
+            }
+        }
+    }
+
     func testClippingHappensBeforeFenceOffsetIsApplied() {
         let storage = NSTextStorage(string: "prefix\n0123456789\nsuffix")
         let fullRange = NSRange(location: 0, length: storage.length)
