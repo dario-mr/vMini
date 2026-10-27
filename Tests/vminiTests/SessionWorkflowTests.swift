@@ -658,12 +658,16 @@ final class SessionWorkflowTests: XCTestCase {
     func testExternalReloadDiscardsPayloadWhenDocumentRevisionChanges() async throws {
         let fileURL = try makeTemporaryFile(named: "revision-check.txt", contents: "disk")
         let store = OpenDocumentsStore()
+        let payloadLoadStarted = expectation(description: "reload payload load started")
+        var payloadContinuations: [CheckedContinuation<DocumentPayload, Error>] = []
         let lifecycle = DocumentFileLifecycleController(
             externalChangeCoordinator: DocumentExternalChangeCoordinator(),
             openDocumentsStore: store,
-            payloadLoader: { url in
-                try await Task.sleep(for: .milliseconds(100))
-                return DocumentPayload(url: url, typeName: "public.plain-text", text: "disk version")
+            payloadLoader: { _ in
+                try await withCheckedThrowingContinuation { continuation in
+                    payloadContinuations.append(continuation)
+                    payloadLoadStarted.fulfill()
+                }
             }
         )
         var revision: UInt64 = 1
@@ -689,8 +693,11 @@ final class SessionWorkflowTests: XCTestCase {
             )
         }
 
-        try await Task.sleep(for: .milliseconds(20))
+        await fulfillment(of: [payloadLoadStarted], timeout: 2)
         revision += 1
+        payloadContinuations[0].resume(returning: DocumentPayload(
+            url: fileURL, typeName: "public.plain-text", text: "disk version"
+        ))
         await reload.value
 
         XCTAssertFalse(didInstallPayload)
