@@ -45,7 +45,7 @@ actor TreeSitterSyntaxSession {
 final class TreeSitterSyntaxParser {
     private static let sqlIdentifierContinuation = CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "_$"))
 
-    // shortcut: SQL treats bind placeholders as parse errors; extend when supporting a new placeholder form.
+    // SQL treats bind placeholders as parse errors; extend when supporting a new placeholder form.
     private static let sqlParameterPattern = try! NSRegularExpression(
         pattern: #"(?<![A-Za-z0-9_$:])(?:@@?|:|\$)[A-Za-z_0-9][A-Za-z0-9_$]*(?![A-Za-z0-9_$])|(?<![A-Za-z0-9_$])\?(?![A-Za-z0-9_$])"#
     )
@@ -53,11 +53,8 @@ final class TreeSitterSyntaxParser {
     private let syntax: SyntaxLanguage
     private let parser = Parser()
     private let query: Query
-    private let inlineParser: Parser?
-    private let inlineQuery: Query?
-    private let inlineRangesQuery: Query?
+    private let markdownInlineParser: MarkdownInlineSyntaxParser?
     private var tree: MutableTree?
-    private var inlineTrees: [MutableTree] = []
     private var textLength = 0
     private var lineStarts = [0]
     private var hadNestedSQLComments = false
@@ -70,26 +67,13 @@ final class TreeSitterSyntaxParser {
         try! parser.setLanguage(definition.language)
         query = definition.highlightsQuery
 
-        if let inlineLanguage = definition.inlineLanguage,
-           let inlineHighlightsQuery = definition.inlineHighlightsQuery,
-           let inlineRangesQuery = definition.inlineRangesQuery {
-            let parser = Parser()
-            try! parser.setLanguage(inlineLanguage)
-            inlineParser = parser
-            inlineQuery = inlineHighlightsQuery
-            self.inlineRangesQuery = inlineRangesQuery
-        } else {
-            inlineParser = nil
-            inlineQuery = nil
-            inlineRangesQuery = nil
-        }
+        markdownInlineParser = MarkdownInlineSyntaxParser(definition: definition)
     }
 
     func reset() {
         tree = nil
-        inlineTrees = []
         parser.reset()
-        inlineParser?.reset()
+        markdownInlineParser?.reset()
         textLength = 0
         lineStarts = [0]
         hadNestedSQLComments = false
@@ -109,7 +93,7 @@ final class TreeSitterSyntaxParser {
 
         var range = (requestedRange ?? fullRange).clamped(toLength: source.length)
         let nestedComments = syntax == .sql ? SQLNestedComments.mask(in: text) : nil
-        // shortcut: nested SQL comments need a full reparse; remove masking when the grammar supports nesting.
+        // nested SQL comments need a full reparse; remove masking when the grammar supports nesting.
         if nestedComments != nil || hadNestedSQLComments {
             reset()
             range = fullRange
@@ -128,7 +112,7 @@ final class TreeSitterSyntaxParser {
 
         let oldTree = tree
         hadNestedSQLComments = nestedComments != nil
-        tree = parse(parser, oldTree: oldTree, source: nestedComments?.source ?? source)
+        tree = Self.parse(parser, oldTree: oldTree, source: nestedComments?.source ?? source)
         textLength = source.length
         guard let tree else { return TreeSitterHighlightWork(range: fullRange, tokens: []) }
         if let oldTree {
@@ -137,78 +121,11 @@ final class TreeSitterSyntaxParser {
             }
         }
 
-        if let inlineParser, let inlineRangesQuery, let inlineQuery {
-            // A newline edit can create a block immediately after the edited range.
-            let boundaryRange = NSRange(location: range.location, length: min(range.length + 1, source.length - range.location))
-            range = source.lineRange(for: boundaryRange).clamped(toLength: source.length)
-            let inlineRanges = inlineRangesQuery.execute(in: tree).flatMap { match in
-                match.captures.map(\.node.tsRange).filter { $0.bytes.lowerBound < $0.bytes.upperBound }
-            }
-            var updatedTrees: [MutableTree] = []
-            var reusedIndices: Set<Int> = []
-            var firstCandidate = 0
-            // Reuse the largest overlapping tree when an edit splits or merges Markdown blocks.
-            for inlineRange in inlineRanges {
-                let blockRange = inlineRange.bytes.range
-                while firstCandidate < inlineTrees.count,
-                      (inlineTrees[firstCandidate].rootNode?.range.upperBound ?? 0) <= blockRange.location {
-                    firstCandidate += 1
-                }
-                var candidate = firstCandidate
-                var bestIndex: Int?
-                var bestOverlap = 0
-                while candidate < inlineTrees.count, let oldRange = inlineTrees[candidate].rootNode?.range,
-                      oldRange.location < blockRange.upperBound {
-                    let overlap = NSIntersectionRange(oldRange, blockRange).length
-                    if overlap > bestOverlap { bestIndex = candidate; bestOverlap = overlap }
-                    candidate += 1
-                }
-                let previousTree = bestIndex.map { inlineTrees[$0] }
-                if let bestIndex { reusedIndices.insert(bestIndex) }
-                if let previousTree, let root = previousTree.rootNode,
-                   root.range == blockRange, !root.hasChanges {
-                    updatedTrees.append(previousTree)
-                    continue
-                }
-                // Changed node ranges alone can omit the start of a removed multiline code span.
-                if let previousTree {
-                    for token in captures(from: inlineQuery, in: previousTree, range: range, source: source)
-                        where token.range.intersects(range) {
-                        range = NSUnionRange(range, token.range.clamped(toLength: source.length))
-                    }
-                }
-                // Inline delimiters may span lines, but must never pair across Markdown blocks.
-                inlineParser.includedRanges = [inlineRange]
-                guard let inlineTree = parse(inlineParser, oldTree: previousTree, source: source) else { continue }
-                updatedTrees.append(inlineTree)
-                if let previousTree {
-                    for change in inlineTree.changedRanges(from: previousTree) {
-                        let changedRange = NSIntersectionRange(change.bytes.range, blockRange)
-                        if changedRange.length > 0 { range = NSUnionRange(range, changedRange) }
-                    }
-                } else {
-                    range = NSUnionRange(range, blockRange)
-                }
-                for token in captures(from: inlineQuery, in: inlineTree, range: range, source: source)
-                    where token.range.intersects(range) {
-                    range = NSUnionRange(range, token.range)
-                }
-            }
-            for index in inlineTrees.indices where !reusedIndices.contains(index) {
-                if let oldRange = inlineTrees[index].rootNode?.range {
-                    range = NSUnionRange(range, oldRange.clamped(toLength: source.length))
-                }
-            }
-            inlineTrees = updatedTrees
-        }
-
-        range = source.lineRange(for: range.clamped(toLength: source.length)).clamped(toLength: source.length)
-        var tokens = captures(from: query, in: tree, range: range, source: source)
-        if let inlineQuery {
-            for inlineTree in inlineTrees where inlineTree.rootNode?.range.intersects(range) == true {
-                tokens.append(contentsOf: captures(from: inlineQuery, in: inlineTree, range: range, source: source))
-            }
-        }
+        let inlineWork = markdownInlineParser?.highlight(in: tree, source: source, range: range)
+        range = inlineWork?.range
+            ?? source.lineRange(for: range.clamped(toLength: source.length)).clamped(toLength: source.length)
+        var tokens = Self.captures(from: query, in: tree, range: range, source: source, syntax: syntax)
+        tokens.append(contentsOf: inlineWork?.tokens ?? [])
         tokens.append(contentsOf: (nestedComments?.ranges ?? []).map {
             TreeSitterHighlightWork.Token(range: $0, role: .comment)
         })
@@ -223,7 +140,7 @@ final class TreeSitterSyntaxParser {
         return TreeSitterHighlightWork(range: range, tokens: tokens)
     }
 
-    private func parse(_ parser: Parser, oldTree: MutableTree?, source: NSString) -> MutableTree? {
+    static func parse(_ parser: Parser, oldTree: MutableTree?, source: NSString) -> MutableTree? {
         parser.parse(tree: oldTree) { byteOffset, _ in
             let location = byteOffset / 2
             let count = min(2_048, source.length - location)
@@ -239,7 +156,9 @@ final class TreeSitterSyntaxParser {
         }
     }
 
-    private func captures(from query: Query, in tree: MutableTree, range: NSRange, source: NSString) -> [TreeSitterHighlightWork.Token] {
+    static func captures(
+        from query: Query, in tree: MutableTree, range: NSRange, source: NSString, syntax: SyntaxLanguage
+    ) -> [TreeSitterHighlightWork.Token] {
         let cursor = query.execute(in: tree)
         cursor.setRange(range)
         let matches = cursor.resolve(with: Predicate.Context(string: source as String))
@@ -299,13 +218,13 @@ final class TreeSitterSyntaxParser {
         }
     }
 
-    private func isWholeSQLKeyword(_ range: NSRange, in source: NSString) -> Bool {
+    private static func isWholeSQLKeyword(_ range: NSRange, in source: NSString) -> Bool {
         guard range.location >= 0, range.length > 0, NSMaxRange(range) <= source.length else { return false }
         return !isSQLIdentifierContinuation(at: range.location - 1, in: source)
             && !isSQLIdentifierContinuation(at: NSMaxRange(range), in: source)
     }
 
-    private func isSQLIdentifierContinuation(at offset: Int, in source: NSString) -> Bool {
+    private static func isSQLIdentifierContinuation(at offset: Int, in source: NSString) -> Bool {
         guard offset >= 0, offset < source.length else { return false }
         let characterRange = source.rangeOfComposedCharacterSequence(at: offset)
         return source.substring(with: characterRange).unicodeScalars.contains {
@@ -338,7 +257,7 @@ final class TreeSitterSyntaxParser {
             newEndPoint: newEnd
         )
         tree?.edit(inputEdit)
-        for inlineTree in inlineTrees { inlineTree.edit(inputEdit) }
+        markdownInlineParser?.edit(inputEdit)
 
         let delta = replacement.count - range.length
         lineStarts = Array(lineStarts.prefix(Int(start.row) + 1)) + newLineStarts
