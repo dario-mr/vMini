@@ -1,5 +1,13 @@
 import AppKit
 
+private enum SelectionOccurrenceStyle {
+    static let colorOpacity: CGFloat = 0.95
+    static let lineWidth: CGFloat = 1
+    static let cornerRadius: CGFloat = 3
+    static let horizontalPadding: CGFloat = 2
+    static let verticalPadding: CGFloat = 1
+}
+
 class EditorTextView: NSTextView {
     private static let selectionDelimiters = [
         "`": "`", "'": "'", "\"": "\"",
@@ -24,6 +32,74 @@ class EditorTextView: NSTextView {
     var onCommandClick: ((Int) -> Bool)?
     var isCommandClickTarget: ((Int) -> Bool)?
     private var linkTrackingArea: NSTrackingArea?
+    private(set) var selectionOccurrenceHighlightRanges: [NSRange] = []
+    private(set) var selectionOccurrenceHighlightColor: NSColor?
+
+    func setSelectionOccurrenceHighlights(_ ranges: [NSRange], color: NSColor?) {
+        selectionOccurrenceHighlightRanges = ranges
+        selectionOccurrenceHighlightColor = ranges.isEmpty ? nil : color
+        needsDisplay = true
+    }
+
+    override func draw(_ dirtyRect: NSRect) {
+        super.draw(dirtyRect)
+
+        guard let color = selectionOccurrenceHighlightColor,
+              let layoutManager,
+              let textContainer else { return }
+
+        let origin = textContainerOrigin
+        let visibleGlyphRange = layoutManager.glyphRange(
+            forBoundingRect: dirtyRect.offsetBy(dx: -origin.x, dy: -origin.y),
+            in: textContainer
+        )
+        let visibleCharacterRange = layoutManager.characterRange(forGlyphRange: visibleGlyphRange, actualGlyphRange: nil)
+        let documentLength = (string as NSString).length
+        let path = NSBezierPath()
+        path.lineWidth = SelectionOccurrenceStyle.lineWidth
+
+        for range in selectionOccurrenceHighlightRanges {
+            guard range.location >= 0, range.length > 0,
+                  range.location < documentLength,
+                  range.length <= documentLength - range.location,
+                  NSIntersectionRange(range, visibleCharacterRange).length > 0 else { continue }
+
+            let glyphRange = layoutManager.glyphRange(forCharacterRange: range, actualCharacterRange: nil)
+            guard NSIntersectionRange(glyphRange, visibleGlyphRange).length > 0 else { continue }
+
+            var glyphIndex = glyphRange.location
+            while glyphIndex < NSMaxRange(glyphRange) {
+                var lineGlyphRange = NSRange()
+                _ = layoutManager.lineFragmentRect(
+                    forGlyphAt: glyphIndex,
+                    effectiveRange: &lineGlyphRange,
+                    withoutAdditionalLayout: false
+                )
+                let segment = NSIntersectionRange(glyphRange, lineGlyphRange)
+                if segment.length > 0 {
+                    let glyphRect = layoutManager.boundingRect(forGlyphRange: segment, in: textContainer)
+                    if glyphRect.width > 0 {
+                        let rect = glyphRect.offsetBy(dx: origin.x, dy: origin.y).insetBy(
+                            dx: -SelectionOccurrenceStyle.horizontalPadding,
+                            dy: -SelectionOccurrenceStyle.verticalPadding
+                        )
+                        path.append(NSBezierPath(
+                            roundedRect: rect,
+                            xRadius: SelectionOccurrenceStyle.cornerRadius,
+                            yRadius: SelectionOccurrenceStyle.cornerRadius
+                        ))
+                    }
+                }
+
+                let nextGlyphIndex = NSMaxRange(lineGlyphRange)
+                guard nextGlyphIndex > glyphIndex else { break }
+                glyphIndex = nextGlyphIndex
+            }
+        }
+
+        color.withAlphaComponent(SelectionOccurrenceStyle.colorOpacity).setStroke()
+        path.stroke()
+    }
 
     override func updateTrackingAreas() {
         super.updateTrackingAreas()

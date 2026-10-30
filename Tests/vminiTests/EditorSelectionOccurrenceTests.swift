@@ -44,8 +44,8 @@ final class EditorSelectionOccurrenceTests: XCTestCase {
         XCTAssertEqual(ranges.last, NSRange(location: 109_989, length: 4))
     }
 
-    func testHighlightsAreTemporaryAndClearingPreservesOtherAttributes() async throws {
-        let textView = NSTextView()
+    func testOccurrenceBordersDoNotModifyTextOrOtherAttributes() async throws {
+        let textView = EditorTextView()
         textView.string = "foo bar foo"
         let storage = try XCTUnwrap(textView.textStorage)
         let layout = try XCTUnwrap(textView.layoutManager)
@@ -58,22 +58,24 @@ final class EditorSelectionOccurrenceTests: XCTestCase {
         controller.refresh()
         try await waitForHighlight(in: textView, at: 8)
 
-        XCTAssertEqual(background(in: textView, at: 0), .blue)
+        XCTAssertFalse(isOccurrenceHighlighted(in: textView, at: 0))
+        XCTAssertTrue(isOccurrenceHighlighted(in: textView, at: 8))
+        XCTAssertEqual(textView.selectionOccurrenceHighlightColor, .blue)
         XCTAssertEqual(storage.attribute(.foregroundColor, at: 8, effectiveRange: nil) as? NSColor, .red)
         XCTAssertEqual(storage.attribute(.backgroundColor, at: 8, effectiveRange: nil) as? NSColor, .yellow)
         XCTAssertEqual(textView.string, "foo bar foo")
         textView.setSelectedRange(NSRange(location: 0, length: 0))
         controller.refresh()
 
-        XCTAssertNil(background(in: textView, at: 0))
-        XCTAssertNil(background(in: textView, at: 8))
+        XCTAssertFalse(isOccurrenceHighlighted(in: textView, at: 0))
+        XCTAssertFalse(isOccurrenceHighlighted(in: textView, at: 8))
         XCTAssertEqual(background(in: textView, at: 4), .green)
         XCTAssertNotNil(layout.temporaryAttribute(.underlineStyle, atCharacterIndex: 8, effectiveRange: nil))
         XCTAssertEqual(storage.attribute(.backgroundColor, at: 8, effectiveRange: nil) as? NSColor, .yellow)
     }
 
     func testClearingAfterEditsRemovesShiftedHighlights() async throws {
-        let textView = NSTextView()
+        let textView = EditorTextView()
         textView.string = "foo bar foo"
         let controller = EditorSelectionOccurrenceController(textView: textView, highlightColorProvider: { .blue })
         textView.setSelectedRange(NSRange(location: 0, length: 3))
@@ -83,16 +85,14 @@ final class EditorSelectionOccurrenceTests: XCTestCase {
         textView.textStorage?.replaceCharacters(in: NSRange(location: 0, length: 0), with: "prefix ")
         textView.setSelectedRange(NSRange(location: 0, length: 0))
         controller.refresh()
-        for location in 0..<(textView.string as NSString).length {
-            XCTAssertNil(background(in: textView, at: location))
-        }
+        XCTAssertTrue(textView.selectionOccurrenceHighlightRanges.isEmpty)
         textView.string = "x"
         controller.refresh()
-        XCTAssertNil(background(in: textView, at: 0))
+        XCTAssertTrue(textView.selectionOccurrenceHighlightRanges.isEmpty)
     }
 
     func testRapidSelectionChangesAndEditsDiscardPendingHighlights() async throws {
-        let textView = NSTextView()
+        let textView = EditorTextView()
         textView.string = "foo bar foo bar"
         let controller = EditorSelectionOccurrenceController(textView: textView, highlightColorProvider: { .blue })
         textView.setSelectedRange(NSRange(location: 0, length: 3))
@@ -100,19 +100,19 @@ final class EditorSelectionOccurrenceTests: XCTestCase {
         textView.setSelectedRange(NSRange(location: 4, length: 3))
         controller.refresh()
         try await waitForHighlight(in: textView, at: 12)
-        XCTAssertNil(background(in: textView, at: 0))
-        XCTAssertNil(background(in: textView, at: 8))
+        XCTAssertFalse(isOccurrenceHighlighted(in: textView, at: 0))
+        XCTAssertFalse(isOccurrenceHighlighted(in: textView, at: 8))
 
         textView.setSelectedRange(NSRange(location: 0, length: 3))
         controller.refresh()
         textView.string = "x"
         controller.refresh()
         try await Task.sleep(nanoseconds: 150_000_000)
-        XCTAssertNil(background(in: textView, at: 0))
+        XCTAssertTrue(textView.selectionOccurrenceHighlightRanges.isEmpty)
     }
 
     func testThemeRefreshChangesHighlightColor() async throws {
-        let textView = NSTextView()
+        let textView = EditorTextView()
         textView.string = "foo foo"
         var color = NSColor.blue
         let controller = EditorSelectionOccurrenceController(textView: textView, highlightColorProvider: { color })
@@ -122,11 +122,11 @@ final class EditorSelectionOccurrenceTests: XCTestCase {
         color = .red
         controller.refresh()
         try await waitForHighlight(in: textView, at: 4)
-        XCTAssertEqual(background(in: textView, at: 4), .red)
+        XCTAssertEqual(textView.selectionOccurrenceHighlightColor, .red)
     }
 
     func testMultipleSelectionsClearOccurrenceHighlights() async throws {
-        let textView = NSTextView()
+        let textView = EditorTextView()
         textView.string = "foo bar foo"
         let controller = EditorSelectionOccurrenceController(textView: textView, highlightColorProvider: { .blue })
         textView.setSelectedRange(NSRange(location: 0, length: 3))
@@ -139,15 +139,14 @@ final class EditorSelectionOccurrenceTests: XCTestCase {
         ]
         controller.refresh()
         try await Task.sleep(nanoseconds: 150_000_000)
-        XCTAssertNil(background(in: textView, at: 0))
-        XCTAssertNil(background(in: textView, at: 8))
+        XCTAssertTrue(textView.selectionOccurrenceHighlightRanges.isEmpty)
     }
 
     func testEditorSelectionEditingAndBracketHighlightsWorkTogether() async throws {
         let editor = EditorViewController()
         _ = editor.view
         editor.text = "(foo) foo"
-        let textView = try XCTUnwrap(editor.view.subviews.compactMap { ($0 as? NSScrollView)?.documentView as? NSTextView }.first)
+        let textView = try XCTUnwrap(editor.view.subviews.compactMap { ($0 as? NSScrollView)?.documentView as? EditorTextView }.first)
         var edits = 0
         editor.onTextChanged = { edits += 1 }
         textView.setSelectedRange(NSRange(location: 1, length: 3))
@@ -155,12 +154,12 @@ final class EditorSelectionOccurrenceTests: XCTestCase {
         XCTAssertEqual(edits, 0)
 
         textView.setSelectedRange(NSRange(location: 1, length: 0))
-        XCTAssertNil(background(in: textView, at: 6))
+        XCTAssertFalse(isOccurrenceHighlighted(in: textView, at: 6))
         XCTAssertNotNil(background(in: textView, at: 0))
         XCTAssertNotNil(background(in: textView, at: 4))
 
         textView.setSelectedRange(NSRange(location: 0, length: 1))
-        try await waitForHighlight(in: textView, at: 0)
+        XCTAssertTrue(textView.selectionOccurrenceHighlightRanges.isEmpty)
         textView.setSelectedRange(NSRange(location: 1, length: 0))
         XCTAssertNotNil(background(in: textView, at: 0))
         XCTAssertNotNil(background(in: textView, at: 4))
@@ -170,10 +169,10 @@ final class EditorSelectionOccurrenceTests: XCTestCase {
         textView.insertText("bar", replacementRange: NSRange(location: 6, length: 3))
         XCTAssertEqual(edits, 1)
         XCTAssertEqual(editor.text, "(foo) bar")
-        XCTAssertNil(background(in: textView, at: 6))
+        XCTAssertFalse(isOccurrenceHighlighted(in: textView, at: 6))
 
         editor.text = "x"
-        XCTAssertNil(background(in: textView, at: 0))
+        XCTAssertTrue(textView.selectionOccurrenceHighlightRanges.isEmpty)
     }
 
     func testReplacingSelectedMarkdownListWithNewlineCanDraw() async throws {
@@ -189,14 +188,13 @@ final class EditorSelectionOccurrenceTests: XCTestCase {
         let selected = "1. ddd\n2. dasdsa\n3. dsada\n4. safdd"
         editor.text = prefix + selected
         editor.view.layoutSubtreeIfNeeded()
-        let textView = try XCTUnwrap(editor.view.subviews.compactMap { ($0 as? NSScrollView)?.documentView as? NSTextView }.first)
+        let textView = try XCTUnwrap(editor.view.subviews.compactMap { ($0 as? NSScrollView)?.documentView as? EditorTextView }.first)
         window.orderFront(nil)
         window.makeFirstResponder(textView)
         try await Task.sleep(nanoseconds: 200_000_000)
         let range = NSRange(location: prefix.utf16.count, length: selected.utf16.count)
         textView.setSelectedRange(range)
         textView.scrollRangeToVisible(range)
-        try await waitForHighlight(in: textView, at: range.location)
         window.displayIfNeeded()
         textView.insertNewline(nil)
         XCTAssertEqual(editor.text, prefix + "\n")
@@ -216,7 +214,6 @@ final class EditorSelectionOccurrenceTests: XCTestCase {
         undoManager.undo()
         XCTAssertEqual(editor.text, prefix + selected)
         textView.setSelectedRange(range)
-        try await waitForHighlight(in: textView, at: range.location)
         window.displayIfNeeded()
         XCTAssertTrue(undoManager.canRedo)
         undoManager.redo()
@@ -228,11 +225,15 @@ final class EditorSelectionOccurrenceTests: XCTestCase {
         textView.layoutManager?.temporaryAttribute(.backgroundColor, atCharacterIndex: location, effectiveRange: nil) as? NSColor
     }
 
-    private func waitForHighlight(in textView: NSTextView, at location: Int, file: StaticString = #filePath, line: UInt = #line) async throws {
+    private func isOccurrenceHighlighted(in textView: EditorTextView, at location: Int) -> Bool {
+        textView.selectionOccurrenceHighlightRanges.contains { NSLocationInRange(location, $0) }
+    }
+
+    private func waitForHighlight(in textView: EditorTextView, at location: Int, file: StaticString = #filePath, line: UInt = #line) async throws {
         for _ in 0..<100 {
-            if background(in: textView, at: location) != nil { return }
+            if isOccurrenceHighlighted(in: textView, at: location) { return }
             try await Task.sleep(nanoseconds: 10_000_000)
         }
-        XCTFail("Expected occurrence highlight at \(location)", file: file, line: line)
+        XCTFail("Expected occurrence border at \(location)", file: file, line: line)
     }
 }
