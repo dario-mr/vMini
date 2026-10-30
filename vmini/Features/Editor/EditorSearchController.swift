@@ -36,6 +36,11 @@ final class EditorSearchController: NSObject, NSTextFieldDelegate {
     init(textView: NSTextView) {
         self.textView = textView
         super.init()
+        (textView.layoutManager as? EditorSearchLayoutManager)?.currentMatch = { [weak self] in
+            guard let self, isVisible, self.textView.selectedRanges.count == 1,
+                  matches.contains(self.textView.selectedRange()) else { return nil }
+            return self.textView.selectedRange()
+        }
         panel.searchField.delegate = self
         panel.replacementField.delegate = self
         for (button, action) in [
@@ -87,6 +92,7 @@ final class EditorSearchController: NSObject, NSTextFieldDelegate {
         clearHighlights()
         panel.close()
         matches = []
+        textView.needsDisplay = true
         onVisibilityChanged?(false)
         textView.window?.makeFirstResponder(textView)
     }
@@ -143,6 +149,7 @@ final class EditorSearchController: NSObject, NSTextFieldDelegate {
 
     func selectionDidChange() {
         guard isVisible else { return }
+        textView.needsDisplay = true
         panel.updateCount(current: matches.firstIndex(of: textView.selectedRange()), total: matches.count)
     }
 
