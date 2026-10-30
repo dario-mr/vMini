@@ -68,6 +68,7 @@ final class EditorTextViewStyler {
         }
         textView.textColor = AppColors.primaryText
         textView.backgroundColor = AppColors.editorBackground
+        (textView.layoutManager as? EditorSearchLayoutManager)?.outlineColor = AppColors.primaryText
         AppPerformanceProfiler.measure("EditorViewportSizing") {
             synchronizeWordWrapLayout()
         }

@@ -164,6 +164,7 @@
 		D00000000000000000000003 /* MarkdownFenceHighlighter.swift in Sources */ = {isa = PBXBuildFile; fileRef = D00000000000000000000004 /* MarkdownFenceHighlighter.swift */; };
 		E3A92C506A3C48B291041301 /* MarkdownInlineSyntaxParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3A92C506A3C48B291041302 /* MarkdownInlineSyntaxParser.swift */; };
 		D00000000000000000000005 /* TreeSitterSyntaxRegressionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D00000000000000000000006 /* TreeSitterSyntaxRegressionTests.swift */; };
+		C17E9A1CFF124B5A9EAF5101 /* EditorSearchLayoutManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C17E9A1CFF124B5A9EAF5102 /* EditorSearchLayoutManager.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -323,6 +324,7 @@
 		D00000000000000000000004 /* MarkdownFenceHighlighter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownFenceHighlighter.swift; sourceTree = "<group>"; };
 		E3A92C506A3C48B291041302 /* MarkdownInlineSyntaxParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownInlineSyntaxParser.swift; sourceTree = "<group>"; };
 		D00000000000000000000006 /* TreeSitterSyntaxRegressionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TreeSitterSyntaxRegressionTests.swift; sourceTree = "<group>"; };
+		C17E9A1CFF124B5A9EAF5102 /* EditorSearchLayoutManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorSearchLayoutManager.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -556,6 +558,7 @@
 				B0000000000000000000000A /* EditorSearchFieldCell.swift */,
 				B00000000000000000000004 /* EditorSearchPanel.swift */,
 				B00000000000000000000006 /* EditorSearchController.swift */,
+				C17E9A1CFF124B5A9EAF5102 /* EditorSearchLayoutManager.swift */,
 				A00000000000000000000231 /* EditorSelectionOccurrenceController.swift */,
 				A00000000000000000000197 /* EditorViewportController.swift */,
 				A00000000000000000000173 /* EditorTextEditing.swift */,
@@ -891,6 +894,7 @@
 				B00000000000000000000009 /* EditorSearchFieldCell.swift in Sources */,
 				B00000000000000000000003 /* EditorSearchPanel.swift in Sources */,
 				B00000000000000000000005 /* EditorSearchController.swift in Sources */,
+				C17E9A1CFF124B5A9EAF5101 /* EditorSearchLayoutManager.swift in Sources */,
 				A00000000000000000000230 /* EditorSelectionOccurrenceController.swift in Sources */,
 				A00000000000000000000196 /* EditorViewportController.swift in Sources */,
 				A00000000000000000000172 /* EditorTextEditing.swift in Sources */,

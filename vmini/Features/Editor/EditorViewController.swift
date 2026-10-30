@@ -367,6 +367,7 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
     }
 
     private func configureTextView() {
+        textView.textContainer?.replaceLayoutManager(EditorSearchLayoutManager())
         textView.delegate = self
         textView.onNavigationCheckpoint = { [weak self] before, after in
             self?.onNavigationCheckpoint?(before, after)
