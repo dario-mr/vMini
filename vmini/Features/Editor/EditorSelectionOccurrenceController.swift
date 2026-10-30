@@ -2,15 +2,12 @@ import AppKit
 
 @MainActor
 final class EditorSelectionOccurrenceController {
-    private static let marker = NSAttributedString.Key("vmini.selectionOccurrence")
-
     var isEnabled = true { didSet { refresh() } }
-    private let textView: NSTextView
+    private let textView: EditorTextView
     private let highlightColorProvider: () -> NSColor
     private var pendingRefreshTask: Task<Void, Never>?
-    private var hasHighlights = false
 
-    init(textView: NSTextView, highlightColorProvider: @escaping () -> NSColor) {
+    init(textView: EditorTextView, highlightColorProvider: @escaping () -> NSColor) {
         self.textView = textView
         self.highlightColorProvider = highlightColorProvider
     }
@@ -21,6 +18,7 @@ final class EditorSelectionOccurrenceController {
 
     func handleTextStorageDidEdit() {
         pendingRefreshTask?.cancel()
+        clearHighlights()
         // Layout still has the old glyph ranges inside NSTextStorage's editing callback.
         pendingRefreshTask = Task { @MainActor [weak self] in
             await Task.yield()
@@ -53,16 +51,13 @@ final class EditorSelectionOccurrenceController {
             } onCancel: {
                 work.cancel()
             }
-            guard !Task.isCancelled, let self, let layoutManager = textView.layoutManager else { return }
+            guard !Task.isCancelled, let self else { return }
 
-            let attributes: [NSAttributedString.Key: Any] = [
-                .backgroundColor: highlightColorProvider(),
-                Self.marker: true,
-            ]
-            for range in ranges {
-                layoutManager.addTemporaryAttributes(attributes, forCharacterRange: range)
-            }
-            hasHighlights = !ranges.isEmpty
+            let otherOccurrences = ranges.filter { NSIntersectionRange($0, selection).length == 0 }
+            self.textView.setSelectionOccurrenceHighlights(
+                otherOccurrences,
+                color: otherOccurrences.isEmpty ? nil : self.highlightColorProvider()
+            )
         }
     }
 
@@ -89,20 +84,6 @@ final class EditorSelectionOccurrenceController {
     }
 
     private func clearHighlights() {
-        guard hasHighlights, let layoutManager = textView.layoutManager else { return }
-        let length = (textView.string as NSString).length
-        var location = 0
-        // Temporary attributes move with edits; stored ranges would leave shifted highlights behind.
-        while location < length {
-            var range = NSRange()
-            let attributes = layoutManager.temporaryAttributes(atCharacterIndex: location, effectiveRange: &range)
-            if attributes[Self.marker] != nil {
-                let validRange = range.clamped(toLength: length)
-                layoutManager.removeTemporaryAttribute(.backgroundColor, forCharacterRange: validRange)
-                layoutManager.removeTemporaryAttribute(Self.marker, forCharacterRange: validRange)
-            }
-            location = max(location + 1, NSMaxRange(range))
-        }
-        hasHighlights = false
+        textView.setSelectionOccurrenceHighlights([], color: nil)
     }
 }
