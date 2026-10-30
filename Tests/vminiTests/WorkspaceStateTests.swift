@@ -120,6 +120,59 @@ final class WorkspaceStateTests: XCTestCase {
         XCTAssertFalse(document.isDocumentEdited)
     }
 
+    func testSaveWritesWritableFileWhenParentDirectoryIsNotWritable() async throws {
+        let document = makeDocument(openDocumentsStore: OpenDocumentsStore())
+        try document.read(from: Data("original".utf8), ofType: "public.plain-text")
+        let editor = document.editorViewController(onFileSystemURLsDropped: { _ in })
+        editor.text = "updated"
+        editor.onTextChanged?()
+
+        let directory = try makeTemporaryDirectory(name: "unwritable-parent-save")
+        let fileURL = directory.appendingPathComponent("hosts")
+        try Data("original".utf8).write(to: fileURL)
+
+        let fileManager = FileManager.default
+        try fileManager.setAttributes([.posixPermissions: 0o644], ofItemAtPath: fileURL.path)
+        try fileManager.setAttributes([.posixPermissions: 0o555], ofItemAtPath: directory.path)
+        defer { try? fileManager.setAttributes([.posixPermissions: 0o755], ofItemAtPath: directory.path) }
+
+        guard
+            !fileManager.isWritableFile(atPath: directory.path),
+            fileManager.isWritableFile(atPath: fileURL.path)
+        else {
+            throw XCTSkip("This test requires a writable file in a non-writable directory.")
+        }
+
+        try await document.save(to: fileURL, ofType: "public.plain-text", for: .saveOperation)
+
+        XCTAssertEqual(try String(contentsOf: fileURL, encoding: .utf8), "updated")
+        XCTAssertFalse(document.isDocumentEdited)
+    }
+
+    func testPrivilegedFileWriterScriptCompilesWithQuotedPaths() {
+        let scriptSource = PrivilegedFileWriter.authorizationScript(
+            from: URL(fileURLWithPath: "/tmp/source's \"text\".txt"),
+            to: URL(fileURLWithPath: "/tmp/target\ntext.txt")
+        )
+        let script = NSAppleScript(source: scriptSource)
+        var error: NSDictionary?
+
+        XCTAssertTrue(script?.compileAndReturnError(&error) == true, "\(String(describing: error))")
+        XCTAssertTrue(scriptSource.contains("quoted form of sourcePath"))
+        XCTAssertTrue(scriptSource.contains("quoted form of destinationPath"))
+    }
+
+    func testPrivilegedFileWriterRejectsSymbolicLinks() throws {
+        let directory = try makeTemporaryDirectory(name: "privileged-write-symlink")
+        let targetURL = directory.appendingPathComponent("target")
+        let symbolicLinkURL = directory.appendingPathComponent("link")
+        try Data("original".utf8).write(to: targetURL)
+        try FileManager.default.createSymbolicLink(at: symbolicLinkURL, withDestinationURL: targetURL)
+
+        XCTAssertThrowsError(try PrivilegedFileWriter.write(Data("replacement".utf8), to: symbolicLinkURL))
+        XCTAssertEqual(try String(contentsOf: targetURL, encoding: .utf8), "original")
+    }
+
     func testUnicodeEncodingChangesRemainUnsavedUntilOriginalBytesAreRestored() throws {
         let document = makeDocument(openDocumentsStore: OpenDocumentsStore())
         try document.read(from: Data("\u{e9}".utf8), ofType: "public.plain-text")
