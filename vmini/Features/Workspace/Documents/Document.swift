@@ -258,12 +258,56 @@ final class Document: NSDocument {
 
     override func write(to url: URL, ofType typeName: String) throws {
         try MainActor.assumeIsolated {
-            let currentText = contentController.currentText(editorText: editorSession.currentEditorText())
-            contentController.updateText(currentText)
-            try currentText.write(to: url, atomically: true, encoding: .utf8)
-            savedText = currentText
-            editorSession.markChangesSaved()
+            try writeCurrentText(to: url, atomically: true)
         }
+    }
+
+    override func writeSafely(to url: URL, ofType typeName: String, for saveOperation: NSDocument.SaveOperationType) throws {
+        let fileManager = FileManager.default
+        if !fileManager.isWritableFile(atPath: url.deletingLastPathComponent().path) {
+            if
+                fileManager.fileExists(atPath: url.path),
+                fileManager.isWritableFile(atPath: url.path)
+            {
+                try MainActor.assumeIsolated {
+                    try writeCurrentText(to: url, atomically: false)
+                }
+            } else {
+                try MainActor.assumeIsolated {
+                    try writeCurrentTextWithAuthorization(to: url)
+                }
+            }
+        } else {
+            try super.writeSafely(to: url, ofType: typeName, for: saveOperation)
+        }
+    }
+
+    private func writeCurrentText(to url: URL, atomically: Bool) throws {
+        let currentText = contentController.currentText(editorText: editorSession.currentEditorText())
+        contentController.updateText(currentText)
+        if atomically {
+            try currentText.write(to: url, atomically: true, encoding: .utf8)
+        } else {
+            let file = try FileHandle(forWritingTo: url)
+            do {
+                try file.truncate(atOffset: 0)
+                try file.write(contentsOf: Data(currentText.utf8))
+                try file.close()
+            } catch {
+                try? file.close()
+                throw error
+            }
+        }
+        savedText = currentText
+        editorSession.markChangesSaved()
+    }
+
+    private func writeCurrentTextWithAuthorization(to url: URL) throws {
+        let currentText = contentController.currentText(editorText: editorSession.currentEditorText())
+        contentController.updateText(currentText)
+        try PrivilegedFileWriter.write(Data(currentText.utf8), to: url)
+        savedText = currentText
+        editorSession.markChangesSaved()
     }
 
     override func read(from data: Data, ofType typeName: String) throws {
