@@ -61,7 +61,7 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
     private lazy var selectionOccurrenceController = EditorSelectionOccurrenceController(
         textView: textView,
         highlightColorProvider: {
-            AppColors.primaryActionBackground.withAlphaComponent(0.6)
+            AppColors.primaryActionBackground
         }
     )
     private lazy var viewportController = EditorViewportController(
