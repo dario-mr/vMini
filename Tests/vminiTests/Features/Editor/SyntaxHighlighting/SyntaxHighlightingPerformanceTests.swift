@@ -9,9 +9,7 @@ final class SyntaxHighlightingPerformanceTests: XCTestCase {
             throw XCTSkip("Run scripts/benchmark-performance.sh to measure the Release corpus")
         }
 
-        let corpusDirectory = URL(fileURLWithPath: #filePath)
-            .deletingLastPathComponent()
-            .appendingPathComponent("PerformanceCorpus", isDirectory: true)
+        let corpusDirectory = PerformanceBenchmark.corpusDirectory
         let cases: [(name: String, language: SyntaxLanguage, text: String, token: String, role: SyntaxColorRole)] = [
             ("token-dense-json", .json, try String(contentsOf: corpusDirectory.appendingPathComponent("TokenDense.json"), encoding: .utf8), "\"key\"", .propertyKey),
             ("multiline-bash", .bash, try String(contentsOf: corpusDirectory.appendingPathComponent("Multiline.sh"), encoding: .utf8), "$USER", .variable),

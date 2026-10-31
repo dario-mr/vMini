@@ -20,10 +20,10 @@ SCHEMA_VERSION = 1
 RESULT_PREFIX = "VMINI_PERF_RESULT:"
 FAILURE_PREFIX = "VMINI_PERF_FAILURE:"
 HARNESS_FILES = (
-    "Tests/vminiTests/EditorEditingPerformanceTests.swift",
-    "Tests/vminiTests/JavaHighlightingPerformanceTests.swift",
-    "Tests/vminiTests/PerformanceBenchmark.swift",
-    "Tests/vminiTests/SyntaxHighlightingPerformanceTests.swift",
+    "Tests/vminiTests/Features/Editor/EditorEditingPerformanceTests.swift",
+    "Tests/vminiTests/Features/Editor/SyntaxHighlighting/JavaHighlightingPerformanceTests.swift",
+    "Tests/vminiTests/Support/PerformanceBenchmark.swift",
+    "Tests/vminiTests/Features/Editor/SyntaxHighlighting/SyntaxHighlightingPerformanceTests.swift",
     "scripts/benchmark-performance.sh",
     "scripts/compare_performance.py",
     "scripts/performance-budgets.json",
