@@ -20,13 +20,9 @@ final class OpenFilesSidebarTableController: NSObject, NSTableViewDataSource, NS
     private var activeDocument: Document?
     private var fileIconsByPath: [String: NSImage] = [:]
     private var rowPresentationByDocumentIdentifier: [ObjectIdentifier: RowPresentation] = [:]
-    private lazy var rowTitleAttributes: [NSAttributedString.Key: Any] = [
-        .font: NSFont.systemFont(ofSize: Constants.rowFontSize, weight: .medium),
-        .foregroundColor: AppColors.sidebarText,
-    ]
     private lazy var untitledIcon: NSImage = {
         let icon = NSWorkspace.shared.icon(for: .plainText)
-        icon.size = NSSize(width: 16, height: 16)
+        icon.size = NSSize(width: 14, height: 14)
         return icon
     }()
     private var isReloadingSelection = false
@@ -67,14 +63,6 @@ final class OpenFilesSidebarTableController: NSObject, NSTableViewDataSource, NS
         reload()
     }
 
-    func applyTheme() {
-        rowTitleAttributes = [
-            .font: NSFont.systemFont(ofSize: Constants.rowFontSize, weight: .medium),
-            .foregroundColor: AppColors.sidebarText,
-        ]
-        tableView?.needsDisplay = true
-    }
-
     var contentHeight: CGFloat {
         guard let tableView, !documents.isEmpty else { return 0 }
         return tableView.rect(ofRow: documents.count - 1).maxY
@@ -99,6 +87,7 @@ final class OpenFilesSidebarTableController: NSObject, NSTableViewDataSource, NS
         let document = documents[row]
         cellView.imageView?.image = icon(for: document)
         cellView.textField?.attributedStringValue = attributedTitle(for: document)
+        cellView.toolTip = document.shortDisplayTitle
         return cellView
     }
 
@@ -137,12 +126,14 @@ final class OpenFilesSidebarTableController: NSObject, NSTableViewDataSource, NS
         let imageView = NSImageView()
         imageView.translatesAutoresizingMaskIntoConstraints = false
         imageView.imageScaling = .scaleProportionallyDown
+        imageView.alphaValue = 0.82
 
         let textField = NSTextField(labelWithString: "")
         textField.translatesAutoresizingMaskIntoConstraints = false
+        textField.usesSingleLineMode = true
         textField.lineBreakMode = .byTruncatingMiddle
-        textField.textColor = AppColors.sidebarText
-        textField.font = NSFont.systemFont(ofSize: Constants.rowFontSize, weight: .medium)
+        textField.textColor = AppColors.sidebarText.withAlphaComponent(0.86)
+        textField.font = NSFont.systemFont(ofSize: Constants.rowFontSize)
 
         cellView.imageView = imageView
         cellView.textField = textField
@@ -171,7 +162,7 @@ final class OpenFilesSidebarTableController: NSObject, NSTableViewDataSource, NS
             }
 
             let icon = NSWorkspace.shared.icon(forFile: path)
-            icon.size = NSSize(width: 16, height: 16)
+            icon.size = NSSize(width: 14, height: 14)
             fileIconsByPath[path] = icon
             return icon
         }
@@ -180,7 +171,14 @@ final class OpenFilesSidebarTableController: NSObject, NSTableViewDataSource, NS
     }
 
     private func attributedTitle(for document: Document) -> NSAttributedString {
-        NSAttributedString(string: document.shortDisplayTitle, attributes: rowTitleAttributes)
+        let isActive = document === activeDocument
+        return NSAttributedString(
+            string: document.shortDisplayTitle,
+            attributes: [
+                .font: NSFont.systemFont(ofSize: Constants.rowFontSize, weight: isActive ? .medium : .regular),
+                .foregroundColor: AppColors.sidebarText.withAlphaComponent(isActive ? 1 : 0.86),
+            ]
+        )
     }
 
     private func reloadChangedRows(previousDocuments: [Document], previousActiveDocument: Document?) {
