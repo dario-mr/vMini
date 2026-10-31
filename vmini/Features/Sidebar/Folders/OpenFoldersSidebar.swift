@@ -3,7 +3,12 @@ import AppKit
 @MainActor
 final class OpenFoldersSidebarViewController: NSViewController {
     private enum Constants {
-        static let headerFontSize: CGFloat = 14
+        static let headerFontSize: CGFloat = 13
+        static let sectionInset: CGFloat = 14
+        static let headerTopInset: CGFloat = 4
+        static let headerBottomInset: CGFloat = 3
+        static let rowSpacing: CGFloat = 0
+        static let indentationPerLevel: CGFloat = 14
     }
 
     var onFileSelected: ((URL) -> Void)? {
@@ -61,10 +66,10 @@ final class OpenFoldersSidebarViewController: NSViewController {
             headerContainer.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             headerContainer.topAnchor.constraint(equalTo: view.topAnchor),
 
-            headerLabel.leadingAnchor.constraint(equalTo: headerContainer.leadingAnchor, constant: 14),
-            headerLabel.trailingAnchor.constraint(equalTo: headerContainer.trailingAnchor, constant: -14),
-            headerLabel.topAnchor.constraint(equalTo: headerContainer.topAnchor, constant: 12),
-            headerLabel.bottomAnchor.constraint(equalTo: headerContainer.bottomAnchor, constant: -8),
+            headerLabel.leadingAnchor.constraint(equalTo: headerContainer.leadingAnchor, constant: Constants.sectionInset),
+            headerLabel.trailingAnchor.constraint(equalTo: headerContainer.trailingAnchor, constant: -Constants.sectionInset),
+            headerLabel.topAnchor.constraint(equalTo: headerContainer.topAnchor, constant: Constants.headerTopInset),
+            headerLabel.bottomAnchor.constraint(equalTo: headerContainer.bottomAnchor, constant: -Constants.headerBottomInset),
 
             scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
@@ -91,11 +96,7 @@ final class OpenFoldersSidebarViewController: NSViewController {
     private func configureHeader() {
         headerContainer.translatesAutoresizingMaskIntoConstraints = false
         headerLabel.translatesAutoresizingMaskIntoConstraints = false
-        headerLabel.font = NSFont.systemFont(ofSize: Constants.headerFontSize, weight: .semibold)
-        headerLabel.textColor = AppColors.sidebarHeaderText
-        headerLabel.alignment = .left
-        headerLabel.drawsBackground = false
-        headerLabel.backgroundColor = .clear
+        configureHeaderAppearance()
     }
 
     private func configureOutlineView() {
@@ -105,17 +106,18 @@ final class OpenFoldersSidebarViewController: NSViewController {
         outlineView.outlineTableColumn = column
         outlineView.headerView = nil
         outlineView.rowHeight = OpenFoldersSidebarOutlineController.Constants.rowHeight
-        outlineView.intercellSpacing = NSSize(width: 0, height: 1)
+        outlineView.intercellSpacing = NSSize(width: 0, height: Constants.rowSpacing)
         outlineView.focusRingType = .none
         outlineView.backgroundColor = .clear
         outlineView.selectionHighlightStyle = .regular
         outlineView.style = .sourceList
-        outlineView.indentationPerLevel = 14
+        outlineView.indentationPerLevel = Constants.indentationPerLevel
         outlineController.attach(to: outlineView)
 
         scrollView.translatesAutoresizingMaskIntoConstraints = false
         scrollView.borderType = .noBorder
         scrollView.hasVerticalScroller = true
+        scrollView.scrollerStyle = .overlay
         scrollView.autohidesScrollers = true
         scrollView.drawsBackground = false
         scrollView.backgroundColor = .clear
@@ -123,7 +125,7 @@ final class OpenFoldersSidebarViewController: NSViewController {
     }
 
     private func applyTheme() {
-        headerLabel.textColor = AppColors.sidebarHeaderText
+        configureHeaderAppearance()
         outlineController.applyTheme()
     }
 
@@ -139,14 +141,22 @@ final class OpenFoldersSidebarViewController: NSViewController {
         }
     }
 
-    func setCollapsed(_ isCollapsed: Bool) {
-        headerContainer.isHidden = isCollapsed
-        scrollView.isHidden = isCollapsed
+    func setHidden(_ isHidden: Bool) {
+        headerContainer.isHidden = isHidden
+        scrollView.isHidden = isHidden
 
-        if isCollapsed {
+        if isHidden {
             NSLayoutConstraint.deactivate(expandedLayoutConstraints)
         } else {
             NSLayoutConstraint.activate(expandedLayoutConstraints)
         }
+    }
+
+    private func configureHeaderAppearance() {
+        headerLabel.font = NSFont.systemFont(ofSize: Constants.headerFontSize, weight: .medium)
+        headerLabel.textColor = AppColors.sidebarText
+        headerLabel.alignment = .left
+        headerLabel.drawsBackground = false
+        headerLabel.backgroundColor = .clear
     }
 }
