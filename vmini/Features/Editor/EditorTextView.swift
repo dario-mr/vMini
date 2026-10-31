@@ -32,6 +32,7 @@ class EditorTextView: NSTextView {
     var onCommandClick: ((Int) -> Bool)?
     var isCommandClickTarget: ((Int) -> Bool)?
     private var linkTrackingArea: NSTrackingArea?
+    private var wordSelectionAnchor: NSRange?
     private(set) var selectionOccurrenceHighlightRanges: [NSRange] = []
     private(set) var selectionOccurrenceHighlightColor: NSColor?
 
@@ -146,7 +147,63 @@ class EditorTextView: NSTextView {
         return layoutManager.characterIndexForGlyph(at: glyph)
     }
 
+    override func selectionRange(forProposedRange proposedCharRange: NSRange, granularity: NSSelectionGranularity) -> NSRange {
+        let range = super.selectionRange(forProposedRange: proposedCharRange, granularity: granularity)
+        guard granularity == .selectByWord,
+              let event = NSApp.currentEvent,
+              [.leftMouseDown, .leftMouseDragged, .leftMouseUp].contains(event.type),
+              let window, event.window === window,
+              let index = characterIndex(at: convert(event.locationInWindow, from: nil)),
+              index >= range.location, index < NSMaxRange(range) else { return range }
+
+        if event.type == .leftMouseDown, event.clickCount == 2 {
+            wordSelectionAnchor = Self.wordSelectionRange(in: string as NSString, proposedRange: range, at: index)
+        }
+        return Self.wordSelectionRange(
+            in: string as NSString,
+            proposedRange: range,
+            at: index,
+            anchoredAt: wordSelectionAnchor
+        )
+    }
+
+    static func wordSelectionRange(
+        in text: NSString,
+        proposedRange range: NSRange,
+        at index: Int,
+        anchoredAt anchor: NSRange? = nil
+    ) -> NSRange {
+        let segment = dottedSegment(in: range, at: index, text: text) ?? range
+        return anchor.map { NSUnionRange($0, segment) } ?? segment
+    }
+
+    private static func dottedSegment(in range: NSRange, at index: Int, text: NSString) -> NSRange? {
+        let end = NSMaxRange(range)
+        let dot: unichar = 46
+        var start = index
+
+        if text.character(at: index) == dot {
+            start += 1
+            while start < end && text.character(at: start) == dot { start += 1 }
+            if start == end {
+                start = index
+                while start > range.location && text.character(at: start - 1) == dot { start -= 1 }
+                guard start > range.location else { return nil }
+                var previousStart = start - 1
+                while previousStart > range.location && text.character(at: previousStart - 1) != dot { previousStart -= 1 }
+                return NSRange(location: previousStart, length: start - previousStart)
+            }
+        } else {
+            while start > range.location && text.character(at: start - 1) != dot { start -= 1 }
+        }
+
+        var segmentEnd = start
+        while segmentEnd < end && text.character(at: segmentEnd) != dot { segmentEnd += 1 }
+        return segmentEnd > start ? NSRange(location: start, length: segmentEnd - start) : nil
+    }
+
     override func mouseDown(with event: NSEvent) {
+        wordSelectionAnchor = nil
         let previousSelection = selectedRange()
         defer { onNavigationCheckpoint?(previousSelection, selectedRange()) }
         if event.modifierFlags.contains(.command),
