@@ -32,7 +32,7 @@ final class ThemeSystemTests: XCTestCase {
         assertColor(palette.windowBackground, matchesHex: 0x1C242B)
         assertColor(palette.editorBackground, matchesHex: 0x142933)
         assertColor(palette.tabBarBackground, matchesHex: 0x333D47)
-        assertColor(palette.primaryText, matchesHex: 0xFAFAFA)
+        assertColor(palette.primaryText, matchesHex: 0xD8DEE9)
         assertColor(palette.primaryActionBackground, matchesHex: 0x3B75B8)
         assertColor(palette.syntaxPalette.headingText, matchesHex: 0xFAB0B8)
         assertColor(palette.syntaxPalette.codeBlockBackground, matchesHex: 0xFFFFFF, alpha: 0.08)
@@ -57,7 +57,7 @@ final class ThemeSystemTests: XCTestCase {
 
         assertColor(palette.windowBackground, matchesHex: 0x2D2D2B)
         assertColor(palette.editorBackground, matchesHex: 0x242423)
-        assertColor(palette.primaryText, matchesHex: 0xF9F9F7)
+        assertColor(palette.primaryText, matchesHex: 0xDDDDDB)
         assertColor(palette.primaryActionBackground, matchesHex: 0xCC7D5E)
         assertColor(palette.syntaxPalette.headingMarker, matchesHex: 0xCC7D5E)
         assertColor(palette.syntaxPalette.headingText, matchesHex: 0xE8A58B)
@@ -70,7 +70,7 @@ final class ThemeSystemTests: XCTestCase {
 
         assertColor(palette.windowBackground, matchesHex: 0x282A36)
         assertColor(palette.editorBackground, matchesHex: 0x282A36)
-        assertColor(palette.primaryText, matchesHex: 0xF8F8F2)
+        assertColor(palette.primaryText, matchesHex: 0xDBDCD8)
         assertColor(palette.primaryActionBackground, matchesHex: 0xA277DE)
         assertColor(palette.syntaxPalette.listMarker, matchesHex: 0xFFB86C)
         assertColor(palette.syntaxPalette.headingText, matchesHex: 0xFFB3DA)
@@ -85,7 +85,7 @@ final class ThemeSystemTests: XCTestCase {
 
         assertColor(palette.windowBackground, matchesHex: 0x282828)
         assertColor(palette.editorBackground, matchesHex: 0x282828)
-        assertColor(palette.primaryText, matchesHex: 0xEBDBB2)
+        assertColor(palette.primaryText, matchesHex: 0xCFC29E)
         assertColor(palette.primaryActionBackground, matchesHex: 0x458588)
         assertColor(palette.syntaxPalette.keyword, matchesHex: 0xFB4934)
         assertColor(palette.syntaxPalette.string, matchesHex: 0xB8BB26)
@@ -98,7 +98,7 @@ final class ThemeSystemTests: XCTestCase {
 
         assertColor(palette.windowBackground, matchesHex: 0xEEE8D5)
         assertColor(palette.editorBackground, matchesHex: 0xFDF6E3)
-        assertColor(palette.primaryText, matchesHex: 0x586E75)
+        assertColor(palette.primaryText, matchesHex: 0x5F7379)
         assertColor(palette.primaryActionBackground, matchesHex: 0x268BD2)
         assertColor(palette.syntaxPalette.keyword, matchesHex: 0x268BD2)
         assertColor(palette.syntaxPalette.string, matchesHex: 0x859900)
@@ -111,7 +111,7 @@ final class ThemeSystemTests: XCTestCase {
 
         assertColor(palette.windowBackground, matchesHex: 0x2E3440)
         assertColor(palette.editorBackground, matchesHex: 0x2E3440)
-        assertColor(palette.primaryText, matchesHex: 0xECEFF4)
+        assertColor(palette.primaryText, matchesHex: 0xD0D4DA)
         assertColor(palette.primaryActionBackground, matchesHex: 0x5E81AC)
         assertColor(palette.syntaxPalette.keyword, matchesHex: 0x81A1C1)
         assertColor(palette.syntaxPalette.string, matchesHex: 0xA3BE8C)
@@ -124,7 +124,7 @@ final class ThemeSystemTests: XCTestCase {
 
         assertColor(palette.windowBackground, matchesHex: 0x181825)
         assertColor(palette.editorBackground, matchesHex: 0x1E1E2E)
-        assertColor(palette.primaryText, matchesHex: 0xCDD6F4)
+        assertColor(palette.primaryText, matchesHex: 0xB5BDD9)
         assertColor(palette.primaryActionBackground, matchesHex: 0xCBA6F7)
         assertColor(palette.syntaxPalette.keyword, matchesHex: 0xCBA6F7)
         assertColor(palette.syntaxPalette.string, matchesHex: 0xA6E3A1)
