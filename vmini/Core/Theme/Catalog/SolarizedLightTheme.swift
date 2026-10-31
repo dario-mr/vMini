@@ -7,7 +7,7 @@ extension ThemeCatalog {
         editorBackground: NSColor(hex: 0xFDF6E3),
         tabBarBackground: NSColor(hex: 0xE4DDC8),
         hoveredTabBackground: NSColor(hex: 0x268BD2, alpha: 0.14),
-        primaryText: NSColor(hex: 0x586E75),
+        primaryText: NSColor(hex: 0x5F7379),
         sidebarText: NSColor(hex: 0x586E75, alpha: 0.94),
         folderSidebarText: NSColor(hex: 0x657B83),
         sidebarHeaderText: NSColor(hex: 0x657B83, alpha: 0.88),
