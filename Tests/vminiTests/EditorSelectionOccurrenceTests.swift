@@ -221,6 +221,44 @@ final class EditorSelectionOccurrenceTests: XCTestCase {
         window.displayIfNeeded()
     }
 
+    func testRendererDrawsMultilineUnicodeBordersAndIgnoresStaleRanges() throws {
+        let textView = EditorTextView(frame: NSRect(x: 0, y: 0, width: 200, height: 100))
+        textView.font = .monospacedSystemFont(ofSize: 14, weight: .regular)
+        textView.string = "😀 foo\nbar\nother"
+        let layout = try XCTUnwrap(textView.layoutManager)
+        layout.ensureLayout(for: try XCTUnwrap(textView.textContainer))
+
+        func redRows(for ranges: [NSRange], color: NSColor?) throws -> Set<Int> {
+            let image = NSImage(size: textView.bounds.size, flipped: true) { _ in
+                NSColor.white.setFill()
+                textView.bounds.fill()
+                EditorSelectionOccurrenceRenderer.draw(in: textView, dirtyRect: textView.bounds, ranges: ranges, color: color)
+                return true
+            }
+            let bitmap = try XCTUnwrap(NSBitmapImageRep(data: XCTUnwrap(image.tiffRepresentation)))
+            var rows = Set<Int>()
+            for y in 0..<bitmap.pixelsHigh {
+                for x in 0..<bitmap.pixelsWide {
+                    let pixel = try XCTUnwrap(bitmap.colorAt(x: x, y: y)?.usingColorSpace(.deviceRGB))
+                    if pixel.redComponent > 0.8, pixel.greenComponent < 0.5, pixel.blueComponent < 0.5 {
+                        rows.insert(y)
+                        break
+                    }
+                }
+            }
+            return rows
+        }
+
+        let range = (textView.string as NSString).range(of: "😀 foo\nbar")
+        let rows = try redRows(for: [range], color: .red)
+        XCTAssertGreaterThan(try XCTUnwrap(rows.max()) - XCTUnwrap(rows.min()), 14)
+        XCTAssertTrue(try redRows(for: [range], color: nil).isEmpty)
+        XCTAssertTrue(try redRows(for: [
+            NSRange(location: -1, length: 1), NSRange(location: NSNotFound, length: 1),
+            NSRange(location: 0, length: Int.max), NSRange(location: 500, length: 1),
+        ], color: .red).isEmpty)
+    }
+
     private func background(in textView: NSTextView, at location: Int) -> NSColor? {
         textView.layoutManager?.temporaryAttribute(.backgroundColor, atCharacterIndex: location, effectiveRange: nil) as? NSColor
     }
