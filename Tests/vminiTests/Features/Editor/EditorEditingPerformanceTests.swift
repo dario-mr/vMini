@@ -212,9 +212,7 @@ final class EditorEditingPerformanceTests: XCTestCase {
     }
 
     private func markdownCorpus() throws -> String {
-        let corpus = URL(fileURLWithPath: #filePath)
-            .deletingLastPathComponent()
-            .appendingPathComponent("PerformanceCorpus/LargeMarkdown.md")
+        let corpus = PerformanceBenchmark.corpusDirectory.appendingPathComponent("LargeMarkdown.md")
         return try String(contentsOf: corpus, encoding: .utf8)
     }
 

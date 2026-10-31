@@ -4,6 +4,10 @@ import XCTest
 
 @MainActor
 enum PerformanceBenchmark {
+    static let corpusDirectory = URL(fileURLWithPath: #filePath)
+        .deletingLastPathComponent()
+        .deletingLastPathComponent()
+        .appendingPathComponent("PerformanceCorpus", isDirectory: true)
     static let warmSampleCount = 50
     static let timeoutNanoseconds: UInt64 = 5_000_000_000
     static let pollNanoseconds: UInt64 = 100_000

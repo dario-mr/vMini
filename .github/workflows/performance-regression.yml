@@ -57,10 +57,15 @@ jobs:
 
       - name: Overlay identical benchmark harness and fixtures on base
         run: |
-          cp candidate/Tests/vminiTests/EditorEditingPerformanceTests.swift base/Tests/vminiTests/
-          cp candidate/Tests/vminiTests/JavaHighlightingPerformanceTests.swift base/Tests/vminiTests/
-          cp candidate/Tests/vminiTests/PerformanceBenchmark.swift base/Tests/vminiTests/
-          cp candidate/Tests/vminiTests/SyntaxHighlightingPerformanceTests.swift base/Tests/vminiTests/
+          for file in \
+            Features/Editor/EditorEditingPerformanceTests.swift \
+            Features/Editor/SyntaxHighlighting/JavaHighlightingPerformanceTests.swift \
+            Support/PerformanceBenchmark.swift \
+            Features/Editor/SyntaxHighlighting/SyntaxHighlightingPerformanceTests.swift; do
+            mkdir -p "base/Tests/vminiTests/$(dirname "$file")"
+            rm -f "base/Tests/vminiTests/$(basename "$file")"
+            cp "candidate/Tests/vminiTests/$file" "base/Tests/vminiTests/$file"
+          done
           rsync -a --delete candidate/Tests/vminiTests/PerformanceCorpus/ base/Tests/vminiTests/PerformanceCorpus/
           cp candidate/scripts/benchmark-performance.sh base/scripts/
           cp candidate/scripts/compare_performance.py base/scripts/

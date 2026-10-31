@@ -560,32 +560,21 @@
 			isa = PBXGroup;
 			children = (
 				A000000000000000000001CB /* EditorCommandController.swift */,
-				A000000000000000000001CD /* EditorFormattingErrorPresenter.swift */,
 				A000000000000000000001CF /* EditorSettingsObserver.swift */,
-				A00000000000000000000191 /* ErrorBannerView.swift */,
 				A00000000000000000000193 /* EditorTextViewStyler.swift */,
-				A00000000000000000000195 /* EditorSyntaxHighlightController.swift */,
-				FF8474A84D684150943E8C36 /* PendingSyntaxHighlight.swift */,
-				A000000000000000000001A3 /* EditorBracketHighlightController.swift */,
-				B00000000000000000000002 /* EditorSearchButton.swift */,
-				B0000000000000000000000A /* EditorSearchFieldCell.swift */,
-				B00000000000000000000004 /* EditorSearchPanel.swift */,
-				B00000000000000000000006 /* EditorSearchController.swift */,
-				C17E9A1CFF124B5A9EAF5102 /* EditorSearchLayoutManager.swift */,
-				A00000000000000000000231 /* EditorSelectionOccurrenceController.swift */,
 				A00000000000000000000197 /* EditorViewportController.swift */,
 				A00000000000000000000173 /* EditorTextEditing.swift */,
 				B0000000000000000000000C /* EditorTextView.swift */,
-				18058472A45C4334AA643FA0 /* EditorWordSelection.swift */,
-				689124A3A1BA46258A389069 /* EditorSelectionOccurrenceRenderer.swift */,
 				B00000000000000000000010 /* MarkdownLink.swift */,
 				B0000000000000000000001C /* WebLink.swift */,
 				B0000000000000000000001A /* MarkdownListContinuation.swift */,
 				A00000000000000000000108 /* EditorViewController.swift */,
-				A0000000000000000000015D /* JSONPrettifier.swift */,
 				A00000000000000000000109 /* LineNumberRuler.swift */,
 				8861F7E996DB457A87277497 /* EditorLineIndex.swift */,
 				A00000000000000000000142 /* SyntaxHighlighting */,
+				7AA30571BFCF499990BBC7FC /* Search */,
+				A5F82711564E4621B951CE75 /* Selection */,
+				4E9211FA4F04447CAF9B85FE /* Formatting */,
 			);
 			path = Editor;
 			sourceTree = "<group>";
@@ -610,6 +599,8 @@
 				A00000000000000000000229 /* DotenvSyntaxHighlighter.swift */,
 				A00000000000000000000141 /* MarkdownSyntaxHighlighter.swift */,
 				A00000000000000000000226 /* Markdown */,
+				A00000000000000000000195 /* EditorSyntaxHighlightController.swift */,
+				FF8474A84D684150943E8C36 /* PendingSyntaxHighlight.swift */,
 			);
 			path = SyntaxHighlighting;
 			sourceTree = "<group>";
@@ -629,17 +620,10 @@
 		A00000000000000000000134 /* Sidebar */ = {
 			isa = PBXGroup;
 			children = (
-				A000000000000000000001D1 /* FolderSidebarExpansionController.swift */,
-				A000000000000000000001D3 /* FolderSidebarSelectionController.swift */,
-				A000000000000000000001D5 /* FolderTreeNode.swift */,
-				A000000000000000000001D7 /* FolderTreeProvider.swift */,
 				A0000000000000000000010A /* OpenFilesSidebar.swift */,
 				A00000000000000000000204 /* OpenFilesSidebarTableController.swift */,
-				A0000000000000000000012B /* OpenFoldersSidebar.swift */,
-				A00000000000000000000206 /* OpenFoldersSidebarOutlineController.swift */,
-				A0000000000000000000012A /* OpenFoldersStore.swift */,
-				A00000000000000000000212 /* SidebarFolderWatcher.swift */,
 				A0000000000000000000010B /* SidebarSelectionRowView.swift */,
+				DA56FE95BC9A4774BE0124A7 /* Folders */,
 			);
 			path = Sidebar;
 			sourceTree = "<group>";
@@ -714,29 +698,181 @@
 		A00000000000000000000185 /* vminiTests */ = {
 			isa = PBXGroup;
 			children = (
-				A00000000000000000000178 /* EditorTextEditingTests.swift */,
-				E6EA99B131CD4154ADAC0ABF /* EditorLineIndexTests.swift */,
-				A0000000000000000000017A /* EditorCommandTests.swift */,
-				B00000000000000000000012 /* EditorMarkdownLinkTests.swift */,
-				B00000000000000000000016 /* WorkspaceNavigationTests.swift */,
-				B00000000000000000000008 /* EditorSearchTests.swift */,
-				A00000000000000000000233 /* EditorSelectionOccurrenceTests.swift */,
-				A0000000000000000000017C /* EditorFontTests.swift */,
-				A0000000000000000000017E /* SyntaxHighlightingTests.swift */,
-				5FCB4CED5E5F41B2B0E17343 /* PendingSyntaxHighlightTests.swift */,
-				F3C7A0B1D9E2456A8B0C0002 /* SyntaxHighlightingPerformanceTests.swift */,
-				C00000000000000000000006 /* JavaSyntaxHighlightingTests.swift */,
-				D00000000000000000000006 /* TreeSitterSyntaxRegressionTests.swift */,
-				C00000000000000000000004 /* JavaHighlightingPerformanceTests.swift */,
-				E00000000000000000000002 /* EditorEditingPerformanceTests.swift */,
-				E00000000000000000000004 /* PerformanceBenchmark.swift */,
-				A00000000000000000000180 /* ThemeSystemTests.swift */,
-				A00000000000000000000209 /* WorkspaceStateTests.swift */,
-				A0000000000000000000020B /* SessionWorkflowTests.swift */,
-				A0000000000000000000020D /* SidebarAndPersistenceTests.swift */,
 				A00000000000000000000215 /* PerformanceCorpus */,
+				B3D56333519C40F59D35B65D /* Core */,
+				5A86F52102FB45A1BBA796D1 /* Features */,
+				E81FB816930440369D58B6D7 /* Support */,
 			);
 			path = vminiTests;
+			sourceTree = "<group>";
+		};
+		7AA30571BFCF499990BBC7FC /* Search */ = {
+			isa = PBXGroup;
+			children = (
+				B00000000000000000000002 /* EditorSearchButton.swift */,
+				B00000000000000000000006 /* EditorSearchController.swift */,
+				B0000000000000000000000A /* EditorSearchFieldCell.swift */,
+				C17E9A1CFF124B5A9EAF5102 /* EditorSearchLayoutManager.swift */,
+				B00000000000000000000004 /* EditorSearchPanel.swift */,
+			);
+			path = Search;
+			sourceTree = "<group>";
+		};
+		A5F82711564E4621B951CE75 /* Selection */ = {
+			isa = PBXGroup;
+			children = (
+				A000000000000000000001A3 /* EditorBracketHighlightController.swift */,
+				A00000000000000000000231 /* EditorSelectionOccurrenceController.swift */,
+				689124A3A1BA46258A389069 /* EditorSelectionOccurrenceRenderer.swift */,
+				18058472A45C4334AA643FA0 /* EditorWordSelection.swift */,
+			);
+			path = Selection;
+			sourceTree = "<group>";
+		};
+		4E9211FA4F04447CAF9B85FE /* Formatting */ = {
+			isa = PBXGroup;
+			children = (
+				A000000000000000000001CD /* EditorFormattingErrorPresenter.swift */,
+				A00000000000000000000191 /* ErrorBannerView.swift */,
+				A0000000000000000000015D /* JSONPrettifier.swift */,
+			);
+			path = Formatting;
+			sourceTree = "<group>";
+		};
+		DA56FE95BC9A4774BE0124A7 /* Folders */ = {
+			isa = PBXGroup;
+			children = (
+				A000000000000000000001D1 /* FolderSidebarExpansionController.swift */,
+				A000000000000000000001D3 /* FolderSidebarSelectionController.swift */,
+				A000000000000000000001D5 /* FolderTreeNode.swift */,
+				A000000000000000000001D7 /* FolderTreeProvider.swift */,
+				A0000000000000000000012B /* OpenFoldersSidebar.swift */,
+				A00000000000000000000206 /* OpenFoldersSidebarOutlineController.swift */,
+				A0000000000000000000012A /* OpenFoldersStore.swift */,
+				A00000000000000000000212 /* SidebarFolderWatcher.swift */,
+			);
+			path = Folders;
+			sourceTree = "<group>";
+		};
+		B3D56333519C40F59D35B65D /* Core */ = {
+			isa = PBXGroup;
+			children = (
+				7434B10EC4124EF0AA4808AB /* Settings */,
+				D4D8084644614E6788FA2A48 /* Theme */,
+			);
+			path = Core;
+			sourceTree = "<group>";
+		};
+		7434B10EC4124EF0AA4808AB /* Settings */ = {
+			isa = PBXGroup;
+			children = (
+				A0000000000000000000017C /* EditorFontTests.swift */,
+			);
+			path = Settings;
+			sourceTree = "<group>";
+		};
+		D4D8084644614E6788FA2A48 /* Theme */ = {
+			isa = PBXGroup;
+			children = (
+				A00000000000000000000180 /* ThemeSystemTests.swift */,
+			);
+			path = Theme;
+			sourceTree = "<group>";
+		};
+		5A86F52102FB45A1BBA796D1 /* Features */ = {
+			isa = PBXGroup;
+			children = (
+				5F9EAA2312C44995ACCA6BD2 /* Editor */,
+				80C5D287E30145E098EB7EC4 /* Sidebar */,
+				5813882C4C5648CC8FBAD5FF /* Workspace */,
+			);
+			path = Features;
+			sourceTree = "<group>";
+		};
+		5F9EAA2312C44995ACCA6BD2 /* Editor */ = {
+			isa = PBXGroup;
+			children = (
+				A0000000000000000000017A /* EditorCommandTests.swift */,
+				E00000000000000000000002 /* EditorEditingPerformanceTests.swift */,
+				E6EA99B131CD4154ADAC0ABF /* EditorLineIndexTests.swift */,
+				B00000000000000000000012 /* EditorMarkdownLinkTests.swift */,
+				A00000000000000000000178 /* EditorTextEditingTests.swift */,
+				DD34A7474F3047DE8618BEB0 /* Search */,
+				CA407E30861A4C8EA9BBC112 /* Selection */,
+				F9F6645F9E3E490F9FCA4100 /* SyntaxHighlighting */,
+			);
+			path = Editor;
+			sourceTree = "<group>";
+		};
+		DD34A7474F3047DE8618BEB0 /* Search */ = {
+			isa = PBXGroup;
+			children = (
+				B00000000000000000000008 /* EditorSearchTests.swift */,
+			);
+			path = Search;
+			sourceTree = "<group>";
+		};
+		CA407E30861A4C8EA9BBC112 /* Selection */ = {
+			isa = PBXGroup;
+			children = (
+				A00000000000000000000233 /* EditorSelectionOccurrenceTests.swift */,
+			);
+			path = Selection;
+			sourceTree = "<group>";
+		};
+		F9F6645F9E3E490F9FCA4100 /* SyntaxHighlighting */ = {
+			isa = PBXGroup;
+			children = (
+				C00000000000000000000004 /* JavaHighlightingPerformanceTests.swift */,
+				C00000000000000000000006 /* JavaSyntaxHighlightingTests.swift */,
+				5FCB4CED5E5F41B2B0E17343 /* PendingSyntaxHighlightTests.swift */,
+				F3C7A0B1D9E2456A8B0C0002 /* SyntaxHighlightingPerformanceTests.swift */,
+				A0000000000000000000017E /* SyntaxHighlightingTests.swift */,
+				D00000000000000000000006 /* TreeSitterSyntaxRegressionTests.swift */,
+			);
+			path = SyntaxHighlighting;
+			sourceTree = "<group>";
+		};
+		80C5D287E30145E098EB7EC4 /* Sidebar */ = {
+			isa = PBXGroup;
+			children = (
+				424B7AFA8F1C4C40966161B2 /* Folders */,
+			);
+			path = Sidebar;
+			sourceTree = "<group>";
+		};
+		424B7AFA8F1C4C40966161B2 /* Folders */ = {
+			isa = PBXGroup;
+			children = (
+				A0000000000000000000020D /* SidebarAndPersistenceTests.swift */,
+			);
+			path = Folders;
+			sourceTree = "<group>";
+		};
+		5813882C4C5648CC8FBAD5FF /* Workspace */ = {
+			isa = PBXGroup;
+			children = (
+				A0000000000000000000020B /* SessionWorkflowTests.swift */,
+				A00000000000000000000209 /* WorkspaceStateTests.swift */,
+				4AEC3BC8BAEE42559C84548D /* Window */,
+			);
+			path = Workspace;
+			sourceTree = "<group>";
+		};
+		4AEC3BC8BAEE42559C84548D /* Window */ = {
+			isa = PBXGroup;
+			children = (
+				B00000000000000000000016 /* WorkspaceNavigationTests.swift */,
+			);
+			path = Window;
+			sourceTree = "<group>";
+		};
+		E81FB816930440369D58B6D7 /* Support */ = {
+			isa = PBXGroup;
+			children = (
+				E00000000000000000000004 /* PerformanceBenchmark.swift */,
+			);
+			path = Support;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */

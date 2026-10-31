@@ -46,6 +46,8 @@ same hosted runner. It builds both revisions, alternates their measurement order
 batches, and uploads reports and logs even when a run fails. For the first PR that adds the harness,
 the workflow overlays it onto the base revision so both revisions can be measured. Fixtures are
 replaced exactly, including deletions. Production sources in the base checkout are not changed.
+The overlay removes old flat benchmark files before copying the suites into their current feature
+folders. Shared benchmark support lives in `Tests/vminiTests/Support`; fixtures remain in `PerformanceCorpus`.
 Every batch must include every required scenario; a later batch cannot fill in missing results.
 
 The comparator's ordinary unit tests run in the performance workflow. Run them locally:

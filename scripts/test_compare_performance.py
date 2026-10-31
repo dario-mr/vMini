@@ -11,7 +11,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).parent))
-from compare_performance import collect, compare_reports, metadata as report_metadata  # noqa: E402
+from compare_performance import HARNESS_FILES, collect, compare_reports, metadata as report_metadata  # noqa: E402
 
 
 class ComparePerformanceTests(unittest.TestCase):
@@ -169,6 +169,12 @@ class ComparePerformanceTests(unittest.TestCase):
             meta = report_metadata(Path(directory), "abc123", "Release")
             self.assertEqual(meta["runnerName"], "runner-test")
             self.assertEqual(meta["runnerOS"], "macOS")
+
+    def test_harness_fingerprint_paths_exist_after_source_moves(self):
+        root = Path(__file__).resolve().parent.parent
+        for name in HARNESS_FILES:
+            with self.subTest(name=name):
+                self.assertTrue((root / name).is_file(), name)
 
     def test_incompatible_harness_or_corpus_fails(self):
         for field, value in (("harnessIdentity", "harness-b"), ("corpusIdentity", "corpus-b")):
