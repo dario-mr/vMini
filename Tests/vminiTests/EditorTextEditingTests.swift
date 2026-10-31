@@ -240,6 +240,23 @@ final class EditorTextEditingTests: XCTestCase {
         XCTAssertEqual(EditorTextEditing.characterLocation(forLineNumber: 99, in: text), text.length)
     }
 
+    @MainActor
+    func testWordSelectionExtendsAcrossDottedSegmentsDuringDrag() {
+        let text = "192.168.0.1" as NSString
+        let word = NSRange(location: 0, length: text.length)
+        let firstSegment = EditorTextView.wordSelectionRange(in: text, proposedRange: word, at: 1)
+
+        XCTAssertEqual(firstSegment, NSRange(location: 0, length: 3))
+        XCTAssertEqual(
+            EditorTextView.wordSelectionRange(in: text, proposedRange: word, at: 3, anchoredAt: firstSegment),
+            NSRange(location: 0, length: 7)
+        )
+        XCTAssertEqual(
+            EditorTextView.wordSelectionRange(in: text, proposedRange: word, at: 7, anchoredAt: firstSegment),
+            NSRange(location: 0, length: 9)
+        )
+    }
+
     func testToggleLineCommentUsesSlashSlashForMarkdown() throws {
         let text = "one\ntwo\nthree" as NSString
         let selection = NSRange(location: 4, length: 3)
