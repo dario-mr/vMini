@@ -1,13 +1,5 @@
 import AppKit
 
-private enum SelectionOccurrenceStyle {
-    static let colorOpacity: CGFloat = 0.95
-    static let lineWidth: CGFloat = 1
-    static let cornerRadius: CGFloat = 3
-    static let horizontalPadding: CGFloat = 2
-    static let verticalPadding: CGFloat = 1
-}
-
 class EditorTextView: NSTextView {
     private static let selectionDelimiters = [
         "`": "`", "'": "'", "\"": "\"",
@@ -44,62 +36,12 @@ class EditorTextView: NSTextView {
 
     override func draw(_ dirtyRect: NSRect) {
         super.draw(dirtyRect)
-
-        guard let color = selectionOccurrenceHighlightColor,
-              let layoutManager,
-              let textContainer else { return }
-
-        let origin = textContainerOrigin
-        let visibleGlyphRange = layoutManager.glyphRange(
-            forBoundingRect: dirtyRect.offsetBy(dx: -origin.x, dy: -origin.y),
-            in: textContainer
+        EditorSelectionOccurrenceRenderer.draw(
+            in: self,
+            dirtyRect: dirtyRect,
+            ranges: selectionOccurrenceHighlightRanges,
+            color: selectionOccurrenceHighlightColor
         )
-        let visibleCharacterRange = layoutManager.characterRange(forGlyphRange: visibleGlyphRange, actualGlyphRange: nil)
-        let documentLength = (string as NSString).length
-        let path = NSBezierPath()
-        path.lineWidth = SelectionOccurrenceStyle.lineWidth
-
-        for range in selectionOccurrenceHighlightRanges {
-            guard range.location >= 0, range.length > 0,
-                  range.location < documentLength,
-                  range.length <= documentLength - range.location,
-                  NSIntersectionRange(range, visibleCharacterRange).length > 0 else { continue }
-
-            let glyphRange = layoutManager.glyphRange(forCharacterRange: range, actualCharacterRange: nil)
-            guard NSIntersectionRange(glyphRange, visibleGlyphRange).length > 0 else { continue }
-
-            var glyphIndex = glyphRange.location
-            while glyphIndex < NSMaxRange(glyphRange) {
-                var lineGlyphRange = NSRange()
-                _ = layoutManager.lineFragmentRect(
-                    forGlyphAt: glyphIndex,
-                    effectiveRange: &lineGlyphRange,
-                    withoutAdditionalLayout: false
-                )
-                let segment = NSIntersectionRange(glyphRange, lineGlyphRange)
-                if segment.length > 0 {
-                    let glyphRect = layoutManager.boundingRect(forGlyphRange: segment, in: textContainer)
-                    if glyphRect.width > 0 {
-                        let rect = glyphRect.offsetBy(dx: origin.x, dy: origin.y).insetBy(
-                            dx: -SelectionOccurrenceStyle.horizontalPadding,
-                            dy: -SelectionOccurrenceStyle.verticalPadding
-                        )
-                        path.append(NSBezierPath(
-                            roundedRect: rect,
-                            xRadius: SelectionOccurrenceStyle.cornerRadius,
-                            yRadius: SelectionOccurrenceStyle.cornerRadius
-                        ))
-                    }
-                }
-
-                let nextGlyphIndex = NSMaxRange(lineGlyphRange)
-                guard nextGlyphIndex > glyphIndex else { break }
-                glyphIndex = nextGlyphIndex
-            }
-        }
-
-        color.withAlphaComponent(SelectionOccurrenceStyle.colorOpacity).setStroke()
-        path.stroke()
     }
 
     override func updateTrackingAreas() {
@@ -157,49 +99,14 @@ class EditorTextView: NSTextView {
               index >= range.location, index < NSMaxRange(range) else { return range }
 
         if event.type == .leftMouseDown, event.clickCount == 2 {
-            wordSelectionAnchor = Self.wordSelectionRange(in: string as NSString, proposedRange: range, at: index)
+            wordSelectionAnchor = EditorWordSelection.wordSelectionRange(in: string as NSString, proposedRange: range, at: index)
         }
-        return Self.wordSelectionRange(
+        return EditorWordSelection.wordSelectionRange(
             in: string as NSString,
             proposedRange: range,
             at: index,
             anchoredAt: wordSelectionAnchor
         )
-    }
-
-    static func wordSelectionRange(
-        in text: NSString,
-        proposedRange range: NSRange,
-        at index: Int,
-        anchoredAt anchor: NSRange? = nil
-    ) -> NSRange {
-        let segment = dottedSegment(in: range, at: index, text: text) ?? range
-        return anchor.map { NSUnionRange($0, segment) } ?? segment
-    }
-
-    private static func dottedSegment(in range: NSRange, at index: Int, text: NSString) -> NSRange? {
-        let end = NSMaxRange(range)
-        let dot: unichar = 46
-        var start = index
-
-        if text.character(at: index) == dot {
-            start += 1
-            while start < end && text.character(at: start) == dot { start += 1 }
-            if start == end {
-                start = index
-                while start > range.location && text.character(at: start - 1) == dot { start -= 1 }
-                guard start > range.location else { return nil }
-                var previousStart = start - 1
-                while previousStart > range.location && text.character(at: previousStart - 1) != dot { previousStart -= 1 }
-                return NSRange(location: previousStart, length: start - previousStart)
-            }
-        } else {
-            while start > range.location && text.character(at: start - 1) != dot { start -= 1 }
-        }
-
-        var segmentEnd = start
-        while segmentEnd < end && text.character(at: segmentEnd) != dot { segmentEnd += 1 }
-        return segmentEnd > start ? NSRange(location: start, length: segmentEnd - start) : nil
     }
 
     override func mouseDown(with event: NSEvent) {

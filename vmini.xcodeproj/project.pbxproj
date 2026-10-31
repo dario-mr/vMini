@@ -165,6 +165,12 @@
 		E3A92C506A3C48B291041301 /* MarkdownInlineSyntaxParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3A92C506A3C48B291041302 /* MarkdownInlineSyntaxParser.swift */; };
 		D00000000000000000000005 /* TreeSitterSyntaxRegressionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D00000000000000000000006 /* TreeSitterSyntaxRegressionTests.swift */; };
 		C17E9A1CFF124B5A9EAF5101 /* EditorSearchLayoutManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C17E9A1CFF124B5A9EAF5102 /* EditorSearchLayoutManager.swift */; };
+		02C4F523ED5D47B18B42282F /* EditorSelectionOccurrenceRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 689124A3A1BA46258A389069 /* EditorSelectionOccurrenceRenderer.swift */; };
+		1525E53EF80844E5BF185033 /* EditorWordSelection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18058472A45C4334AA643FA0 /* EditorWordSelection.swift */; };
+		455109A8ADEE4B368BA981FF /* EditorLineIndex.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8861F7E996DB457A87277497 /* EditorLineIndex.swift */; };
+		11CD518C8263421A9AFB774D /* PendingSyntaxHighlight.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF8474A84D684150943E8C36 /* PendingSyntaxHighlight.swift */; };
+		3EE67BCE41B6427C8420C532 /* EditorLineIndexTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6EA99B131CD4154ADAC0ABF /* EditorLineIndexTests.swift */; };
+		5649223B9F824A6BBF171D1C /* PendingSyntaxHighlightTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FCB4CED5E5F41B2B0E17343 /* PendingSyntaxHighlightTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -325,6 +331,12 @@
 		E3A92C506A3C48B291041302 /* MarkdownInlineSyntaxParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownInlineSyntaxParser.swift; sourceTree = "<group>"; };
 		D00000000000000000000006 /* TreeSitterSyntaxRegressionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TreeSitterSyntaxRegressionTests.swift; sourceTree = "<group>"; };
 		C17E9A1CFF124B5A9EAF5102 /* EditorSearchLayoutManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorSearchLayoutManager.swift; sourceTree = "<group>"; };
+		689124A3A1BA46258A389069 /* EditorSelectionOccurrenceRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorSelectionOccurrenceRenderer.swift; sourceTree = "<group>"; };
+		18058472A45C4334AA643FA0 /* EditorWordSelection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorWordSelection.swift; sourceTree = "<group>"; };
+		8861F7E996DB457A87277497 /* EditorLineIndex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorLineIndex.swift; sourceTree = "<group>"; };
+		FF8474A84D684150943E8C36 /* PendingSyntaxHighlight.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PendingSyntaxHighlight.swift; sourceTree = "<group>"; };
+		E6EA99B131CD4154ADAC0ABF /* EditorLineIndexTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorLineIndexTests.swift; sourceTree = "<group>"; };
+		5FCB4CED5E5F41B2B0E17343 /* PendingSyntaxHighlightTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PendingSyntaxHighlightTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -553,6 +565,7 @@
 				A00000000000000000000191 /* ErrorBannerView.swift */,
 				A00000000000000000000193 /* EditorTextViewStyler.swift */,
 				A00000000000000000000195 /* EditorSyntaxHighlightController.swift */,
+				FF8474A84D684150943E8C36 /* PendingSyntaxHighlight.swift */,
 				A000000000000000000001A3 /* EditorBracketHighlightController.swift */,
 				B00000000000000000000002 /* EditorSearchButton.swift */,
 				B0000000000000000000000A /* EditorSearchFieldCell.swift */,
@@ -563,12 +576,15 @@
 				A00000000000000000000197 /* EditorViewportController.swift */,
 				A00000000000000000000173 /* EditorTextEditing.swift */,
 				B0000000000000000000000C /* EditorTextView.swift */,
+				18058472A45C4334AA643FA0 /* EditorWordSelection.swift */,
+				689124A3A1BA46258A389069 /* EditorSelectionOccurrenceRenderer.swift */,
 				B00000000000000000000010 /* MarkdownLink.swift */,
 				B0000000000000000000001C /* WebLink.swift */,
 				B0000000000000000000001A /* MarkdownListContinuation.swift */,
 				A00000000000000000000108 /* EditorViewController.swift */,
 				A0000000000000000000015D /* JSONPrettifier.swift */,
 				A00000000000000000000109 /* LineNumberRuler.swift */,
+				8861F7E996DB457A87277497 /* EditorLineIndex.swift */,
 				A00000000000000000000142 /* SyntaxHighlighting */,
 			);
 			path = Editor;
@@ -699,6 +715,7 @@
 			isa = PBXGroup;
 			children = (
 				A00000000000000000000178 /* EditorTextEditingTests.swift */,
+				E6EA99B131CD4154ADAC0ABF /* EditorLineIndexTests.swift */,
 				A0000000000000000000017A /* EditorCommandTests.swift */,
 				B00000000000000000000012 /* EditorMarkdownLinkTests.swift */,
 				B00000000000000000000016 /* WorkspaceNavigationTests.swift */,
@@ -706,6 +723,7 @@
 				A00000000000000000000233 /* EditorSelectionOccurrenceTests.swift */,
 				A0000000000000000000017C /* EditorFontTests.swift */,
 				A0000000000000000000017E /* SyntaxHighlightingTests.swift */,
+				5FCB4CED5E5F41B2B0E17343 /* PendingSyntaxHighlightTests.swift */,
 				F3C7A0B1D9E2456A8B0C0002 /* SyntaxHighlightingPerformanceTests.swift */,
 				C00000000000000000000006 /* JavaSyntaxHighlightingTests.swift */,
 				D00000000000000000000006 /* TreeSitterSyntaxRegressionTests.swift */,
@@ -889,6 +907,7 @@
 				A00000000000000000000190 /* ErrorBannerView.swift in Sources */,
 				A00000000000000000000192 /* EditorTextViewStyler.swift in Sources */,
 				A00000000000000000000194 /* EditorSyntaxHighlightController.swift in Sources */,
+				11CD518C8263421A9AFB774D /* PendingSyntaxHighlight.swift in Sources */,
 				A000000000000000000001A2 /* EditorBracketHighlightController.swift in Sources */,
 				B00000000000000000000001 /* EditorSearchButton.swift in Sources */,
 				B00000000000000000000009 /* EditorSearchFieldCell.swift in Sources */,
@@ -899,12 +918,15 @@
 				A00000000000000000000196 /* EditorViewportController.swift in Sources */,
 				A00000000000000000000172 /* EditorTextEditing.swift in Sources */,
 				B0000000000000000000000B /* EditorTextView.swift in Sources */,
+				1525E53EF80844E5BF185033 /* EditorWordSelection.swift in Sources */,
+				02C4F523ED5D47B18B42282F /* EditorSelectionOccurrenceRenderer.swift in Sources */,
 				B0000000000000000000000F /* MarkdownLink.swift in Sources */,
 				B0000000000000000000001B /* WebLink.swift in Sources */,
 				B00000000000000000000019 /* MarkdownListContinuation.swift in Sources */,
 				A00000000000000000000118 /* EditorViewController.swift in Sources */,
 				A0000000000000000000015C /* JSONPrettifier.swift in Sources */,
 				A00000000000000000000119 /* LineNumberRuler.swift in Sources */,
+				455109A8ADEE4B368BA981FF /* EditorLineIndex.swift in Sources */,
 				A0000000000000000000018D /* SyntaxLanguage.swift in Sources */,
 				A0000000000000000000013E /* SyntaxHighlighting.swift in Sources */,
 				A00000000000000000000143 /* PlainTextSyntaxHighlighter.swift in Sources */,
@@ -963,6 +985,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				A00000000000000000000177 /* EditorTextEditingTests.swift in Sources */,
+				3EE67BCE41B6427C8420C532 /* EditorLineIndexTests.swift in Sources */,
 				A00000000000000000000179 /* EditorCommandTests.swift in Sources */,
 				B00000000000000000000011 /* EditorMarkdownLinkTests.swift in Sources */,
 				B00000000000000000000015 /* WorkspaceNavigationTests.swift in Sources */,
@@ -970,6 +993,7 @@
 				A00000000000000000000232 /* EditorSelectionOccurrenceTests.swift in Sources */,
 				A0000000000000000000017B /* EditorFontTests.swift in Sources */,
 				A0000000000000000000017D /* SyntaxHighlightingTests.swift in Sources */,
+				5649223B9F824A6BBF171D1C /* PendingSyntaxHighlightTests.swift in Sources */,
 				F3C7A0B1D9E2456A8B0C0001 /* SyntaxHighlightingPerformanceTests.swift in Sources */,
 				C00000000000000000000005 /* JavaSyntaxHighlightingTests.swift in Sources */,
 				D00000000000000000000005 /* TreeSitterSyntaxRegressionTests.swift in Sources */,

@@ -240,20 +240,38 @@ final class EditorTextEditingTests: XCTestCase {
         XCTAssertEqual(EditorTextEditing.characterLocation(forLineNumber: 99, in: text), text.length)
     }
 
-    @MainActor
     func testWordSelectionExtendsAcrossDottedSegmentsDuringDrag() {
         let text = "192.168.0.1" as NSString
         let word = NSRange(location: 0, length: text.length)
-        let firstSegment = EditorTextView.wordSelectionRange(in: text, proposedRange: word, at: 1)
+        let firstSegment = EditorWordSelection.wordSelectionRange(in: text, proposedRange: word, at: 1)
 
         XCTAssertEqual(firstSegment, NSRange(location: 0, length: 3))
         XCTAssertEqual(
-            EditorTextView.wordSelectionRange(in: text, proposedRange: word, at: 3, anchoredAt: firstSegment),
+            EditorWordSelection.wordSelectionRange(in: text, proposedRange: word, at: 3, anchoredAt: firstSegment),
             NSRange(location: 0, length: 7)
         )
         XCTAssertEqual(
-            EditorTextView.wordSelectionRange(in: text, proposedRange: word, at: 7, anchoredAt: firstSegment),
+            EditorWordSelection.wordSelectionRange(in: text, proposedRange: word, at: 7, anchoredAt: firstSegment),
             NSRange(location: 0, length: 9)
+        )
+    }
+
+    func testWordSelectionHandlesBackwardDraggingDotsAndUTF16Offsets() {
+        let text = "prefix 😀..é... suffix" as NSString
+        let word = text.range(of: "😀..é...")
+        let first = text.range(of: "😀")
+        let last = text.range(of: "é")
+        XCTAssertEqual(EditorWordSelection.wordSelectionRange(in: text, proposedRange: word, at: first.location), first)
+        XCTAssertEqual(EditorWordSelection.wordSelectionRange(in: text, proposedRange: word, at: first.location + first.length), last)
+        XCTAssertEqual(EditorWordSelection.wordSelectionRange(in: text, proposedRange: word, at: NSMaxRange(word) - 1), last)
+        XCTAssertEqual(
+            EditorWordSelection.wordSelectionRange(in: text, proposedRange: word, at: first.location, anchoredAt: last),
+            NSUnionRange(first, last)
+        )
+        let dots = "..." as NSString
+        XCTAssertEqual(
+            EditorWordSelection.wordSelectionRange(in: dots, proposedRange: NSRange(location: 0, length: 3), at: 1),
+            NSRange(location: 0, length: 3)
         )
     }
 

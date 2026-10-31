@@ -15,8 +15,7 @@ final class EditorSyntaxHighlightController {
 
     private var isApplyingHighlighting = false
     private var pendingRefreshTask: Task<Void, Never>?
-    private var pendingHighlight: PendingHighlight = .none
-    private var pendingTextLength: Int?
+    private var pendingHighlight: PendingSyntaxHighlight = .none
     private var pendingLanguage: SyntaxLanguage = .plaintext
     private var markdownFenceCache: MarkdownSyntaxHighlighter.FenceCache?
     private var markdownHighlightWorkTask: Task<MarkdownSyntaxHighlighter.HighlightWork?, Never>?
@@ -26,12 +25,6 @@ final class EditorSyntaxHighlightController {
     private var treeSitterPendingEdits: [SyntaxHighlightEditContext]? = []
     private var treeSitterSubmittedRevision: UInt64 = 0
     private var treeSitterAppliedRevision: UInt64 = 0
-
-    private enum PendingHighlight {
-        case none
-        case range(NSRange)
-        case full
-    }
 
     init(
         highlighterRegistry: HighlighterRegistry,
@@ -94,11 +87,10 @@ final class EditorSyntaxHighlightController {
             treeSitterAppliedRevision = 0
         }
         let textLength = textStorageProvider()?.length ?? 0
-        if pendingLanguage != language, !isPendingHighlightEmpty {
+        if pendingLanguage != language, !pendingHighlight.isEmpty {
             pendingHighlight = .full
-            pendingTextLength = nil
         } else {
-            pendingHighlight = pendingHighlightAdjusted(for: editContext, currentTextLength: textLength)
+            pendingHighlight.adjust(for: editContext, currentTextLength: textLength)
         }
 
         pendingLanguage = language
@@ -108,13 +100,9 @@ final class EditorSyntaxHighlightController {
 
         if let editedRange {
             let incoming = expandedHighlightRange(for: editedRange, language: language, editContext: editContext)
-            pendingHighlight = mergedHighlight(pendingHighlight, with: incoming, textLength: textLength)
-            if case .range = pendingHighlight {
-                pendingTextLength = textLength
-            }
+            pendingHighlight.merge(incoming, textLength: textLength)
         } else {
             pendingHighlight = .full
-            pendingTextLength = nil
             if language == .markdown {
                 markdownFenceCache = nil
             }
@@ -139,7 +127,7 @@ final class EditorSyntaxHighlightController {
             switch target {
             case .none:
                 return
-            case .range(let range):
+            case .range(let range, _):
                 highlightRange = range
             case .full:
                 highlightRange = nil
@@ -152,7 +140,6 @@ final class EditorSyntaxHighlightController {
             // Keep the dirty range available for rebasing if an edit cancels in-flight work.
             guard scheduledRevision == self.textRevision, !Task.isCancelled else { return }
             self.pendingHighlight = .none
-            self.pendingTextLength = nil
             self.pendingRefreshTask = nil
         }
     }
@@ -344,80 +331,5 @@ final class EditorSyntaxHighlightController {
             editContext: editContext,
             in: text
         ).clamped(toLength: text.length)
-    }
-
-    private var isPendingHighlightEmpty: Bool {
-        if case .none = pendingHighlight { return true }
-        return false
-    }
-
-    private func pendingHighlightAdjusted(
-        for editContext: SyntaxHighlightEditContext?,
-        currentTextLength: Int
-    ) -> PendingHighlight {
-        guard case .range(let range) = pendingHighlight else {
-            return pendingHighlight
-        }
-        guard let editContext,
-              let pendingTextLength,
-              let adjustedRange = adjusted(range, through: editContext, currentTextLength: currentTextLength),
-              pendingTextLength == currentTextLength
-                - (editContext.replacementString as NSString).length
-                + (editContext.replacedText as NSString).length else {
-            return .full
-        }
-        return .range(adjustedRange)
-    }
-
-    private func adjusted(
-        _ range: NSRange,
-        through editContext: SyntaxHighlightEditContext,
-        currentTextLength: Int
-    ) -> NSRange? {
-        let editRange = editContext.replacementRange
-        let replacedLength = (editContext.replacedText as NSString).length
-        let replacementLength = (editContext.replacementString as NSString).length
-        let oldLength = currentTextLength - replacementLength + replacedLength
-        guard editRange.length == replacedLength,
-              editRange.location <= oldLength,
-              editRange.upperBound <= oldLength else {
-            return nil
-        }
-
-        let delta = replacementLength - replacedLength
-        if range.upperBound <= editRange.location {
-            return range.clamped(toLength: currentTextLength)
-        }
-        if range.location >= editRange.upperBound {
-            return NSRange(location: range.location + delta, length: range.length)
-                .clamped(toLength: currentTextLength)
-        }
-
-        let start = min(range.location, editRange.location)
-        let end = max(
-            range.upperBound > editRange.upperBound ? range.upperBound + delta : editRange.location + replacementLength,
-            editRange.location + replacementLength
-        )
-        return NSRange(location: start, length: max(end - start, 0)).clamped(toLength: currentTextLength)
-    }
-
-    private func mergedHighlight(
-        _ existing: PendingHighlight,
-        with incomingRange: NSRange,
-        textLength: Int
-    ) -> PendingHighlight {
-        let incomingRange = incomingRange.clamped(toLength: textLength)
-        if incomingRange.location == 0, incomingRange.length == textLength {
-            return .full
-        }
-
-        switch existing {
-        case .none:
-            return .range(incomingRange)
-        case .range(let existingRange):
-            return .range(NSUnionRange(existingRange, incomingRange))
-        case .full:
-            return .full
-        }
     }
 }
