@@ -5,7 +5,6 @@ final class OpenFoldersSidebarOutlineController: NSObject, NSOutlineViewDataSour
     enum Constants {
         static let rowFontSize: CGFloat = 13
         static let rowHeight: CGFloat = rowFontSize * 2
-        static let rootFolderRowHeight: CGFloat = 32
     }
 
     var onFileSelected: ((URL) -> Void)?
@@ -87,15 +86,13 @@ final class OpenFoldersSidebarOutlineController: NSObject, NSOutlineViewDataSour
     }
 
     func outlineView(_ outlineView: NSOutlineView, heightOfRowByItem item: Any) -> CGFloat {
-        if let node = node(for: item), rootNodes.contains(where: { $0 === node }) {
-            return Constants.rootFolderRowHeight
-        }
-
         return Constants.rowHeight
     }
 
     func outlineView(_ outlineView: NSOutlineView, rowViewForItem item: Any) -> NSTableRowView? {
-        SidebarSelectionRowView()
+        let rowView = SidebarSelectionRowView()
+        rowView.selectionStrength = 0.25
+        return rowView
     }
 
     func outlineView(_ outlineView: NSOutlineView, viewFor tableColumn: NSTableColumn?, item: Any) -> NSView? {
@@ -106,9 +103,14 @@ final class OpenFoldersSidebarOutlineController: NSObject, NSOutlineViewDataSour
             ?? makeCellView(identifier: identifier)
 
         cellView.imageView?.image = icon(for: node)
+        cellView.imageView?.alphaValue = node.isDirectory ? 1 : 0.82
         cellView.textField?.stringValue = node.title
-        cellView.textField?.font = NSFont.systemFont(ofSize: Constants.rowFontSize, weight: node.isDirectory ? .semibold : .regular)
-        cellView.textField?.textColor = AppColors.folderSidebarText
+        cellView.textField?.font = NSFont.systemFont(
+            ofSize: Constants.rowFontSize,
+            weight: node.isDirectory ? .medium : .regular
+        )
+        cellView.toolTip = node.title
+        cellView.textField?.textColor = AppColors.folderSidebarText.withAlphaComponent(node.isDirectory ? 1 : 0.86)
         return cellView
     }
 
@@ -245,6 +247,7 @@ final class OpenFoldersSidebarOutlineController: NSObject, NSOutlineViewDataSour
 
         let textField = NSTextField(labelWithString: "")
         textField.translatesAutoresizingMaskIntoConstraints = false
+        textField.usesSingleLineMode = true
         textField.lineBreakMode = .byTruncatingMiddle
         textField.font = NSFont.systemFont(ofSize: Constants.rowFontSize)
 
@@ -259,8 +262,8 @@ final class OpenFoldersSidebarOutlineController: NSObject, NSOutlineViewDataSour
             imageView.widthAnchor.constraint(equalToConstant: 16),
             imageView.heightAnchor.constraint(equalToConstant: 16),
 
-            textField.leadingAnchor.constraint(equalTo: imageView.trailingAnchor, constant: 5),
-            textField.trailingAnchor.constraint(equalTo: cellView.trailingAnchor, constant: -8),
+            textField.leadingAnchor.constraint(equalTo: imageView.trailingAnchor, constant: 6),
+            textField.trailingAnchor.constraint(equalTo: cellView.trailingAnchor, constant: -12),
             textField.centerYAnchor.constraint(equalTo: cellView.centerYAnchor),
         ])
 
@@ -274,7 +277,8 @@ final class OpenFoldersSidebarOutlineController: NSObject, NSOutlineViewDataSour
         }
 
         let icon = NSWorkspace.shared.icon(forFile: node.url.path)
-        icon.size = NSSize(width: 16, height: 16)
+        let iconSize: CGFloat = node.isDirectory ? 16 : 14
+        icon.size = NSSize(width: iconSize, height: iconSize)
         iconsByPath[path] = icon
         return icon
     }

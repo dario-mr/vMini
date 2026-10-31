@@ -4,6 +4,81 @@ import XCTest
 
 @MainActor
 final class SidebarAndPersistenceTests: XCTestCase {
+    func testOpenFilesSidebarScrollingAndActiveRowVisibility() throws {
+        _ = NSApplication.shared
+        let rootURL = try makeTemporaryDirectory(name: "sidebar-scroll")
+        let documents = OpenDocumentsStore()
+        defer { documents.documents.forEach { $0.close() } }
+        let folders = OpenFoldersStore(persistence: WorkspacePersistence(
+            userDefaults: makeUserDefaults(prefix: "SidebarAndPersistenceTests.Scroll")
+        ))
+        folders.add([rootURL])
+
+        func addDocuments(_ count: Int) {
+            for _ in 0..<count {
+                documents.register(Document(
+                    sessionIdentifier: UUID(),
+                    syntaxOverrideStore: .shared,
+                    openDocumentsStore: documents
+                ))
+            }
+        }
+        addDocuments(2)
+
+        let documentController = NSDocumentController()
+        let router = WorkspaceDocumentCoordinator(
+            documentOpener: WorkspaceDocumentOpener(documentController: documentController, openDocumentsStore: documents),
+            openDocumentsStore: documents,
+            closedDocumentHistory: ClosedDocumentHistory(),
+            documentController: documentController
+        )
+        let controller = OpenFilesSidebarViewController(documentStore: documents, folderStore: folders, documentRouter: router)
+        let view = controller.view
+        view.frame = NSRect(x: 0, y: 0, width: 220, height: 640)
+        view.layoutSubtreeIfNeeded()
+
+        let openFilesScrollView = try XCTUnwrap(view.subviews.compactMap { $0 as? NSScrollView }.first)
+        let foldersView = try XCTUnwrap(controller.children.first?.view)
+        let foldersScrollView = try XCTUnwrap(foldersView.subviews.compactMap { $0 as? NSScrollView }.first)
+        XCTAssertFalse(openFilesScrollView.hasVerticalScroller)
+
+        addDocuments(20)
+        view.layoutSubtreeIfNeeded()
+
+        XCTAssertTrue(openFilesScrollView.hasVerticalScroller)
+        XCTAssertGreaterThan(foldersScrollView.frame.height, 0)
+
+        let tableView = try XCTUnwrap(openFilesScrollView.documentView as? NSTableView)
+        documents.select(try XCTUnwrap(documents.documents.last))
+        view.layoutSubtreeIfNeeded()
+        XCTAssertTrue(tableView.visibleRect.contains(tableView.rect(ofRow: tableView.selectedRow)),
+                      "Activating an overflow row must keep it visible")
+
+        openFilesScrollView.contentView.scroll(to: NSPoint(x: 0, y: 100))
+        let scrollOrigin = openFilesScrollView.contentView.bounds.origin
+        documents.refresh()
+        view.layoutSubtreeIfNeeded()
+        XCTAssertEqual(openFilesScrollView.contentView.bounds.origin, scrollOrigin,
+                       "Document updates must preserve manual scrolling")
+
+        let newDocument = Document(sessionIdentifier: UUID(), syntaxOverrideStore: .shared, openDocumentsStore: documents)
+        documents.register(newDocument, makeActive: true)
+        view.layoutSubtreeIfNeeded()
+        XCTAssertTrue(tableView.visibleRect.contains(tableView.rect(ofRow: tableView.selectedRow)),
+                      "A newly opened overflow row must be visible")
+
+        view.setFrameSize(NSSize(width: 220, height: 1_000))
+        view.layoutSubtreeIfNeeded()
+        XCTAssertFalse(openFilesScrollView.hasVerticalScroller)
+        XCTAssertGreaterThanOrEqual(openFilesScrollView.contentSize.height, tableView.rect(ofRow: tableView.numberOfRows - 1).maxY)
+
+        view.setFrameSize(NSSize(width: 220, height: 200))
+        view.layoutSubtreeIfNeeded()
+        XCTAssertGreaterThanOrEqual(openFilesScrollView.contentSize.height, tableView.rowHeight,
+                                    "Small windows must leave open files accessible")
+        XCTAssertGreaterThan(foldersScrollView.frame.height, 0)
+    }
+
     func testFolderSidebarSingleAndDoubleClickUseSeparateFileActions() async throws {
         let rootURL = try makeTemporaryDirectory(name: "preview-clicks")
         let fileURL = rootURL.appendingPathComponent("file.txt")

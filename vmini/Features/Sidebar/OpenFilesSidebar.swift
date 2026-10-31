@@ -1,17 +1,17 @@
 import AppKit
 
-private final class NonScrollingClipView: NSClipView {
-    override func constrainBoundsRect(_ proposedBounds: NSRect) -> NSRect {
-        var bounds = super.constrainBoundsRect(proposedBounds)
-        bounds.origin = .zero
-        return bounds
-    }
-}
-
 @MainActor
 final class OpenFilesSidebarViewController: NSViewController {
     private enum Constants {
-        static let headerFontSize: CGFloat = 14
+        static let headerFontSize: CGFloat = 13
+        static let sectionInset: CGFloat = 14
+        static let headerTopInset: CGFloat = 10
+        static let headerBottomInset: CGFloat = 3
+        static let separatorTopSpacing: CGFloat = 8
+        static let separatorBottomSpacing: CGFloat = 8
+        static let dividerThickness: CGFloat = 1
+        static let rowSpacing: CGFloat = 1
+        static let preferredFoldersHeight: CGFloat = 160
     }
 
     private let foldersViewController = OpenFoldersSidebarViewController()
@@ -19,10 +19,13 @@ final class OpenFilesSidebarViewController: NSViewController {
     private let headerLabel = NSTextField(labelWithString: "OPEN FILES")
     private let scrollView = NSScrollView()
     private let tableView = NSTableView()
+    private let dividerView = NSBox()
     private let documentStore: OpenDocumentsStore
     private let folderStore: OpenFoldersStore
     private let tableController: OpenFilesSidebarTableController
     private var openFilesHeightConstraint: NSLayoutConstraint?
+    private var dividerTopConstraint: NSLayoutConstraint?
+    private var dividerHeightConstraint: NSLayoutConstraint?
     private var foldersTopConstraint: NSLayoutConstraint?
     private var foldersBottomConstraint: NSLayoutConstraint?
     private var foldersHiddenHeightConstraint: NSLayoutConstraint?
@@ -77,10 +80,14 @@ final class OpenFilesSidebarViewController: NSViewController {
         foldersView.translatesAutoresizingMaskIntoConstraints = false
 
         let openFilesHeightConstraint = scrollView.heightAnchor.constraint(equalToConstant: 0)
-        let foldersTopConstraint = foldersView.topAnchor.constraint(equalTo: scrollView.bottomAnchor, constant: 8)
+        let dividerTopConstraint = dividerView.topAnchor.constraint(equalTo: scrollView.bottomAnchor, constant: Constants.separatorTopSpacing)
+        let dividerHeightConstraint = dividerView.heightAnchor.constraint(equalToConstant: Constants.dividerThickness)
+        let foldersTopConstraint = foldersView.topAnchor.constraint(equalTo: dividerView.bottomAnchor, constant: Constants.separatorBottomSpacing)
         let foldersBottomConstraint = foldersView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         let foldersHiddenHeightConstraint = foldersView.heightAnchor.constraint(equalToConstant: 0)
         self.openFilesHeightConstraint = openFilesHeightConstraint
+        self.dividerTopConstraint = dividerTopConstraint
+        self.dividerHeightConstraint = dividerHeightConstraint
         self.foldersTopConstraint = foldersTopConstraint
         self.foldersBottomConstraint = foldersBottomConstraint
         self.foldersHiddenHeightConstraint = foldersHiddenHeightConstraint
@@ -88,6 +95,7 @@ final class OpenFilesSidebarViewController: NSViewController {
         view.addSubview(headerContainer)
         headerContainer.addSubview(headerLabel)
         view.addSubview(scrollView)
+        view.addSubview(dividerView)
         view.addSubview(foldersView)
 
         NSLayoutConstraint.activate([
@@ -95,15 +103,20 @@ final class OpenFilesSidebarViewController: NSViewController {
             headerContainer.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             headerContainer.topAnchor.constraint(equalTo: view.topAnchor),
 
-            headerLabel.leadingAnchor.constraint(equalTo: headerContainer.leadingAnchor, constant: 14),
-            headerLabel.trailingAnchor.constraint(equalTo: headerContainer.trailingAnchor, constant: -14),
-            headerLabel.topAnchor.constraint(equalTo: headerContainer.topAnchor, constant: 14),
-            headerLabel.bottomAnchor.constraint(equalTo: headerContainer.bottomAnchor, constant: -10),
+            headerLabel.leadingAnchor.constraint(equalTo: headerContainer.leadingAnchor, constant: Constants.sectionInset),
+            headerLabel.trailingAnchor.constraint(equalTo: headerContainer.trailingAnchor, constant: -Constants.sectionInset),
+            headerLabel.topAnchor.constraint(equalTo: headerContainer.topAnchor, constant: Constants.headerTopInset),
+            headerLabel.bottomAnchor.constraint(equalTo: headerContainer.bottomAnchor, constant: -Constants.headerBottomInset),
 
             scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             scrollView.topAnchor.constraint(equalTo: headerContainer.bottomAnchor),
             openFilesHeightConstraint,
+
+            dividerView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Constants.sectionInset),
+            dividerView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Constants.sectionInset),
+            dividerTopConstraint,
+            dividerHeightConstraint,
 
             foldersView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             foldersView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
@@ -131,8 +144,8 @@ final class OpenFilesSidebarViewController: NSViewController {
     private func configureHeader() {
         headerContainer.translatesAutoresizingMaskIntoConstraints = false
         headerLabel.translatesAutoresizingMaskIntoConstraints = false
-        headerLabel.font = NSFont.systemFont(ofSize: Constants.headerFontSize, weight: .semibold)
-        headerLabel.textColor = AppColors.sidebarHeaderText
+        headerLabel.font = NSFont.systemFont(ofSize: Constants.headerFontSize, weight: .medium)
+        headerLabel.textColor = AppColors.sidebarText
         headerLabel.alignment = .left
         headerLabel.drawsBackground = false
         headerLabel.backgroundColor = .clear
@@ -145,7 +158,7 @@ final class OpenFilesSidebarViewController: NSViewController {
         tableView.headerView = nil
         tableView.rowSizeStyle = .default
         tableView.rowHeight = OpenFilesSidebarTableController.Constants.rowHeight
-        tableView.intercellSpacing = NSSize(width: 0, height: 2)
+        tableView.intercellSpacing = NSSize(width: 0, height: Constants.rowSpacing)
         tableView.focusRingType = .none
         tableView.backgroundColor = .clear
         tableView.selectionHighlightStyle = .regular
@@ -154,15 +167,17 @@ final class OpenFilesSidebarViewController: NSViewController {
         tableController.attach(to: tableView)
 
         scrollView.translatesAutoresizingMaskIntoConstraints = false
-        scrollView.contentView = NonScrollingClipView()
         scrollView.borderType = .noBorder
         scrollView.hasVerticalScroller = false
         scrollView.hasHorizontalScroller = false
+        scrollView.scrollerStyle = .overlay
         scrollView.verticalScrollElasticity = .none
         scrollView.horizontalScrollElasticity = .none
         scrollView.autohidesScrollers = true
         scrollView.drawsBackground = false
         scrollView.backgroundColor = .clear
+        dividerView.translatesAutoresizingMaskIntoConstraints = false
+        dividerView.boxType = .separator
         scrollView.documentView = tableView
     }
 
@@ -171,26 +186,45 @@ final class OpenFilesSidebarViewController: NSViewController {
         updateOpenFilesHeight()
     }
 
+    override func viewDidLayout() {
+        super.viewDidLayout()
+        updateOpenFilesHeight()
+    }
+
     private func updateOpenFilesHeight() {
-        let height = tableController.contentHeight
-        openFilesHeightConstraint?.constant = height
-        tableView.frame.size.height = height
-        scrollView.contentView.scroll(to: .zero)
+        let contentHeight = tableController.contentHeight
+        let availableHeight = max(0, view.bounds.height - headerContainer.frame.height)
+        let reservedFoldersHeight = folderStore.folderURLs.isEmpty
+            ? 0
+            : Constants.preferredFoldersHeight
+                + Constants.separatorTopSpacing
+                + Constants.separatorBottomSpacing
+                + Constants.dividerThickness
+        let maxHeight = max(availableHeight / 2, availableHeight - reservedFoldersHeight)
+        let height = min(contentHeight, maxHeight)
+        if openFilesHeightConstraint?.constant != height {
+            openFilesHeightConstraint?.constant = height
+        }
+        scrollView.hasVerticalScroller = contentHeight > height
+        tableView.frame.size.height = contentHeight
     }
 
     @objc
     private func updateFoldersVisibility() {
         let hasFolders = !folderStore.folderURLs.isEmpty
-        foldersViewController.setCollapsed(!hasFolders)
+        foldersViewController.setHidden(!hasFolders)
         foldersViewController.view.isHidden = !hasFolders
-        foldersTopConstraint?.constant = hasFolders ? 8 : 0
+        dividerView.isHidden = !hasFolders
+        dividerTopConstraint?.constant = hasFolders ? Constants.separatorTopSpacing : 0
+        dividerHeightConstraint?.constant = hasFolders ? Constants.dividerThickness : 0
+        foldersTopConstraint?.constant = hasFolders ? Constants.separatorBottomSpacing : 0
         foldersBottomConstraint?.isActive = hasFolders
         foldersHiddenHeightConstraint?.isActive = !hasFolders
+        updateOpenFilesHeight()
     }
 
     private func applyTheme() {
-        headerLabel.textColor = AppColors.sidebarHeaderText
-        tableController.applyTheme()
+        configureHeader()
         tableController.reload()
     }
 }

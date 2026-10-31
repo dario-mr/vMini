@@ -2,13 +2,14 @@ import AppKit
 
 final class SidebarSelectionRowView: NSTableRowView {
     private enum Layout {
-        static let cornerRadius: CGFloat = 5
+        static let cornerRadius: CGFloat = 6
         static let horizontalInset: CGFloat = 10
         static let verticalInset: CGFloat = 1
         static let hoverOverlayOpacity: CGFloat = 0.08
     }
 
     private var trackingArea: NSTrackingArea?
+    var selectionStrength: CGFloat = 0.9
     private var isHovered = false {
         didSet {
             guard oldValue != isHovered else { return }
@@ -55,7 +56,7 @@ final class SidebarSelectionRowView: NSTableRowView {
             return
         }
 
-        NSColor.white.withAlphaComponent(Layout.hoverOverlayOpacity).setFill()
+        NSColor.labelColor.withAlphaComponent(Layout.hoverOverlayOpacity).setFill()
         hoverRectPath.fill()
     }
 
@@ -64,7 +65,8 @@ final class SidebarSelectionRowView: NSTableRowView {
             return
         }
 
-        AppColors.subtleSelectionFill.setFill()
+        let selectionFill = AppColors.subtleSelectionFill
+        selectionFill.withAlphaComponent(selectionFill.alphaComponent * selectionStrength).setFill()
         hoverRectPath.fill()
     }
 
