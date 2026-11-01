@@ -28,6 +28,12 @@ class EditorTextView: NSTextView {
     private(set) var selectionOccurrenceHighlightRanges: [NSRange] = []
     private(set) var selectionOccurrenceHighlightColor: NSColor?
 
+    override func setSelectedRanges(_ ranges: [NSValue], affinity: NSSelectionAffinity, stillSelecting: Bool) {
+        super.setSelectedRanges(ranges, affinity: affinity, stillSelecting: stillSelecting)
+        // AppKit's drag invalidation excludes the padding around our selection outline.
+        needsDisplay = true
+    }
+
     func setSelectionOccurrenceHighlights(_ ranges: [NSRange], color: NSColor?) {
         selectionOccurrenceHighlightRanges = ranges
         selectionOccurrenceHighlightColor = ranges.isEmpty ? nil : color
@@ -41,7 +47,8 @@ class EditorTextView: NSTextView {
             dirtyRect: rect,
             ranges: selectionRangesExcludingSearchMatch(),
             color: selectionOccurrenceHighlightColor ?? AppColors.primaryActionBackground,
-            filled: true
+            filled: true,
+            joinLineFragments: true
         )
     }
 
@@ -50,8 +57,15 @@ class EditorTextView: NSTextView {
         EditorSelectionOccurrenceRenderer.draw(
             in: self,
             dirtyRect: dirtyRect,
-            ranges: selectionOccurrenceHighlightRanges + selectionRangesExcludingSearchMatch(),
-            color: selectionOccurrenceHighlightColor ?? AppColors.primaryActionBackground
+            ranges: selectionOccurrenceHighlightRanges,
+            color: selectionOccurrenceHighlightColor
+        )
+        EditorSelectionOccurrenceRenderer.draw(
+            in: self,
+            dirtyRect: dirtyRect,
+            ranges: selectionRangesExcludingSearchMatch(),
+            color: selectionOccurrenceHighlightColor ?? AppColors.primaryActionBackground,
+            joinLineFragments: true
         )
     }
 

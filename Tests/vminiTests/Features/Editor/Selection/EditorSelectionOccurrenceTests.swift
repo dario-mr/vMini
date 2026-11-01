@@ -221,42 +221,148 @@ final class EditorSelectionOccurrenceTests: XCTestCase {
         window.displayIfNeeded()
     }
 
-    func testRendererDrawsMultilineUnicodeBordersAndIgnoresStaleRanges() throws {
+    func testRendererJoinsMultilineUnicodeBordersAndIgnoresStaleRanges() throws {
         let textView = EditorTextView(frame: NSRect(x: 0, y: 0, width: 200, height: 100))
         textView.font = .monospacedSystemFont(ofSize: 14, weight: .regular)
+        textView.textContainerInset = NSSize(width: 0, height: 4)
+        textView.textContainer?.containerSize = NSSize(width: 200, height: 100)
         textView.string = "😀 foo\nbar\nother"
         let layout = try XCTUnwrap(textView.layoutManager)
         layout.ensureLayout(for: try XCTUnwrap(textView.textContainer))
 
-        func redRows(for ranges: [NSRange], color: NSColor?) throws -> Set<Int> {
+        func redPixelCounts(for ranges: [NSRange], color: NSColor?, dirtyRect: NSRect? = nil) throws -> [Int: Int] {
             let image = NSImage(size: textView.bounds.size, flipped: true) { _ in
                 NSColor.white.setFill()
                 textView.bounds.fill()
-                EditorSelectionOccurrenceRenderer.draw(in: textView, dirtyRect: textView.bounds, ranges: ranges, color: color)
+                let dirtyRect = dirtyRect ?? textView.bounds
+                NSBezierPath(rect: dirtyRect).addClip()
+                EditorSelectionOccurrenceRenderer.draw(
+                    in: textView,
+                    dirtyRect: dirtyRect,
+                    ranges: ranges,
+                    color: color,
+                    joinLineFragments: true
+                )
                 return true
             }
             let bitmap = try XCTUnwrap(NSBitmapImageRep(data: XCTUnwrap(image.tiffRepresentation)))
-            var rows = Set<Int>()
+            var countsByRow: [Int: Int] = [:]
             for y in 0..<bitmap.pixelsHigh {
                 for x in 0..<bitmap.pixelsWide {
                     let pixel = try XCTUnwrap(bitmap.colorAt(x: x, y: y)?.usingColorSpace(.deviceRGB))
-                    if pixel.redComponent > 0.8, pixel.greenComponent < 0.5, pixel.blueComponent < 0.5 {
-                        rows.insert(y)
-                        break
+                    if pixel.redComponent > 0.8, pixel.greenComponent < 0.8, pixel.blueComponent < 0.8 {
+                        // Both selected rows contain this column; their shared edge must stay open.
+                        if (10..<20).contains(x) { countsByRow[y, default: 0] += 1 }
                     }
                 }
             }
-            return rows
+            return countsByRow
         }
 
         let range = (textView.string as NSString).range(of: "😀 foo\nbar")
-        let rows = try redRows(for: [range], color: .red)
-        XCTAssertGreaterThan(try XCTUnwrap(rows.max()) - XCTUnwrap(rows.min()), 14)
-        XCTAssertTrue(try redRows(for: [range], color: nil).isEmpty)
-        XCTAssertTrue(try redRows(for: [
+        let redCounts = try redPixelCounts(for: [range], color: .red)
+        let rows = Set(redCounts.keys)
+        let firstRow = try XCTUnwrap(rows.min())
+        let lastRow = try XCTUnwrap(rows.max())
+        XCTAssertGreaterThan(lastRow - firstRow, 14)
+        let interiorRows = redCounts.filter { $0.key > firstRow + 3 && $0.key < lastRow - 3 }
+        XCTAssertTrue(interiorRows.isEmpty, "multiline selection should not draw a border across each row")
+        let glyphs = layout.glyphRange(forCharacterRange: range, actualCharacterRange: nil)
+        let bounds = layout.boundingRect(forGlyphRange: glyphs, in: try XCTUnwrap(textView.textContainer))
+            .offsetBy(dx: textView.textContainerOrigin.x, dy: textView.textContainerOrigin.y)
+        for y in [bounds.minY - 2, bounds.maxY + 1] {
+            XCTAssertFalse(try redPixelCounts(
+                for: [range], color: .red,
+                dirtyRect: NSRect(x: 0, y: y, width: textView.bounds.width, height: 1)
+            ).isEmpty, "Border-only dirty rectangles must still draw the selection")
+        }
+        XCTAssertTrue(try redPixelCounts(for: [range], color: nil).isEmpty)
+        XCTAssertTrue(try redPixelCounts(for: [
             NSRange(location: -1, length: 1), NSRange(location: NSNotFound, length: 1),
             NSRange(location: 0, length: Int.max), NSRange(location: 500, length: 1),
         ], color: .red).isEmpty)
+    }
+
+    func testRendererKeepsMultilineSidesStraightBetweenRoundedOuterCorners() throws {
+        let textView = EditorTextView(frame: NSRect(x: 0, y: 0, width: 240, height: 160))
+        textView.font = .monospacedSystemFont(ofSize: 14, weight: .regular)
+        textView.textContainerInset = NSSize(width: 8, height: 8)
+        textView.textContainer?.containerSize = NSSize(width: 220, height: 160)
+        let selected = String(repeating: "line\n", count: 6)
+        textView.string = selected + "suffix"
+        let range = NSRange(location: 0, length: selected.utf16.count)
+        let layout = try XCTUnwrap(textView.layoutManager)
+        let container = try XCTUnwrap(textView.textContainer)
+        layout.ensureLayout(for: container)
+        let glyphs = layout.glyphRange(forCharacterRange: range, actualCharacterRange: nil)
+        let bounds = layout.boundingRect(forGlyphRange: glyphs, in: container)
+            .offsetBy(dx: textView.textContainerOrigin.x, dy: textView.textContainerOrigin.y)
+        for filled in [false, true] {
+            let image = NSImage(size: textView.bounds.size, flipped: true) { _ in
+                NSColor.white.setFill()
+                textView.bounds.fill()
+                EditorSelectionOccurrenceRenderer.draw(
+                    in: textView, dirtyRect: textView.bounds, ranges: [range],
+                    color: .red, filled: filled, joinLineFragments: true
+                )
+                return true
+            }
+            let bitmap = try XCTUnwrap(NSBitmapImageRep(data: XCTUnwrap(image.tiffRepresentation)))
+            let scaleX = CGFloat(bitmap.pixelsWide) / image.size.width
+            let scaleY = CGFloat(bitmap.pixelsHigh) / image.size.height
+            for x in [bounds.minX - 2, bounds.maxX + 2] {
+                let greens = try (Int((bounds.minY + 4) * scaleY)..<Int((bounds.maxY - 4) * scaleY)).map { y in
+                    try XCTUnwrap(bitmap.colorAt(x: Int(x * scaleX), y: y)?.usingColorSpace(.deviceRGB)).greenComponent
+                }
+                XCTAssertLessThan(try XCTUnwrap(greens.max()) - XCTUnwrap(greens.min()), 0.01,
+                                  "Joined rows must have a straight side for both the fill and outline")
+            }
+        }
+    }
+
+    func testRendererPreservesUnselectedPrefixAndSuffixAcrossLines() throws {
+        let textView = EditorTextView(frame: NSRect(x: 0, y: 0, width: 240, height: 120))
+        textView.font = .monospacedSystemFont(ofSize: 14, weight: .regular)
+        textView.textContainerInset = NSSize(width: 0, height: 4)
+        textView.textContainer?.containerSize = NSSize(width: 240, height: 120)
+        textView.string = "prefix 😀 selected\nend suffix\nother"
+        let text = textView.string as NSString
+        let selection = text.range(of: "😀 selected\nend")
+        let layout = try XCTUnwrap(textView.layoutManager)
+        let container = try XCTUnwrap(textView.textContainer)
+        layout.ensureLayout(for: container)
+        let image = NSImage(size: textView.bounds.size, flipped: true) { _ in
+            NSColor.white.setFill()
+            textView.bounds.fill()
+            EditorSelectionOccurrenceRenderer.draw(
+                in: textView, dirtyRect: textView.bounds, ranges: [selection],
+                color: .red, filled: true, joinLineFragments: true
+            )
+            return true
+        }
+        let bitmap = try XCTUnwrap(NSBitmapImageRep(data: XCTUnwrap(image.tiffRepresentation)))
+        for (word, selected) in [("prefix", false), ("selected", true), ("end", true), ("suffix", false)] {
+            let glyphs = layout.glyphRange(forCharacterRange: text.range(of: word), actualCharacterRange: nil)
+            let rect = layout.boundingRect(forGlyphRange: glyphs, in: container)
+                .offsetBy(dx: textView.textContainerOrigin.x, dy: textView.textContainerOrigin.y)
+            let pixel = try XCTUnwrap(bitmap.colorAt(
+                x: Int(rect.midX * CGFloat(bitmap.pixelsWide) / image.size.width),
+                y: Int(rect.midY * CGFloat(bitmap.pixelsHigh) / image.size.height)
+            )?.usingColorSpace(.deviceRGB))
+            XCTAssertEqual(pixel.greenComponent < 0.9, selected, word)
+        }
+        XCTAssertEqual(text.substring(with: selection), "😀 selected\nend")
+    }
+
+    func testDraggingInvalidatesThePaddedSelectionOutline() {
+        let textView = SelectionInvalidationTextView(frame: NSRect(x: 0, y: 0, width: 200, height: 100))
+        textView.string = "prefix selected\nsecond line\nthird line"
+        for range in [NSRange(location: 7, length: 13), NSRange(location: 7, length: 24), NSRange(location: 7, length: 4)] {
+            textView.invalidatedEntireView = false
+            textView.setSelectedRanges([NSValue(range: range)], affinity: .downstream, stillSelecting: true)
+            XCTAssertTrue(textView.invalidatedEntireView, "Drag updates must redraw outside AppKit's glyph rectangles")
+            XCTAssertEqual(textView.selectedRange(), range)
+        }
     }
 
     private func background(in textView: NSTextView, at location: Int) -> NSColor? {
@@ -273,5 +379,17 @@ final class EditorSelectionOccurrenceTests: XCTestCase {
             try await Task.sleep(nanoseconds: 10_000_000)
         }
         XCTFail("Expected occurrence border at \(location)", file: file, line: line)
+    }
+}
+
+private final class SelectionInvalidationTextView: EditorTextView {
+    var invalidatedEntireView = false
+
+    override var needsDisplay: Bool {
+        get { super.needsDisplay }
+        set {
+            if newValue { invalidatedEntireView = true }
+            super.needsDisplay = newValue
+        }
     }
 }
