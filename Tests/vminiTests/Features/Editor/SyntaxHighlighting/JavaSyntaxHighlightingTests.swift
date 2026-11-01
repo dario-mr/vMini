@@ -176,6 +176,7 @@ final class JavaSyntaxHighlightingTests: XCTestCase {
 
         textView.insertText(" ", replacementRange: NSRange(location: NSNotFound, length: 0))
         let highlighted = expectation(description: "Asynchronous highlighting finished")
+        highlighted.assertForOverFulfill = false
         let observation = NotificationCenter.default.addObserver(
             forName: NSTextStorage.didProcessEditingNotification, object: storage, queue: .main
         ) { _ in highlighted.fulfill() }
@@ -199,6 +200,7 @@ final class JavaSyntaxHighlightingTests: XCTestCase {
                 undoManager.undo()
             }
             let highlighted = expectation(description: "Undo/redo highlighting finished")
+            highlighted.assertForOverFulfill = false
             let observation = NotificationCenter.default.addObserver(
                 forName: NSTextStorage.didProcessEditingNotification, object: storage, queue: .main
             ) { _ in highlighted.fulfill() }
