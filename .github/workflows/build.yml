@@ -31,3 +31,34 @@ jobs:
 
       - name: Build and test
         run: swift test
+
+      - name: Collect XCTest crash diagnostics
+        if: failure()
+        run: |
+          output="$RUNNER_TEMP/xctest-crash-diagnostics"
+          mkdir -p "$output"
+          printf 'Crash report files found:\n' > "$output/collection.txt"
+
+          /usr/bin/log show --last 10m --style compact \
+            --predicate 'process == "xctest" OR process == "vminiPackageTests" OR process == "ReportCrash"' \
+            2>&1 | tail -n 2000 > "$output/unified-log.txt" || true
+
+          for report_dir in "$HOME/Library/Logs/DiagnosticReports" /Library/Logs/DiagnosticReports; do
+            if [[ -d "$report_dir" ]]; then
+              echo "Scanning $report_dir"
+              find "$report_dir" -type f -mmin -10 \( -name '*.ips' -o -name '*.crash' \) \
+                -print -exec cp -p {} "$output/" \; 2>> "$output/collection.txt" \
+                | tee -a "$output/collection.txt" || true
+            else
+              echo "Not found: $report_dir" >> "$output/collection.txt"
+            fi
+          done
+
+      - name: Upload XCTest crash diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: xctest-crash-diagnostics
+          path: ${{ runner.temp }}/xctest-crash-diagnostics/
+          if-no-files-found: error
+          retention-days: 7
