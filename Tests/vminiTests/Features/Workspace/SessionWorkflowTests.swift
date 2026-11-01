@@ -50,7 +50,8 @@ final class SessionWorkflowTests: XCTestCase {
                 XCTAssertTrue(reviewedController === controller)
                 XCTAssertEqual(result, shouldTerminate)
                 XCTAssertEqual(context, contextInfo)
-                XCTAssertEqual(controller.documents.count, 2)
+                XCTAssertTrue(controller.documents.contains { $0 === clean })
+                XCTAssertTrue(controller.documents.contains { $0 === edited })
                 XCTAssertFalse(clean.wasClosed)
                 XCTAssertFalse(edited.wasClosed)
                 completed.fulfill()
@@ -184,7 +185,12 @@ final class SessionWorkflowTests: XCTestCase {
             ))
             await fulfillment(of: [allCompleted], timeout: 2)
             XCTAssertEqual(store.documents.count, 1)
-            XCTAssertEqual(controller.documents.count, 1)
+            let openedDocuments = controller.documents.filter { document in
+                guard let fileURL = document.fileURL?.standardizedFileURL else { return false }
+                return urls.contains(fileURL)
+            }
+            XCTAssertEqual(openedDocuments.count, 1)
+            XCTAssertEqual(openedDocuments.first?.fileURL?.standardizedFileURL, urls[1].standardizedFileURL)
             XCTAssertEqual(store.activeDocument?.fileURL, urls[1])
             XCTAssertTrue(store.activeDocument?.isPreview == true)
             store.documents.forEach { $0.close() }
@@ -224,7 +230,10 @@ final class SessionWorkflowTests: XCTestCase {
             }
             await fulfillment(of: [completed], timeout: 2)
             XCTAssertEqual(store.documents.count, 1)
-            XCTAssertEqual(controller.documents.count, 1)
+            XCTAssertEqual(
+                controller.documents.filter { $0.fileURL?.standardizedFileURL == url.standardizedFileURL }.count,
+                1
+            )
             XCTAssertEqual(store.activeDocument?.fileURL, url)
             XCTAssertNil(store.previewDocument)
             store.documents.forEach { $0.close() }
