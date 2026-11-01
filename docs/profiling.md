@@ -1,53 +1,33 @@
 # Performance checks
 
-## Run locally
+## Run a local regression check
 
-Run the Release benchmark suite:
-
-```bash
-./scripts/benchmark-performance.sh --output /tmp/vmini-performance.json
-```
-
-It builds the test bundle, measures warm editing and full-document highlighting, then measures cold
-Markdown/SQL initialization in five fresh test processes. The JSON report and raw logs are written
-next to the requested output. Warm edit scenarios use three untimed edits followed by 50 samples.
-Timings cover edit-to-highlighted-attributes; they exclude build and process startup. Ordinary
-`swift test` skips these benchmarks.
-
-Useful options:
-
-- `--cold-samples N` changes the number of cold runs; use at least five.
-- `--build-only` builds the Release test bundle without measuring.
-- `--skip-build` reuses an existing Release test bundle.
-
-## Compare two revisions
-
-Run the benchmark at each revision on the same machine and toolchain, saving each JSON report. Both
-revisions must have compatible benchmark harnesses and fixtures. Then compare them:
+Compare the current checkout against the merge base with the locally available `origin/main`:
 
 ```bash
-python3 scripts/compare_performance.py compare \
-  --base /tmp/base.json \
-  --candidate /tmp/candidate.json \
-  --budgets scripts/performance-budgets.json \
-  --summary /tmp/comparison.md \
-  --report /tmp/comparison.json
+./scripts/compare-performance-local.sh
 ```
 
-The comparator checks medians and edit p95 against each scenario's regression allowance and latency
-ceiling. It exits nonzero for regressions, missing results, benchmark failures, or incompatible
-reports. Read the Markdown summary first, then use the JSON reports and raw logs to inspect details.
-Budgets are in `scripts/performance-budgets.json`.
+The candidate includes staged, unstaged, and untracked changes. No branch, commit, or push is
+required. The baseline runs in a temporary worktree; the current benchmark harness and fixtures are
+overlaid onto it so both revisions use the same measurements. Both Release test bundles are built
+before timing, then three alternating base/candidate batches run. Reports, raw logs, build logs, and
+the Markdown comparison are saved under `profiles/performance-regression-<timestamp>/`.
+
+The default uses the local `origin/main` ref without fetching. Run `git fetch origin main` first if
+you need an up-to-date baseline. Use `--base REF` to compare against an exact commit instead.
 
 ## Pull request check
 
-The `performance-regression` job in the `Performance regression test` workflow compares the PR base and head on the
+The `performance-regression` job in the `Performance regression test` workflow compares the PR base
+and head on the
 same hosted runner. It builds both revisions, alternates their measurement order across three
 batches, and uploads reports and logs even when a run fails. For the first PR that adds the harness,
 the workflow overlays it onto the base revision so both revisions can be measured. Fixtures are
 replaced exactly, including deletions. Production sources in the base checkout are not changed.
 The overlay removes old flat benchmark files before copying the suites into their current feature
-folders. Shared benchmark support lives in `Tests/vminiTests/Support`; fixtures remain in `PerformanceCorpus`.
+folders. Shared benchmark support lives in `Tests/vminiTests/Support`; fixtures remain in
+`PerformanceCorpus`.
 Every batch must include every required scenario; a later batch cannot fill in missing results.
 
 The comparator's ordinary unit tests run in the performance workflow. Run them locally:
