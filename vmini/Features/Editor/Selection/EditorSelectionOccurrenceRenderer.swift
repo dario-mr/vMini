@@ -1,6 +1,7 @@
 import AppKit
 
 private enum SelectionOccurrenceStyle {
+    static let fillOpacity: CGFloat = 0.35
     static let colorOpacity: CGFloat = 0.95
     static let lineWidth: CGFloat = 1
     static let cornerRadius: CGFloat = 3
@@ -10,7 +11,7 @@ private enum SelectionOccurrenceStyle {
 
 @MainActor
 enum EditorSelectionOccurrenceRenderer {
-    static func draw(in textView: NSTextView, dirtyRect: NSRect, ranges: [NSRange], color: NSColor?) {
+    static func draw(in textView: NSTextView, dirtyRect: NSRect, ranges: [NSRange], color: NSColor?, filled: Bool = false) {
         guard let color,
               let layoutManager = textView.layoutManager,
               let textContainer = textView.textContainer else { return }
@@ -64,7 +65,12 @@ enum EditorSelectionOccurrenceRenderer {
             }
         }
 
-        color.withAlphaComponent(SelectionOccurrenceStyle.colorOpacity).setStroke()
-        path.stroke()
+        if filled {
+            color.withAlphaComponent(SelectionOccurrenceStyle.fillOpacity).setFill()
+            path.fill()
+        } else {
+            color.withAlphaComponent(SelectionOccurrenceStyle.colorOpacity).setStroke()
+            path.stroke()
+        }
     }
 }

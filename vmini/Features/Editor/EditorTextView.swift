@@ -34,14 +34,30 @@ class EditorTextView: NSTextView {
         needsDisplay = true
     }
 
+    override func drawBackground(in rect: NSRect) {
+        super.drawBackground(in: rect)
+        EditorSelectionOccurrenceRenderer.draw(
+            in: self,
+            dirtyRect: rect,
+            ranges: selectionRangesExcludingSearchMatch(),
+            color: selectionOccurrenceHighlightColor ?? AppColors.primaryActionBackground,
+            filled: true
+        )
+    }
+
     override func draw(_ dirtyRect: NSRect) {
         super.draw(dirtyRect)
         EditorSelectionOccurrenceRenderer.draw(
             in: self,
             dirtyRect: dirtyRect,
-            ranges: selectionOccurrenceHighlightRanges,
-            color: selectionOccurrenceHighlightColor
+            ranges: selectionOccurrenceHighlightRanges + selectionRangesExcludingSearchMatch(),
+            color: selectionOccurrenceHighlightColor ?? AppColors.primaryActionBackground
         )
+    }
+
+    private func selectionRangesExcludingSearchMatch() -> [NSRange] {
+        let searchMatch = (layoutManager as? EditorSearchLayoutManager)?.currentMatch?()
+        return selectedRanges.map(\.rangeValue).filter { $0 != searchMatch }
     }
 
     override func updateTrackingAreas() {

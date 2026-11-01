@@ -154,6 +154,28 @@ final class EditorSearchTests: XCTestCase {
         }
     }
 
+    func testCurrentSearchMatchDoesNotDrawRoundedSelectionOutline() throws {
+        let (editor, textView, window) = try makeEditor("localhost localhost")
+        defer { window.orderOut(nil) }
+        editor.performSearchAction(.find)
+        let search = editor.searchController
+        setQuery("localhost", in: search)
+
+        let layout = try XCTUnwrap(textView.layoutManager as? EditorSearchLayoutManager)
+        let container = try XCTUnwrap(textView.textContainer)
+        let selection = textView.selectedRange()
+        XCTAssertEqual(layout.currentMatch?(), selection)
+        let glyphRange = layout.glyphRange(forCharacterRange: selection, actualCharacterRange: nil)
+        let selectionRect = layout.boundingRect(forGlyphRange: glyphRange, in: container)
+            .offsetBy(dx: textView.textContainerOrigin.x, dy: textView.textContainerOrigin.y)
+            .insetBy(dx: -2, dy: -1)
+        let bitmap = try renderTextView(textView)
+        let roundedOutlinePoint = NSPoint(x: selectionRect.minX, y: selectionRect.midY)
+        let backgroundPoint = NSPoint(x: textView.bounds.maxX - 2, y: textView.bounds.maxY - 2)
+
+        XCTAssertEqual(try pixel(bitmap, at: roundedOutlinePoint), try pixel(bitmap, at: backgroundPoint))
+    }
+
     func testCurrentMatchBackgroundAcrossThemesAndNavigation() throws {
         let originalTheme = ThemeManager.shared.selectedThemeID
         defer { ThemeManager.shared.setThemeID(originalTheme) }
@@ -325,6 +347,14 @@ final class EditorSearchTests: XCTestCase {
             textView.bounds.fill()
             layout.drawBackground(forGlyphRange: layout.glyphRange(for: container), at: .zero)
         }
+        return bitmap
+    }
+
+    private func renderTextView(_ textView: NSTextView) throws -> NSBitmapImageRep {
+        let rect = textView.bounds
+        let bitmap = try XCTUnwrap(textView.bitmapImageRepForCachingDisplay(in: rect))
+        textView.needsDisplay = true
+        textView.cacheDisplay(in: rect, to: bitmap)
         return bitmap
     }
 
