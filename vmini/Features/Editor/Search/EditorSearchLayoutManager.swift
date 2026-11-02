@@ -25,10 +25,29 @@ final class EditorSearchLayoutManager: NSLayoutManager {
             rect.fill()
             color.setFill()
             rect.fill()
-            self.outlineColor.withAlphaComponent(0.8).setStroke()
-            let border = NSBezierPath(rect: rect.insetBy(dx: 0.5, dy: 0.5))
-            border.lineWidth = 1
-            border.stroke()
         }
+
+        guard let context = NSGraphicsContext.current?.cgContext else { return }
+        let fragments = CGMutablePath()
+        var previousRect: NSRect?
+        enumerateEnclosingRects(forGlyphRange: selectedGlyphs, withinSelectedGlyphRange: selectedGlyphs, in: container) { rect, _ in
+            let rect = rect.offsetBy(dx: origin.x, dy: origin.y).insetBy(dx: 0.5, dy: 0.5)
+            guard rect.width > 0, rect.height > 0 else { return }
+            fragments.addRect(rect)
+            if let previousRect, rect.minY > previousRect.minY {
+                let left = max(previousRect.minX, rect.minX)
+                let right = min(previousRect.maxX, rect.maxX)
+                let top = previousRect.maxY - 0.5
+                let bottom = rect.minY + 0.5
+                if right > left, bottom > top {
+                    fragments.addRect(NSRect(x: left, y: top, width: right - left, height: bottom - top))
+                }
+            }
+            previousRect = rect
+        }
+        context.addPath(fragments.normalized(using: .winding))
+        context.setStrokeColor(outlineColor.withAlphaComponent(0.8).cgColor)
+        context.setLineWidth(1)
+        context.strokePath()
     }
 }
