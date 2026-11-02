@@ -292,6 +292,20 @@ final class EditorSearchTests: XCTestCase {
                 let point = NSPoint(x: rect.minX + 3, y: rect.minY + 3)
                 XCTAssertEqual(try pixel(highlighted, at: point), try pixel(ordinary, at: point))
             }
+            if query.contains("\n") {
+                let rows = rects.sorted { $0.minY < $1.minY }
+                let joinedRows = try XCTUnwrap(zip(rows, rows.dropFirst()).first {
+                    min($0.maxX, $1.maxX) - max($0.minX, $1.minX) > 4
+                })
+                let origin = textView.textContainerOrigin
+                let pointX = (max(joinedRows.0.minX, joinedRows.1.minX)
+                    + min(joinedRows.0.maxX, joinedRows.1.maxX)) / 2 + origin.x
+                for y in [joinedRows.0.maxY - 0.5, joinedRows.1.minY + 0.5] {
+                    let point = NSPoint(x: pointX, y: y + origin.y)
+                    XCTAssertEqual(try pixel(highlighted, at: point), try pixel(ordinary, at: point),
+                                   "A multiline match should not draw an outline between its lines")
+                }
+            }
         }
     }
 
