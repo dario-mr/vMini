@@ -527,13 +527,16 @@ final class SessionWorkflowTests: XCTestCase {
         let history = ClosedDocumentHistory()
         let store = OpenDocumentsStore()
         let documentController = DocumentController()
+        let started = (0..<2).map { _ in expectation(description: "open started") }
+        var continuations: [CheckedContinuation<DocumentPayload, Error>] = []
         let opener = WorkspaceDocumentOpener(
             documentController: documentController,
             openDocumentsStore: store,
-            payloadLoader: { url in
-                let delay = url.standardizedFileURL == earlierURL.standardizedFileURL ? 60 : 400
-                try await Task.sleep(for: .milliseconds(delay))
-                return try await DocumentPayloadLoader.load(from: url)
+            payloadLoader: { _ in
+                return try await withCheckedThrowingContinuation { continuation in
+                    continuations.append(continuation)
+                    started[continuations.count - 1].fulfill()
+                }
             }
         )
         let coordinator = WorkspaceDocumentCoordinator(
@@ -544,19 +547,36 @@ final class SessionWorkflowTests: XCTestCase {
         )
 
         coordinator.open(urls: [earlierURL], activate: earlierURL)
-        try await Task.sleep(for: .milliseconds(20))
+        await fulfillment(of: [started[0]], timeout: 2)
         coordinator.open(urls: [newerURL], activate: newerURL)
+        await fulfillment(of: [started[1]], timeout: 2)
 
-        for _ in 0..<30 where !store.documents.contains(where: { $0.fileURL?.standardizedFileURL == earlierURL.standardizedFileURL }) {
-            try await Task.sleep(for: .milliseconds(15))
+        let earlierFinished = expectation(description: "earlier open finished while newer open is pending")
+        earlierFinished.expectedFulfillmentCount = 2
+        let bothFinished = expectation(description: "both opens finished")
+        coordinator.onDocumentOpeningStateChanged = { isOpening in
+            if isOpening {
+                earlierFinished.fulfill()
+            } else {
+                bothFinished.fulfill()
+            }
         }
+        continuations[0].resume(returning: DocumentPayload(
+            url: earlierURL.standardizedFileURL,
+            typeName: "public.plain-text",
+            text: "earlier"
+        ))
+        await fulfillment(of: [earlierFinished], timeout: 2)
 
         XCTAssertEqual(store.documents.count, 1)
         XCTAssertNil(store.activeDocument)
 
-        for _ in 0..<40 where store.documents.count < 2 {
-            try await Task.sleep(for: .milliseconds(20))
-        }
+        continuations[1].resume(returning: DocumentPayload(
+            url: newerURL.standardizedFileURL,
+            typeName: "public.plain-text",
+            text: "newer"
+        ))
+        await fulfillment(of: [bothFinished], timeout: 2)
 
         XCTAssertEqual(store.documents.count, 2)
         XCTAssertEqual(store.activeDocument?.fileURL?.standardizedFileURL, newerURL.standardizedFileURL)

@@ -139,6 +139,10 @@ final class MarkdownSyntaxHighlighter: SyntaxHighlighter {
             TreeSitterSyntaxHighlighter.apply(highlight.work, to: textStorage, theme: theme, offset: highlight.offset)
         }
         MarkdownAttributeStyler.applyLineStyles(lineStyles, textStorage: textStorage, baseFont: baseFont, theme: theme)
+        let tables = (textStorage.layoutManagers.first as? EditorSearchLayoutManager)?.markdownTables.tables
+            ?? MarkdownTableParser.parse(text, in: MarkdownTableParser.blockRange(around: targetRange, in: text),
+                excluding: fenceCache.blocks.map(\.totalRange) + (syntaxWork.markdownHTMLBlocks ?? MarkdownHTMLBlocks.ranges(in: text)))
+        MarkdownTableRendering.applyStyles(tables, to: textStorage, in: targetRange, font: baseFont, theme: theme)
     }
 
     nonisolated func makeFenceCache(in text: NSString) -> FenceCache {

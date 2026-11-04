@@ -10,6 +10,7 @@ struct TreeSitterHighlightWork: Sendable {
 
     let range: NSRange
     let tokens: [Token]
+    var markdownHTMLBlocks: [NSRange]? = nil
 }
 
 actor TreeSitterSyntaxSession {
@@ -137,7 +138,8 @@ final class TreeSitterSyntaxParser {
             }
             return $0.range.location < $1.range.location
         }
-        return TreeSitterHighlightWork(range: range, tokens: tokens)
+        return TreeSitterHighlightWork(range: range, tokens: tokens,
+            markdownHTMLBlocks: syntax == .markdown ? MarkdownHTMLBlocks.ranges(in: tree) : nil)
     }
 
     static func parse(_ parser: Parser, oldTree: MutableTree?, source: NSString) -> MutableTree? {

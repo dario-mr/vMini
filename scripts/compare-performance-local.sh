@@ -66,6 +66,7 @@ WORKTREE_ADDED=1
 
 PERFORMANCE_TESTS=(
   Tests/vminiTests/Features/Editor/EditorEditingPerformanceTests.swift
+  Tests/vminiTests/Features/Editor/MarkdownTables/MarkdownTablePerformanceTests.swift
   Tests/vminiTests/Features/Editor/SyntaxHighlighting/JavaHighlightingPerformanceTests.swift
   Tests/vminiTests/Support/PerformanceBenchmark.swift
   Tests/vminiTests/Features/Editor/SyntaxHighlighting/SyntaxHighlightingPerformanceTests.swift

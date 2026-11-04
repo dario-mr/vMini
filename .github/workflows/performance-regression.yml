@@ -59,6 +59,7 @@ jobs:
         run: |
           for file in \
             Features/Editor/EditorEditingPerformanceTests.swift \
+            Features/Editor/MarkdownTables/MarkdownTablePerformanceTests.swift \
             Features/Editor/SyntaxHighlighting/JavaHighlightingPerformanceTests.swift \
             Support/PerformanceBenchmark.swift \
             Features/Editor/SyntaxHighlighting/SyntaxHighlightingPerformanceTests.swift; do

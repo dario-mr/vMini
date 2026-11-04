@@ -198,6 +198,7 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
 
     func textDidChange(_ notification: Notification) {
         formattingErrorPresenter.clear()
+        MarkdownTableRendering.updateDelimiterVisibility(in: textView)
         textViewStyler.synchronizeWordWrapLayout()
         selectionOccurrenceController.refresh()
         bracketHighlightController.refresh()
@@ -246,6 +247,11 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
         range editedRange: NSRange,
         changeInLength delta: Int
     ) {
+        if editedMask.contains(.editedCharacters), syntaxLanguage == .markdown {
+            (textView.layoutManager as? EditorSearchLayoutManager)?.markdownTables.update(
+                textStorage.string as NSString, edit: pendingSyntaxHighlightEditContext)
+            textView.needsDisplay = true
+        }
         syntaxHighlightController.handleProcessedEditing(
             editedMask: editedMask,
             editedRange: editedRange,
@@ -268,6 +274,7 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
     }
 
     func textViewDidChangeSelection(_ notification: Notification) {
+        MarkdownTableRendering.updateDelimiterVisibility(in: textView)
         viewportController.handleSelectionDidChange()
         searchController.selectionDidChange()
         selectionOccurrenceController.refresh()
@@ -317,6 +324,12 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
 
     func formatJSONSelectionOrDocument() {
         commandController.formatJSONSelectionOrDocument()
+    }
+
+    var canFormatMarkdownTable: Bool { commandController.canFormatMarkdownTable }
+
+    func formatMarkdownTable() {
+        commandController.formatMarkdownTable()
     }
 
     func currentLineNumber() -> Int {
@@ -422,6 +435,10 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
 
     private func refreshSyntaxHighlighting() {
         guard isViewLoaded else { return }
+        (textView.layoutManager as? EditorSearchLayoutManager)?.markdownTables.reset(
+            textView.string as NSString, enabled: syntaxLanguage == .markdown)
+        MarkdownTableRendering.updateDelimiterVisibility(in: textView)
+        textView.needsDisplay = true
         // Java and Markdown font edits need stable glyph positions while scrolled, including fenced code.
         textView.layoutManager?.allowsNonContiguousLayout = syntaxLanguage != .java && syntaxLanguage != .markdown
         syntaxHighlightController.refresh(language: syntaxLanguage)
