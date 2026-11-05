@@ -68,6 +68,7 @@
 		A000000000000000000001A2 /* EditorBracketHighlightController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000001A3 /* EditorBracketHighlightController.swift */; };
 		A00000000000000000000230 /* EditorSelectionOccurrenceController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000231 /* EditorSelectionOccurrenceController.swift */; };
 		A00000000000000000000232 /* EditorSelectionOccurrenceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000233 /* EditorSelectionOccurrenceTests.swift */; };
+		12EBA95C958C421A92584CA1 /* EditorWordSelectionNavigationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0E08CFDB9CE42838DB8526C /* EditorWordSelectionNavigationTests.swift */; };
 		A00000000000000000000172 /* EditorTextEditing.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000173 /* EditorTextEditing.swift */; };
 		A0000000000000000000018C /* EditorTextEditing.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000173 /* EditorTextEditing.swift */; };
 		A00000000000000000000118 /* EditorViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000108 /* EditorViewController.swift */; };
@@ -272,6 +273,7 @@
 		A000000000000000000001A3 /* EditorBracketHighlightController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorBracketHighlightController.swift; sourceTree = "<group>"; };
 		A00000000000000000000231 /* EditorSelectionOccurrenceController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorSelectionOccurrenceController.swift; sourceTree = "<group>"; };
 		A00000000000000000000233 /* EditorSelectionOccurrenceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorSelectionOccurrenceTests.swift; sourceTree = "<group>"; };
+		B0E08CFDB9CE42838DB8526C /* EditorWordSelectionNavigationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorWordSelectionNavigationTests.swift; sourceTree = "<group>"; };
 		A00000000000000000000173 /* EditorTextEditing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorTextEditing.swift; sourceTree = "<group>"; };
 		A00000000000000000000108 /* EditorViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorViewController.swift; sourceTree = "<group>"; };
 		A00000000000000000000109 /* LineNumberRuler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LineNumberRuler.swift; sourceTree = "<group>"; };
@@ -838,6 +840,7 @@
 			isa = PBXGroup;
 			children = (
 				A00000000000000000000233 /* EditorSelectionOccurrenceTests.swift */,
+				B0E08CFDB9CE42838DB8526C /* EditorWordSelectionNavigationTests.swift */,
 			);
 			path = Selection;
 			sourceTree = "<group>";
@@ -1183,6 +1186,7 @@
 				B00000000000000000000015 /* WorkspaceNavigationTests.swift in Sources */,
 				B00000000000000000000007 /* EditorSearchTests.swift in Sources */,
 				A00000000000000000000232 /* EditorSelectionOccurrenceTests.swift in Sources */,
+				12EBA95C958C421A92584CA1 /* EditorWordSelectionNavigationTests.swift in Sources */,
 				A0000000000000000000017B /* EditorFontTests.swift in Sources */,
 				A0000000000000000000017D /* SyntaxHighlightingTests.swift in Sources */,
 				5649223B9F824A6BBF171D1C /* PendingSyntaxHighlightTests.swift in Sources */,
