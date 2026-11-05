@@ -20,14 +20,12 @@ you need an up-to-date baseline. Use `--base REF` to compare against an exact co
 ## Pull request check
 
 The `performance-regression` job in the `Performance regression test` workflow compares the PR base
-and head on the
-same hosted runner. It builds both revisions, alternates their measurement order across three
-batches, and uploads reports and logs even when a run fails. For the first PR that adds the harness,
-the workflow overlays it onto the base revision so both revisions can be measured. Fixtures are
-replaced exactly, including deletions. Production sources in the base checkout are not changed.
-The overlay removes old flat benchmark files before copying the suites into their current feature
-folders. Shared benchmark support lives in `Tests/vminiTests/Support`; fixtures remain in
-`PerformanceCorpus`.
+and head on the same hosted runner. It builds both revisions, alternates their measurement order
+across three batches, and uploads reports and logs even when a run fails. The workflow overlays the
+benchmark harness and fixtures onto the base revision so both revisions use the same measurements.
+Fixtures are replaced exactly, including deletions. Production sources in the base checkout are not
+changed. Benchmark suites live in their feature folders, shared support lives in
+`Tests/vminiTests/Support`, and fixtures live in `PerformanceCorpus`.
 Every batch must include every required scenario; a later batch cannot fill in missing results.
 
 The comparator's ordinary unit tests run in the performance workflow. Run them locally:
@@ -48,5 +46,5 @@ While it records, edit a Markdown document with SQL and switch between corpus ta
 trace in Instruments and inspect the signposts for highlighting, parsing, Markdown fence work, and
 attribute application.
 
-The benchmark gate covers highlighting latency. It does not measure screen rendering or protect
-file-open/tab-switch latency and memory growth.
+The gate covers highlighting latency and offscreen drawing of a real editor viewport. It does not
+measure screen presentation, input-to-photon latency, file-open/tab-switch latency, or memory growth.

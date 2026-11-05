@@ -171,6 +171,16 @@
 		11CD518C8263421A9AFB774D /* PendingSyntaxHighlight.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF8474A84D684150943E8C36 /* PendingSyntaxHighlight.swift */; };
 		3EE67BCE41B6427C8420C532 /* EditorLineIndexTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6EA99B131CD4154ADAC0ABF /* EditorLineIndexTests.swift */; };
 		5649223B9F824A6BBF171D1C /* PendingSyntaxHighlightTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FCB4CED5E5F41B2B0E17343 /* PendingSyntaxHighlightTests.swift */; };
+		C7876CD2457F43DFA5734BD6 /* MarkdownTableParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F8A9C318779402CA061465C /* MarkdownTableParser.swift */; };
+		83483BEC68D74998B0BADD0F /* MarkdownTableCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94326F19963A4FDE9F08E637 /* MarkdownTableCache.swift */; };
+		521AA7651C8F4C719BC722E5 /* MarkdownTableFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E2224739E464DE2AFE55AA6 /* MarkdownTableFormatter.swift */; };
+		EB1DD2919AD045A6A0252A3F /* MarkdownTableRendering.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7340AD8ADD544AFB8146B972 /* MarkdownTableRendering.swift */; };
+		33499DDE4C6D4D7587772E49 /* MarkdownTableTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADB8AA06E3CC476DBEC1BCC9 /* MarkdownTableTests.swift */; };
+		F92C7DC37AD04B1284B8F46C /* MarkdownTableColumnLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7402E18CE4E4E5F8B470D1E /* MarkdownTableColumnLayout.swift */; };
+		745B59FD6A054817B82D2526 /* MarkdownTableColumnTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7D71DA333BD45D9B544C1C2 /* MarkdownTableColumnTests.swift */; };
+		A7D13CC0F9994B4082FC1B06 /* MarkdownHTMLBlocks.swift in Sources */ = {isa = PBXBuildFile; fileRef = C786E356BEFE4BB19949DAE5 /* MarkdownHTMLBlocks.swift */; };
+		69049A838E5047B49510A573 /* MarkdownTableLayoutCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8EFE933261B48D6B5DAEF41 /* MarkdownTableLayoutCache.swift */; };
+		5E49C8469EDE4AA9AC8BCFA3 /* MarkdownTablePerformanceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A7BF67E79D941CFA92B59E6 /* MarkdownTablePerformanceTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -337,6 +347,16 @@
 		FF8474A84D684150943E8C36 /* PendingSyntaxHighlight.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PendingSyntaxHighlight.swift; sourceTree = "<group>"; };
 		E6EA99B131CD4154ADAC0ABF /* EditorLineIndexTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorLineIndexTests.swift; sourceTree = "<group>"; };
 		5FCB4CED5E5F41B2B0E17343 /* PendingSyntaxHighlightTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PendingSyntaxHighlightTests.swift; sourceTree = "<group>"; };
+		9F8A9C318779402CA061465C /* MarkdownTableParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownTableParser.swift; sourceTree = "<group>"; };
+		94326F19963A4FDE9F08E637 /* MarkdownTableCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownTableCache.swift; sourceTree = "<group>"; };
+		1E2224739E464DE2AFE55AA6 /* MarkdownTableFormatter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownTableFormatter.swift; sourceTree = "<group>"; };
+		7340AD8ADD544AFB8146B972 /* MarkdownTableRendering.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownTableRendering.swift; sourceTree = "<group>"; };
+		ADB8AA06E3CC476DBEC1BCC9 /* MarkdownTableTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownTableTests.swift; sourceTree = "<group>"; };
+		B7402E18CE4E4E5F8B470D1E /* MarkdownTableColumnLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownTableColumnLayout.swift; sourceTree = "<group>"; };
+		C7D71DA333BD45D9B544C1C2 /* MarkdownTableColumnTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownTableColumnTests.swift; sourceTree = "<group>"; };
+		C786E356BEFE4BB19949DAE5 /* MarkdownHTMLBlocks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownHTMLBlocks.swift; sourceTree = "<group>"; };
+		C8EFE933261B48D6B5DAEF41 /* MarkdownTableLayoutCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownTableLayoutCache.swift; sourceTree = "<group>"; };
+		6A7BF67E79D941CFA92B59E6 /* MarkdownTablePerformanceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownTablePerformanceTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -559,6 +579,7 @@
 		A00000000000000000000133 /* Editor */ = {
 			isa = PBXGroup;
 			children = (
+				1F891F29F0744E0FACF490F7 /* MarkdownTables */,
 				A000000000000000000001CB /* EditorCommandController.swift */,
 				A000000000000000000001CF /* EditorSettingsObserver.swift */,
 				A00000000000000000000193 /* EditorTextViewStyler.swift */,
@@ -792,6 +813,7 @@
 		5F9EAA2312C44995ACCA6BD2 /* Editor */ = {
 			isa = PBXGroup;
 			children = (
+				BCE83B19851F4A3FBE05AFB5 /* MarkdownTables */,
 				A0000000000000000000017A /* EditorCommandTests.swift */,
 				E00000000000000000000002 /* EditorEditingPerformanceTests.swift */,
 				E6EA99B131CD4154ADAC0ABF /* EditorLineIndexTests.swift */,
@@ -873,6 +895,30 @@
 				E00000000000000000000004 /* PerformanceBenchmark.swift */,
 			);
 			path = Support;
+			sourceTree = "<group>";
+		};
+		1F891F29F0744E0FACF490F7 /* MarkdownTables */ = {
+			isa = PBXGroup;
+			children = (
+				9F8A9C318779402CA061465C /* MarkdownTableParser.swift */,
+				C8EFE933261B48D6B5DAEF41 /* MarkdownTableLayoutCache.swift */,
+				C786E356BEFE4BB19949DAE5 /* MarkdownHTMLBlocks.swift */,
+				94326F19963A4FDE9F08E637 /* MarkdownTableCache.swift */,
+				1E2224739E464DE2AFE55AA6 /* MarkdownTableFormatter.swift */,
+				7340AD8ADD544AFB8146B972 /* MarkdownTableRendering.swift */,
+				B7402E18CE4E4E5F8B470D1E /* MarkdownTableColumnLayout.swift */,
+			);
+			path = MarkdownTables;
+			sourceTree = "<group>";
+		};
+		BCE83B19851F4A3FBE05AFB5 /* MarkdownTables */ = {
+			isa = PBXGroup;
+			children = (
+				C7D71DA333BD45D9B544C1C2 /* MarkdownTableColumnTests.swift */,
+				6A7BF67E79D941CFA92B59E6 /* MarkdownTablePerformanceTests.swift */,
+				ADB8AA06E3CC476DBEC1BCC9 /* MarkdownTableTests.swift */,
+			);
+			path = MarkdownTables;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -1059,6 +1105,13 @@
 				B0000000000000000000000F /* MarkdownLink.swift in Sources */,
 				B0000000000000000000001B /* WebLink.swift in Sources */,
 				B00000000000000000000019 /* MarkdownListContinuation.swift in Sources */,
+				EB1DD2919AD045A6A0252A3F /* MarkdownTableRendering.swift in Sources */,
+				F92C7DC37AD04B1284B8F46C /* MarkdownTableColumnLayout.swift in Sources */,
+				521AA7651C8F4C719BC722E5 /* MarkdownTableFormatter.swift in Sources */,
+				83483BEC68D74998B0BADD0F /* MarkdownTableCache.swift in Sources */,
+				C7876CD2457F43DFA5734BD6 /* MarkdownTableParser.swift in Sources */,
+				69049A838E5047B49510A573 /* MarkdownTableLayoutCache.swift in Sources */,
+				A7D13CC0F9994B4082FC1B06 /* MarkdownHTMLBlocks.swift in Sources */,
 				A00000000000000000000118 /* EditorViewController.swift in Sources */,
 				A0000000000000000000015C /* JSONPrettifier.swift in Sources */,
 				A00000000000000000000119 /* LineNumberRuler.swift in Sources */,
@@ -1120,9 +1173,12 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				745B59FD6A054817B82D2526 /* MarkdownTableColumnTests.swift in Sources */,
+				5E49C8469EDE4AA9AC8BCFA3 /* MarkdownTablePerformanceTests.swift in Sources */,
 				A00000000000000000000177 /* EditorTextEditingTests.swift in Sources */,
 				3EE67BCE41B6427C8420C532 /* EditorLineIndexTests.swift in Sources */,
 				A00000000000000000000179 /* EditorCommandTests.swift in Sources */,
+				33499DDE4C6D4D7587772E49 /* MarkdownTableTests.swift in Sources */,
 				B00000000000000000000011 /* EditorMarkdownLinkTests.swift in Sources */,
 				B00000000000000000000015 /* WorkspaceNavigationTests.swift in Sources */,
 				B00000000000000000000007 /* EditorSearchTests.swift in Sources */,

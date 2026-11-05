@@ -99,6 +99,11 @@ final class EditorWindow: NSWindow {
             return true
         }
 
+        if modifiers == [.command], characters == "t" {
+            (contentViewController as? EditorContentViewController)?.formatMarkdownTable()
+            return true
+        }
+
         return super.performKeyEquivalent(with: event)
     }
 }

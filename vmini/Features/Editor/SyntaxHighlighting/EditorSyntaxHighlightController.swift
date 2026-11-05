@@ -323,7 +323,10 @@ final class EditorSyntaxHighlightController {
                 return NSRange(location: 0, length: text.length)
             }
             self.markdownFenceCache = update.cache
-            return update.highlightRange.clamped(toLength: text.length)
+            let tables = (textStorage.layoutManagers.first as? EditorSearchLayoutManager)?.markdownTables
+            let tableRange = tables?.highlightRange ?? NSRange(location: 0, length: 0)
+            return (tableRange.length > 0 ? NSUnionRange(update.highlightRange, tableRange) : update.highlightRange)
+                .clamped(toLength: text.length)
         }
 
         return highlighter.expandedHighlightRange(

@@ -175,6 +175,40 @@ final class WorkspaceNavigationTests: XCTestCase {
         }
     }
 
+    func testCommandTFormatsTablesInTheActiveDocument() throws {
+        let (workspace, store) = makeWorkspace()
+        let window = EditorWindow(contentRect: NSRect(x: 0, y: 0, width: 800, height: 600),
+                                  styleMask: [.titled], backing: .buffered, defer: false)
+        window.contentViewController = workspace
+        let oldMenu = NSApp.mainMenu
+        let oldWindowsMenu = NSApp.windowsMenu
+        defer {
+            NSApp.mainMenu = oldMenu
+            NSApp.windowsMenu = oldWindowsMenu
+            window.orderOut(nil)
+        }
+        MenuBuilder.installMainMenu(commandTarget: nil)
+        let formatItem = try XCTUnwrap(NSApp.mainMenu?.item(withTitle: "Edit")?.submenu?.items.first {
+            $0.action == #selector(AppCommandDispatcher.formatMarkdownTable(_:))
+        })
+        XCTAssertEqual(formatItem.keyEquivalent, "t")
+        XCTAssertEqual(formatItem.keyEquivalentModifierMask, .command)
+        let inactive = makeDocument(store)
+        store.register(inactive)
+        editor(inactive).text = "a|b\n---|---\nx|y"
+        let active = makeDocument(store)
+        active.setSyntaxLanguageOverride(.markdown)
+        store.register(active)
+        store.select(active)
+        let activeEditor = editor(active)
+        activeEditor.text = "Intro\n\na|b\n---|---\nx|y\n\nc|d\n---|---\nz|w"
+        XCTAssertTrue(workspace.canFormatMarkdownTable)
+        XCTAssertTrue(window.performKeyEquivalent(with: try keyEvent("t", code: 17, modifiers: .command)))
+        XCTAssertTrue(activeEditor.text.contains("| a   | b   |"))
+        XCTAssertTrue(activeEditor.text.contains("| c   | d   |"))
+        XCTAssertEqual(editor(inactive).text, "a|b\n---|---\nx|y")
+    }
+
     private func makeWorkspace() -> (EditorContentViewController, OpenDocumentsStore) {
         _ = NSApplication.shared
         let store = OpenDocumentsStore()

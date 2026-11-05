@@ -84,7 +84,8 @@ enum PerformanceBenchmark {
             XCTFail("Could not encode benchmark result")
             return
         }
-        print(prefix + line)
+        // Use XCTest's stream without stdout buffering splitting records across SwiftPM's forwarded chunks.
+        FileHandle.standardError.write(Data((prefix + line + "\n").utf8))
     }
 
     static func median(_ samples: [Double]) -> Double {

@@ -117,6 +117,61 @@ final class EditorCommandController {
         notifyCursorPositionChanged()
     }
 
+    var canFormatMarkdownTable: Bool {
+        !markdownTablesToFormat.isEmpty
+    }
+
+    private var markdownTablesToFormat: [MarkdownTable] {
+        guard syntaxLanguageProvider() == .markdown, !textView.hasMarkedText(), textView.selectedRanges.count == 1,
+              let tables = (textView.layoutManager as? EditorSearchLayoutManager)?.markdownTables.tables else { return [] }
+        let selection = textView.selectedRange()
+        let caretLine = (textView.string as NSString).lineRange(for: selection).location
+        let selected = tables.filter { table in
+            selection.length == 0 ? NSLocationInRange(caretLine, table.range) : table.range.intersects(selection)
+        }
+        return selected.isEmpty ? tables : selected
+    }
+
+    func formatMarkdownTable() {
+        guard let storage = textView.textStorage else { return }
+        let text = textView.string as NSString
+        let font = textView.font ?? NSFont.monospacedSystemFont(ofSize: 13, weight: .regular)
+        let selection = textView.selectedRange()
+        let edits = markdownTablesToFormat.compactMap { table -> (range: NSRange, text: String, table: MarkdownTable, formatted: MarkdownTable)? in
+            let formatted = MarkdownTableFormatter.format(table, in: text, font: font)
+            guard formatted != text.substring(with: table.range),
+                  let parsed = MarkdownTableParser.parse(formatted as NSString, excluding: []).first else { return nil }
+            return (table.range, formatted, table, parsed)
+        }
+        guard !edits.isEmpty else { return }
+        func mappedLocation(_ location: Int) -> Int {
+            var delta = 0
+            for edit in edits {
+                if location < edit.range.location { break }
+                if location < edit.range.upperBound {
+                    return edit.range.location + delta
+                        + MarkdownTableFormatter.mapLocation(location, in: edit.table, to: edit.formatted)
+                }
+                delta += (edit.text as NSString).length - edit.range.length
+            }
+            return location + delta
+        }
+        let start = mappedLocation(selection.location)
+        let restoredSelection = NSRange(location: start, length: mappedLocation(selection.upperBound) - start)
+        textView.breakUndoCoalescing()
+        guard textView.shouldChangeText(inRanges: edits.map { NSValue(range: $0.range) },
+                                       replacementStrings: edits.map(\.text)) else { return }
+        storage.beginEditing()
+        for edit in edits.reversed() { storage.replaceCharacters(in: edit.range, with: edit.text) }
+        storage.endEditing()
+        textView.didChangeText()
+        textView.setSelectedRange(restoredSelection)
+        textView.scrollRangeToVisible(restoredSelection)
+        notifyCursorPositionChanged()
+        textView.breakUndoCoalescing()
+        textView.undoManager?.setActionName("Format Markdown Table")
+    }
+
     func currentLineNumber() -> Int {
         currentCursorPosition().line
     }

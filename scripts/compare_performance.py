@@ -21,6 +21,7 @@ RESULT_PREFIX = "VMINI_PERF_RESULT:"
 FAILURE_PREFIX = "VMINI_PERF_FAILURE:"
 HARNESS_FILES = (
     "Tests/vminiTests/Features/Editor/EditorEditingPerformanceTests.swift",
+    "Tests/vminiTests/Features/Editor/MarkdownTables/MarkdownTablePerformanceTests.swift",
     "Tests/vminiTests/Features/Editor/SyntaxHighlighting/JavaHighlightingPerformanceTests.swift",
     "Tests/vminiTests/Support/PerformanceBenchmark.swift",
     "Tests/vminiTests/Features/Editor/SyntaxHighlighting/SyntaxHighlightingPerformanceTests.swift",
@@ -206,7 +207,7 @@ def collect(args: argparse.Namespace) -> int:
     report = {
         "schemaVersion": SCHEMA_VERSION,
         "metadata": metadata(root, args.revision, args.build_configuration),
-        "measurementNote": "Edit timings end when expected NSTextStorage attributes are applied; they do not measure screen presentation or input-to-photon latency.",
+        "measurementNote": "Highlight timings end at NSTextStorage attributes; editor viewport timings include offscreen rasterization. Neither measures screen presentation or input-to-photon latency.",
         "status": "passed" if not errors and not failures else "failed",
         "errors": errors,
         "failures": failures,

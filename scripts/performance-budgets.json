@@ -29,6 +29,20 @@
         "p95Milliseconds": { "relativeAllowance": 0.2, "absoluteAllowanceMilliseconds": 20, "ceilingMilliseconds": 2150 }
       }
     },
+    "table-selection": {
+      "classification": "warm-edit",
+      "metrics": {
+        "medianMilliseconds": { "relativeAllowance": 0.2, "absoluteAllowanceMilliseconds": 5, "ceilingMilliseconds": 8 },
+        "p95Milliseconds": { "relativeAllowance": 0.2, "absoluteAllowanceMilliseconds": 5, "ceilingMilliseconds": 16 }
+      }
+    },
+    "table-typing": {
+      "classification": "warm-edit",
+      "metrics": {
+        "medianMilliseconds": { "relativeAllowance": 0.2, "absoluteAllowanceMilliseconds": 200, "ceilingMilliseconds": 200 },
+        "p95Milliseconds": { "relativeAllowance": 0.2, "absoluteAllowanceMilliseconds": 300, "ceilingMilliseconds": 300 }
+      }
+    },
     "warm-full-document": {
       "classification": "warm-full-document",
       "metrics": {
@@ -47,6 +61,9 @@
     "edit.markdown-sql": "warm-edit",
     "edit.several-fences": "warm-edit",
     "edit.large-document.markdown": "full-corpus-edit",
+    "edit.large-document.mixed-markdown": "full-corpus-edit",
+    "editor.large-table.selection": "table-selection",
+    "editor.large-table.typing": "table-typing",
     "edit.large-document.java": "very-large-edit",
     "edit.rapid-typing": "large-edit",
     "edit.unicode-incomplete-syntax": "warm-edit",
