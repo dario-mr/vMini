@@ -11,15 +11,17 @@ permissions:
 jobs:
   build-and-test:
     runs-on: macos-26
+    env:
+      XCODE_VERSION: "26.6"
 
     steps:
       - name: Check out repository
         uses: actions/checkout@v6
 
-      - name: Select Xcode 26.6
+      - name: Select Xcode
         uses: maxim-lobanov/setup-xcode@v1
         with:
-          xcode-version: "26.6"
+          xcode-version: ${{ env.XCODE_VERSION }}
 
       - name: Cache dependencies
         uses: actions/cache@v6
@@ -28,6 +30,15 @@ jobs:
           key: ${{ runner.os }}-swiftpm-${{ hashFiles('Package.swift', 'Package.resolved') }}
           restore-keys: |
             ${{ runner.os }}-swiftpm-
+
+      # Reuse DuckDB build objects until the dependencies or Xcode change
+      - name: Cache build products
+        uses: actions/cache@v6
+        with:
+          path: .build
+          key: ${{ runner.os }}-build-xcode${{ env.XCODE_VERSION }}-${{ hashFiles('Package.swift', 'Package.resolved') }}
+          restore-keys: |
+            ${{ runner.os }}-build-xcode${{ env.XCODE_VERSION }}-
 
       - name: Build and test
         run: swift test

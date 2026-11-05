@@ -132,7 +132,7 @@ final class AppButton: NSButton {
     }
 
     private func applyHoverState(animated: Bool) {
-        let targetOpacity: Float = isHovered ? Layout.hoverOverlayOpacity : 0
+        let targetOpacity: Float = isHovered && isEnabled ? Layout.hoverOverlayOpacity : 0
 
         guard animated else {
             hoverOverlayLayer.removeAnimation(forKey: "hoverOpacity")

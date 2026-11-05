@@ -8,7 +8,8 @@ final class ActiveEditorCoordinator {
 
     private weak var parentViewController: NSViewController?
     private weak var containerView: NSView?
-    private var currentEditorViewController: EditorViewController?
+    private var currentViewController: NSViewController?
+    private var currentEditorViewController: EditorViewController? { currentViewController as? EditorViewController }
 
     init(parentViewController: NSViewController, containerView: NSView) {
         self.parentViewController = parentViewController
@@ -17,51 +18,43 @@ final class ActiveEditorCoordinator {
 
     func display(document: Document?) {
         guard let document else {
-            currentEditorViewController?.view.removeFromSuperview()
-            currentEditorViewController?.removeFromParent()
-            currentEditorViewController = nil
+            currentViewController?.view.removeFromSuperview()
+            currentViewController?.removeFromParent()
+            currentViewController = nil
             return
         }
 
-        let editorViewController = document.editorViewController { [weak self] urls in
-            self?.onOpenURLs?(urls)
+        let controller: NSViewController
+        if let parquetController = document.parquetViewController() {
+            controller = parquetController
+        } else {
+            let editor = document.editorViewController { [weak self] urls in self?.onOpenURLs?(urls) }
+            editor.onCursorPositionChanged = { [weak self] in self?.onCursorPositionChanged?() }
+            editor.onNavigationCheckpoint = { [weak self, weak document, weak editor] before, after in
+                guard let self, let document, currentEditorViewController === editor else { return }
+                onNavigationCheckpoint?(document, before, after)
+            }
+            controller = editor
         }
-        editorViewController.onCursorPositionChanged = { [weak self] in
-            self?.onCursorPositionChanged?()
-        }
-        editorViewController.onNavigationCheckpoint = { [weak self, weak document, weak editorViewController] before, after in
-            guard let self, let document,
-                  currentEditorViewController === editorViewController else { return }
-            onNavigationCheckpoint?(document, before, after)
-        }
-
-        guard currentEditorViewController !== editorViewController else {
-            editorViewController.focusTextView()
+        guard currentViewController !== controller else {
+            focusEditor()
             return
         }
-
-        currentEditorViewController?.view.removeFromSuperview()
-        currentEditorViewController?.removeFromParent()
-
-        guard
-            let parentViewController,
-            let containerView
-        else {
-            return
-        }
-
-        currentEditorViewController = editorViewController
-        parentViewController.addChild(editorViewController)
-        let editorView = editorViewController.view
-        editorView.translatesAutoresizingMaskIntoConstraints = false
-        containerView.addSubview(editorView)
+        currentViewController?.view.removeFromSuperview()
+        currentViewController?.removeFromParent()
+        guard let parentViewController, let containerView else { return }
+        currentViewController = controller
+        parentViewController.addChild(controller)
+        let contentView = controller.view
+        contentView.translatesAutoresizingMaskIntoConstraints = false
+        containerView.addSubview(contentView)
         NSLayoutConstraint.activate([
-            editorView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
-            editorView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
-            editorView.topAnchor.constraint(equalTo: containerView.topAnchor),
-            editorView.bottomAnchor.constraint(equalTo: containerView.bottomAnchor),
+            contentView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
+            contentView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
+            contentView.topAnchor.constraint(equalTo: containerView.topAnchor),
+            contentView.bottomAnchor.constraint(equalTo: containerView.bottomAnchor),
         ])
-        editorViewController.focusTextView()
+        focusEditor()
     }
 
     func increaseFontSize() {
@@ -74,6 +67,7 @@ final class ActiveEditorCoordinator {
 
     func focusEditor() {
         currentEditorViewController?.focusTextView()
+        (currentViewController as? ParquetViewController)?.focusTable()
     }
 
     @discardableResult
@@ -128,7 +122,10 @@ final class ActiveEditorCoordinator {
         currentEditorViewController != nil
     }
 
-    var navigationSelection: NSRange? { currentEditorViewController?.navigationSelection }
+    var navigationSelection: NSRange? {
+        currentEditorViewController?.navigationSelection
+            ?? (currentViewController is ParquetViewController ? NSRange(location: 0, length: 0) : nil)
+    }
 
     func restoreNavigationSelection(_ selection: NSRange) {
         currentEditorViewController?.restoreNavigationSelection(selection)

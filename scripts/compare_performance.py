@@ -342,14 +342,23 @@ def compare_reports(
             actual = {
                 result["scenarioID"] for result in results if not validate_result(result)
             } if isinstance(results, list) else set()
+            failed = {
+                failure.get("scenarioID") for failure in report.get("failures", []) if isinstance(failure, dict)
+            } if isinstance(report, dict) and isinstance(report.get("failures"), list) else set()
             for scenario_id in scenarios.keys() - actual:
+                # A scenario the base never ran but the candidate measures is new, not missing.
+                if label == "base" and scenario_id in candidate and scenario_id not in base and scenario_id not in failed:
+                    continue
                 errors.append(f"missing required {label} scenario: {scenario_id} in batch {index + 1}")
             for scenario_id in actual - scenarios.keys():
                 errors.append(f"unbudgeted {label} scenario: {scenario_id} in batch {index + 1}")
 
     rows: list[dict[str, Any]] = []
     for scenario_id, budget in scenarios.items():
-        if scenario_id not in base or scenario_id not in candidate:
+        if scenario_id not in candidate:
+            continue
+        if scenario_id not in base:
+            rows.extend(new_scenario_rows(scenario_id, candidate[scenario_id], budget, errors))
             continue
         before = base[scenario_id]
         after = candidate[scenario_id]
@@ -411,6 +420,32 @@ def compare_reports(
     return rows, errors
 
 
+def new_scenario_rows(scenario_id: str, result: dict[str, Any], budget: Any, errors: list[str]) -> list[dict[str, Any]]:
+    """Without a base measurement, a new scenario is held only to its ceiling."""
+    metric_budget = budget.get("metrics", {}).get("medianMilliseconds") if isinstance(budget, dict) else None
+    ceiling = metric_budget.get("ceilingMilliseconds") if isinstance(metric_budget, dict) else None
+    if isinstance(ceiling, bool) or not isinstance(ceiling, (int, float)) or not math.isfinite(ceiling) or ceiling < 0:
+        errors.append(f"{scenario_id}: invalid scenario budget")
+        return []
+    if result.get("classification") != budget.get("classification"):
+        errors.append(f"{scenario_id}: classification mismatch")
+        return []
+    candidate_value = statistics.median(result["samplesMilliseconds"])
+    reasons = [f"candidate exceeds {ceiling:g} ms ceiling"] if candidate_value > ceiling else []
+    return [{
+        "scenarioID": scenario_id,
+        "metric": "medianMilliseconds",
+        "baseMilliseconds": None,
+        "candidateMilliseconds": candidate_value,
+        "deltaMilliseconds": None,
+        "relativeAllowance": metric_budget.get("relativeAllowance"),
+        "absoluteAllowanceMilliseconds": metric_budget.get("absoluteAllowanceMilliseconds"),
+        "ceilingMilliseconds": ceiling,
+        "status": "failed" if reasons else "new",
+        "reasons": reasons,
+    }]
+
+
 def markdown_summary(rows: list[dict[str, Any]], errors: list[str], base_sha: str | None = None, candidate_sha: str | None = None) -> str:
     lines = ["## Performance regression comparison", ""]
     if base_sha or candidate_sha:
@@ -419,9 +454,11 @@ def markdown_summary(rows: list[dict[str, Any]], errors: list[str], base_sha: st
     for row in rows:
         budget = f"+{row['absoluteAllowanceMilliseconds']:g} ms and {row['relativeAllowance']:.0%}; ceiling {row['ceilingMilliseconds']:g} ms"
         metric = {"medianMilliseconds": "Median", "p95Milliseconds": "P95"}.get(row["metric"], row["metric"])
-        result = "❌" if row["status"] == "failed" else "✅"
+        result = {"failed": "❌", "new": "🆕"}.get(row["status"], "✅")
+        base = "—" if row["baseMilliseconds"] is None else f"{row['baseMilliseconds']:.3f}"
+        delta = "—" if row["deltaMilliseconds"] is None else f"{row['deltaMilliseconds']:+.3f}"
         lines.append(
-            f"| `{row['scenarioID']}` | {metric} | {row['baseMilliseconds']:.3f} | {row['candidateMilliseconds']:.3f} | {row['deltaMilliseconds']:+.3f} | {budget} | {result} | {'; '.join(row['reasons']) or '—'} |"
+            f"| `{row['scenarioID']}` | {metric} | {base} | {row['candidateMilliseconds']:.3f} | {delta} | {budget} | {result} | {'; '.join(row['reasons']) or '—'} |"
         )
     if errors:
         lines.extend(["", "### Comparison errors", ""])

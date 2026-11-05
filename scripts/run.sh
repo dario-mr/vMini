@@ -3,10 +3,14 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+# Exported so build.sh and app-path.sh build and locate the same configuration.
+export CONFIGURATION="${CONFIGURATION:-Debug}"
 
-"$ROOT_DIR/scripts/build.sh" >/dev/null
+"$ROOT_DIR/scripts/build.sh" >/dev/null &
+BUILD_PID=$!
 
 APP_PATH="$("$ROOT_DIR/scripts/app-path.sh")"
+wait $BUILD_PID
 
 if [[ ! -d "$APP_PATH" ]]; then
   echo "Built app not found at: $APP_PATH" >&2
