@@ -10,6 +10,7 @@ class EditorTextView: NSTextView {
     private enum Navigation {
         static let homeKeyCode: UInt16 = 115
         static let endKeyCode: UInt16 = 119
+        static let leftArrowKeyCode: UInt16 = 123
         static let pageUpKeyCode: UInt16 = 116
         static let pageDownKeyCode: UInt16 = 121
         static let upArrowKeyCode: UInt16 = 126
@@ -25,6 +26,7 @@ class EditorTextView: NSTextView {
     var isCommandClickTarget: ((Int) -> Bool)?
     private var linkTrackingArea: NSTrackingArea?
     private var wordSelectionAnchor: NSRange?
+    private var optionShiftLeftAnchor: Int?
     private(set) var selectionOccurrenceHighlightRanges: [NSRange] = []
     private(set) var selectionOccurrenceHighlightColor: NSColor?
 
@@ -141,6 +143,7 @@ class EditorTextView: NSTextView {
 
     override func mouseDown(with event: NSEvent) {
         wordSelectionAnchor = nil
+        optionShiftLeftAnchor = nil
         let previousSelection = selectedRange()
         defer { onNavigationCheckpoint?(previousSelection, selectedRange()) }
         if event.modifierFlags.contains(.command),
@@ -181,6 +184,14 @@ class EditorTextView: NSTextView {
 
     override func keyDown(with event: NSEvent) {
         let modifiers = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
+        if event.keyCode == Navigation.leftArrowKeyCode,
+           modifiers.contains([.option, .shift]),
+           !modifiers.contains(.command), !modifiers.contains(.control) {
+            handleOptionShiftLeft(with: event)
+            return
+        }
+        optionShiftLeftAnchor = nil
+
         let previousSelection = selectedRange()
         let isNavigation = [Navigation.homeKeyCode, Navigation.endKeyCode,
                             Navigation.pageUpKeyCode, Navigation.pageDownKeyCode].contains(event.keyCode)
@@ -225,6 +236,50 @@ class EditorTextView: NSTextView {
         }
 
         super.keyDown(with: event)
+    }
+
+    private func handleOptionShiftLeft(with event: NSEvent) {
+        let selection = selectedRange()
+        if let anchor = optionShiftLeftAnchor,
+           selection.length > 0,
+           selection.upperBound == anchor {
+            let text = string as NSString
+            let line = text.lineRange(for: NSRange(location: selection.location, length: 0))
+            if selection.location == line.location, line.location > 0 {
+                let previousLine = text.lineRange(for: NSRange(location: line.location - 1, length: 0))
+                if text.substring(with: previousLine).trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    moveUpAndModifySelection(nil)
+                    return
+                }
+            }
+
+            let prefix = NSRange(location: line.location, length: selection.location - line.location)
+            // Native word movement skips punctuation-only prefixes and finds an earlier line's word.
+            if selection.location > line.location,
+               text.rangeOfCharacter(from: .alphanumerics, options: [], range: prefix).location == NSNotFound {
+                setSelectedRange(NSRange(location: line.location, length: anchor - line.location))
+                scrollRangeToVisible(NSRange(location: line.location, length: 0))
+                return
+            }
+        }
+
+        super.keyDown(with: event)
+        let nextSelection = selectedRange()
+        if let anchor = optionShiftLeftAnchor,
+           selection.length > 0,
+           selection.upperBound == anchor,
+           nextSelection.location <= selection.location {
+            // AppKit can move both selection ends when crossing CRLF lines.
+            if nextSelection.upperBound != anchor {
+                setSelectedRange(NSRange(location: nextSelection.location, length: anchor - nextSelection.location))
+            }
+            return
+        }
+        optionShiftLeftAnchor = selection.length == 0
+            && nextSelection.length > 0
+            && nextSelection.upperBound == selection.location
+            ? selection.location
+            : nil
     }
 
     @objc
