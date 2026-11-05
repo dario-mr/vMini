@@ -92,16 +92,10 @@ final class EditorViewportController {
 
         let selection = textView.selectedRange()
         initialViewportResetSelection = selection
-        enforceInitialViewportReset(remainingPasses: 3, expectedSelection: selection)
+        enforceInitialViewportReset(expectedSelection: selection)
     }
 
-    private func enforceInitialViewportReset(remainingPasses: Int, expectedSelection: NSRange) {
-        guard remainingPasses > 0 else {
-            hasCompletedInitialViewportReset = true
-            initialViewportResetSelection = nil
-            return
-        }
-
+    private func enforceInitialViewportReset(expectedSelection: NSRange) {
         DispatchQueue.main.async { [weak self] in
             guard let self,
                   !hasCompletedInitialViewportReset,
@@ -131,24 +125,10 @@ final class EditorViewportController {
 
             scrollView.superview?.layoutSubtreeIfNeeded()
 
-            let clipView = scrollView.contentView
-            let targetOrigin = NSPoint(x: 0, y: 0)
-            textView.setBoundsOrigin(.zero)
-            clipView.scroll(to: targetOrigin)
-            scrollView.reflectScrolledClipView(clipView)
-            clipView.setBoundsOrigin(targetOrigin)
-            scrollView.reflectScrolledClipView(clipView)
+            textView.scrollRangeToVisible(initialSelection)
             lineNumberRulerView.needsDisplay = true
-
-            if abs(clipView.bounds.origin.x - targetOrigin.x) < 0.5 && textView.bounds.origin == .zero {
-                hasCompletedInitialViewportReset = true
-                initialViewportResetSelection = nil
-            } else {
-                enforceInitialViewportReset(
-                    remainingPasses: remainingPasses - 1,
-                    expectedSelection: initialSelection
-                )
-            }
+            hasCompletedInitialViewportReset = true
+            initialViewportResetSelection = nil
         }
     }
 }
