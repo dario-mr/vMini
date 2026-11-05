@@ -41,6 +41,7 @@ final class DocumentController: NSDocumentController {
     }
 
     override func typeForContents(of url: URL) throws -> String {
+        if ParquetPage.recognizes(url) { return ParquetPage.typeIdentifier }
         if
             let contentType = try? url.resourceValues(forKeys: [.contentTypeKey]).contentType,
             Document.supportedTypes.contains(where: { contentType.conforms(to: $0) })

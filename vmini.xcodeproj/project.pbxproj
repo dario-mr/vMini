@@ -187,6 +187,10 @@
 		FAC000000000000000000008 /* ParquetIntegrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAC000000000000000000007 /* ParquetIntegrationTests.swift */; };
 		FAC000000000000000000020 /* DuckDB in Frameworks */ = {isa = PBXBuildFile; productRef = FAC000000000000000000021 /* DuckDB */; };
 		FAC000000000000000000023 /* DuckDB in Frameworks */ = {isa = PBXBuildFile; productRef = FAC000000000000000000021 /* DuckDB */; };
+		FAB000000000000000000002 /* ParquetPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAB000000000000000000001 /* ParquetPage.swift */; };
+		FAB000000000000000000004 /* ParquetSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAB000000000000000000003 /* ParquetSession.swift */; };
+		FAB000000000000000000006 /* ParquetViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAB000000000000000000005 /* ParquetViewController.swift */; };
+		FAB000000000000000000008 /* ParquetViewerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAB000000000000000000007 /* ParquetViewerTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -367,6 +371,10 @@
 		FAC000000000000000000001 /* ParquetConnection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParquetConnection.swift; sourceTree = "<group>"; };
 		FAC000000000000000000003 /* ParquetTestFixtures.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParquetTestFixtures.swift; sourceTree = "<group>"; };
 		FAC000000000000000000007 /* ParquetIntegrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParquetIntegrationTests.swift; sourceTree = "<group>"; };
+		FAB000000000000000000001 /* ParquetPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParquetPage.swift; sourceTree = "<group>"; };
+		FAB000000000000000000003 /* ParquetSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParquetSession.swift; sourceTree = "<group>"; };
+		FAB000000000000000000005 /* ParquetViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParquetViewController.swift; sourceTree = "<group>"; };
+		FAB000000000000000000007 /* ParquetViewerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParquetViewerTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -939,6 +947,9 @@
 		FAC000000000000000000010 /* Parquet */ = {
 			isa = PBXGroup;
 			children = (
+				FAB000000000000000000001 /* ParquetPage.swift */,
+				FAB000000000000000000003 /* ParquetSession.swift */,
+				FAB000000000000000000005 /* ParquetViewController.swift */,
 				FAC000000000000000000001 /* ParquetConnection.swift */,
 			);
 			path = Parquet;
@@ -947,6 +958,7 @@
 		FAC000000000000000000011 /* Parquet */ = {
 			isa = PBXGroup;
 			children = (
+				FAB000000000000000000007 /* ParquetViewerTests.swift */,
 				FAC000000000000000000007 /* ParquetIntegrationTests.swift */,
 				FAC000000000000000000003 /* ParquetTestFixtures.swift */,
 			);
@@ -1070,6 +1082,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				FAB000000000000000000002 /* ParquetPage.swift in Sources */,
+				FAB000000000000000000004 /* ParquetSession.swift in Sources */,
+				FAB000000000000000000006 /* ParquetViewController.swift in Sources */,
 				FAC000000000000000000002 /* ParquetConnection.swift in Sources */,
 				A0000000000000000000013C /* AppColors.swift in Sources */,
 				A00000000000000000000111 /* AppDelegate.swift in Sources */,
@@ -1211,6 +1226,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				FAB000000000000000000008 /* ParquetViewerTests.swift in Sources */,
 				FAC000000000000000000008 /* ParquetIntegrationTests.swift in Sources */,
 				FAC000000000000000000004 /* ParquetTestFixtures.swift in Sources */,
 				745B59FD6A054817B82D2526 /* MarkdownTableColumnTests.swift in Sources */,

@@ -6,7 +6,7 @@ Open a local Parquet file in vMini and explore it through a read-only native tab
 sorting, filters configured entirely through the UI, automatic formatting, and a counter showing
 matching rows out of total rows. Reuse the existing workspace, tabs, themes, and document routing.
 
-This is an implementation plan, not a completed feature. The initial estimate is **5–10 engineering
+This plan covers the full first release; the first-page increment below is implemented. The initial estimate is **5–10 engineering
 days**, including integration and focused validation. A **1–2 day integration spike**, included in
 that estimate, should establish whether the proposed dependency and data-loading approach work.
 Revisit the estimate after testing representative files; no file-size or latency guarantee has been
@@ -55,7 +55,34 @@ References:
 
 Implementation and measured results: [DuckDB integration spike](parquet-integration-spike-results.md).
 The spike is complete and DuckDB is accepted for the next step. Spike-only app entry points were
-removed; the engine connection, fixture, and regression checks remain. Next: the read-only document path.
+removed; the engine connection, fixture, and regression checks remain. The next increment is described below.
+
+### First-page increment (2026-11-05)
+
+The existing Open flow now opens `.parquet` files as read-only workspace tabs. A cancellable background
+load reads schema, exact total count, and at most 1,000 rows through the retained DuckDB connection.
+The native table has names/types, resizable columns, both scroll directions, selectable rows, and a
+muted italic NULL marker. Loading, empty, and error/retry states share the normal workspace, with
+row/column counts in its footer. Switching tabs preserves the table view; external file changes
+reload it, and closing cancels pending work and clears its page. Document writes and Save/text
+commands are guarded. Text tabs, duplicate opens, restore, and navigation use the existing paths.
+
+Paging controls, sorting, filters, and advanced formatting remain deferred. Cells use the engine's
+text representation with bounded display text; the existing typed-formatting shortcut still applies.
+`ParquetViewerTests` covers real files, first-page bounds, empty/error/retry/close states, NULL display,
+mixed tabs, restore, menu/write guards, and unchanged source bytes. To include the supplied samples:
+
+```sh
+VMINI_PARQUET_SAMPLES="$HOME/Downloads/VP_WH.parquet:$HOME/Downloads/promo_export_v2.snappy.parquet" \
+  swift test -c release --filter ParquetViewerTests
+```
+
+Validation: `swift test -c release --jobs 6` with both sample paths passed 299 tests (6 existing
+skips, zero failures). `CONFIGURATION=Release ./scripts/build.sh` passed for the host arm64 target.
+Packaged-app checks opened both samples with a text tab, verified the 652/652 × 9 and
+1,000/1,601,186 × 17 footers, native scrolling, preserved scroll state on tab switches, disabled
+Save/editing menus, and closing. SHA-256 checks after closing confirmed both samples unchanged.
+Intel execution, macOS 13, and VoiceOver were not checked in this increment.
 
 Before building the complete UI:
 

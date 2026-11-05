@@ -43,6 +43,7 @@ final class EditorStatusBarView: NSView {
 
     func update(state: EditorStatusBarState?) {
         self.state = state
+        syntaxStatusButton.isHidden = state == nil
 
         guard let state else {
             cursorPositionLabel.stringValue = ""
@@ -56,6 +57,11 @@ final class EditorStatusBarView: NSView {
         syntaxStatusButton.isEnabled = true
         syntaxStatusButton.title = state.title
         applyTitleAppearance()
+    }
+
+    func updateParquet(status: String) {
+        update(state: nil)
+        cursorPositionLabel.stringValue = status
     }
 
     func setDocumentOpening(_ isOpening: Bool) {
