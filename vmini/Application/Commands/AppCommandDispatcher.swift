@@ -67,6 +67,7 @@ final class AppCommandDispatcher: NSObject, NSMenuItemValidation {
     @objc func closeCurrentDocument(_ sender: Any?) { documentRouter.closeCurrentDocument() }
     @objc func reopenClosedDocument(_ sender: Any?) { documentRouter.reopenMostRecentClosedDocument() }
     @objc func formatJSON(_ sender: Any?) { workspaceResolver.activeEditorContentViewController()?.formatJSON() }
+    @objc func formatMarkdownTable(_ sender: Any?) { workspaceResolver.activeEditorContentViewController()?.formatMarkdownTable() }
 
     @objc
     func showGoToLine(_ sender: Any?) {
@@ -83,6 +84,9 @@ final class AppCommandDispatcher: NSObject, NSMenuItemValidation {
     }
 
     func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
+        if menuItem.action == #selector(formatMarkdownTable(_:)) {
+            return workspaceResolver.activeEditorContentViewController()?.canFormatMarkdownTable ?? false
+        }
         if menuItem.action == #selector(navigateBack(_:)) {
             return workspaceResolver.activeEditorContentViewController()?.canGoBack ?? false
         }

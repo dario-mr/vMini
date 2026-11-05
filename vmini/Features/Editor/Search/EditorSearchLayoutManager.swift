@@ -3,8 +3,32 @@ import AppKit
 final class EditorSearchLayoutManager: NSLayoutManager {
     var currentMatch: (() -> NSRange?)?
     var outlineColor: NSColor = .labelColor
+    let markdownTables = MarkdownTableCache()
+    let markdownTableLayouts = MarkdownTableLayoutCache()
+    var markdownTableSelections: [NSRange] = []
+    var markdownTableRevision: UInt64?
+
+    override func invalidateLayout(forCharacterRange charRange: NSRange, actualCharacterRange actualCharRange: NSRangePointer?) {
+        markdownTableLayouts.invalidate()
+        super.invalidateLayout(forCharacterRange: charRange, actualCharacterRange: actualCharRange)
+    }
+
+    override func textContainerChangedGeometry(_ container: NSTextContainer) {
+        markdownTableLayouts.invalidate()
+        super.textContainerChangedGeometry(container)
+    }
+
+    override func processEditing(for textStorage: NSTextStorage, edited editMask: NSTextStorageEditActions,
+                                 range newCharRange: NSRange, changeInLength delta: Int, invalidatedRange invalidatedCharRange: NSRange) {
+        markdownTableLayouts.invalidate()
+        super.processEditing(for: textStorage, edited: editMask, range: newCharRange,
+                             changeInLength: delta, invalidatedRange: invalidatedCharRange)
+    }
 
     override func drawBackground(forGlyphRange glyphsToShow: NSRange, at origin: NSPoint) {
+        // Keep the table tint beneath native selection and attributed text backgrounds.
+        MarkdownTableRendering.draw(markdownTables.tables, layoutManager: self,
+                                    glyphRange: glyphsToShow, origin: origin, color: outlineColor)
         super.drawBackground(forGlyphRange: glyphsToShow, at: origin)
 
         guard let range = currentMatch?(), range.length > 0,

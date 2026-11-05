@@ -121,6 +121,8 @@ enum MenuBuilder {
         goToLineItem.target = commandTarget
         let formatJSONItem = menu.addItem(withTitle: "Format JSON", action: #selector(AppCommandDispatcher.formatJSON(_:)), keyEquivalent: "j")
         formatJSONItem.target = commandTarget
+        let formatTableItem = menu.addItem(withTitle: "Format Markdown Table", action: #selector(AppCommandDispatcher.formatMarkdownTable(_:)), keyEquivalent: "t")
+        formatTableItem.target = commandTarget
         menu.addItem(.separator())
 
         let findMenuItem = NSMenuItem(title: "Find", action: nil, keyEquivalent: "")

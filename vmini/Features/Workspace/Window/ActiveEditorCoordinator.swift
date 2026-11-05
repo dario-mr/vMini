@@ -107,6 +107,10 @@ final class ActiveEditorCoordinator {
         currentEditorViewController?.formatJSONSelectionOrDocument()
     }
 
+    var canFormatMarkdownTable: Bool { currentEditorViewController?.canFormatMarkdownTable ?? false }
+
+    func formatMarkdownTable() { currentEditorViewController?.formatMarkdownTable() }
+
     func currentLineNumber() -> Int {
         currentEditorViewController?.currentLineNumber() ?? 1
     }

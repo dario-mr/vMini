@@ -181,6 +181,10 @@ final class EditorContentViewController: NSViewController {
         activeEditorCoordinator?.formatJSON()
     }
 
+    var canFormatMarkdownTable: Bool { activeEditorCoordinator?.canFormatMarkdownTable ?? false }
+
+    func formatMarkdownTable() { activeEditorCoordinator?.formatMarkdownTable() }
+
     func currentLineNumber() -> Int {
         activeEditorCoordinator?.currentLineNumber() ?? 1
     }
