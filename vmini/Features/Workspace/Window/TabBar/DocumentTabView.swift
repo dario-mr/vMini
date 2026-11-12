@@ -16,6 +16,8 @@ final class DocumentTabView: NSView {
         static let inactiveWeight: NSFont.Weight = .regular
     }
 
+    static let maximumTitleLength = 40
+
     weak var document: Document?
 
     var onSelect: ((Document) -> Void)?
@@ -196,7 +198,9 @@ final class DocumentTabView: NSView {
         isPreview = document.isPreview
         if didChangeTitle {
             displayedTitle = nextTitle
-            titleLabel.stringValue = nextTitle
+            let isCut = nextTitle.count > Self.maximumTitleLength
+            titleLabel.stringValue = isCut ? nextTitle.prefix(Self.maximumTitleLength) + "..." : nextTitle
+            titleLabel.toolTip = isCut ? nextTitle : nil
         }
 
         guard didChangeTitle || didChangeActiveState || didChangePinnedState || didChangePreviewState else {
@@ -215,7 +219,7 @@ final class DocumentTabView: NSView {
             + Layout.pinButtonToCloseButtonSpacing
             + Layout.closeButtonSize
             + Layout.closeButtonTrailingInset
-        return min(max(contentWidth, EditorTabBarLayout.minimumTabWidth), EditorTabBarLayout.maximumTabWidth)
+        return max(contentWidth, EditorTabBarLayout.minimumTabWidth)
     }
 
     private func applyAppearance() {

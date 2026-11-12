@@ -113,15 +113,32 @@ class ComparePerformanceTests(unittest.TestCase):
         self.assertEqual(rows[0]["status"], "failed")
 
     def test_missing_and_duplicate_scenario_ids_fail(self):
+        crashed = self.report(10)
+        crashed["results"] = []
+        crashed["failures"] = [{"scenarioID": "edit.test", "failure": "crashed"}]
+        _, errors = self.compare(crashed, self.report(10))
+        self.assertTrue(any("missing required base scenario" in error for error in errors))
+
         empty = self.report(10)
         empty["results"] = []
-        _, errors = self.compare(empty, self.report(10))
-        self.assertTrue(any("missing required base scenario" in error for error in errors))
+        _, errors = self.compare(self.report(10), empty)
+        self.assertTrue(any("missing required candidate scenario" in error for error in errors))
 
         duplicate = self.report(10)
         duplicate["results"].append(dict(duplicate["results"][0]))
         _, errors = self.compare(duplicate, self.report(10))
         self.assertTrue(any("duplicate scenario ID" in error for error in errors))
+
+    def test_scenarios_new_in_the_candidate_are_held_to_their_ceiling_only(self):
+        absent = self.report(10)
+        absent["results"] = []
+        rows, errors = self.compare(absent, self.report(10))
+        self.assertEqual(errors, [])
+        self.assertEqual([(row["status"], row["baseMilliseconds"]) for row in rows], [("new", None)])
+        rows, errors = self.compare(absent, self.report(101), self.budgets(ceiling=100))
+        self.assertEqual(errors, [])
+        self.assertEqual(rows[0]["status"], "failed")
+        self.assertIn("ceiling", rows[0]["reasons"][0])
 
     def test_invalid_samples_fail_without_crashing(self):
         for samples in ([], [-1.0] * 50, [math.nan] * 50, [math.inf] * 50):

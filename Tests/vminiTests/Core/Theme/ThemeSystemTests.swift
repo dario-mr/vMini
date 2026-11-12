@@ -28,12 +28,12 @@ final class ThemeSystemTests: XCTestCase {
     func testDefaultThemeMatchesCurrentPalette() {
         let palette = ThemeCatalog.palette(for: .default)
 
-        assertColor(palette.appBackground, matchesHex: 0x141C21)
-        assertColor(palette.windowBackground, matchesHex: 0x1C242B)
-        assertColor(palette.editorBackground, matchesHex: 0x142933)
-        assertColor(palette.tabBarBackground, matchesHex: 0x333D47)
-        assertColor(palette.primaryText, matchesHex: 0xD8DEE9)
-        assertColor(palette.primaryActionBackground, matchesHex: 0x3B75B8)
+        assertColor(palette.appBackground, matchesHex: 0x111925)
+        assertColor(palette.windowBackground, matchesHex: 0x192432)
+        assertColor(palette.editorBackground, matchesHex: 0x1B2837)
+        assertColor(palette.tabBarBackground, matchesHex: 0x2C3C51)
+        assertColor(palette.primaryText, matchesHex: 0xDCE5F0)
+        assertColor(palette.primaryActionBackground, matchesHex: 0x4F7DB0)
         assertColor(palette.syntaxPalette.headingText, matchesHex: 0xFAB0B8)
         assertColor(palette.syntaxPalette.codeBlockBackground, matchesHex: 0xFFFFFF, alpha: 0.08)
     }

@@ -35,6 +35,7 @@ xcodebuild \
   -project "$PROJECT_PATH" \
   -scheme "$SCHEME" \
   -configuration "$CONFIGURATION" \
+  ENABLE_CODE_COVERAGE=NO \
   -archivePath "$ARCHIVE_PATH" \
   archive
 
@@ -52,6 +53,12 @@ fi
 
 if [[ ! -d "$APP_PATH" ]]; then
   echo "Packaged app not found at: $APP_PATH" >&2
+  exit 1
+fi
+
+# refuse to ship a code-coverage instrumented binary.
+if otool -l "$APP_PATH/Contents/MacOS/$SCHEME" | grep -q "sectname __llvm_prf"; then
+  echo "Packaged app contains code-coverage instrumentation (__llvm_prf sections); build with ENABLE_CODE_COVERAGE=NO." >&2
   exit 1
 fi
 

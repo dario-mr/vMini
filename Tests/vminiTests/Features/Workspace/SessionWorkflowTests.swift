@@ -756,7 +756,10 @@ final class SessionWorkflowTests: XCTestCase {
                     contentRevision: { revision }, startingRevision: revision,
                     restartWatcher: false, isDocumentEdited: false,
                     isDocumentCurrentlyEdited: { false }, reloadEvenIfEdited: false,
-                    installPayload: { installed = $0.text; revision += 1 }, onReload: {},
+                    installPayload: {
+                        if case .text(let text) = $0.content { installed = text }
+                        revision += 1
+                    }, onReload: {},
                     onMissingFile: { XCTFail("File exists") },
                     onMissingFileWithUnsavedChanges: { XCTFail("File exists") },
                     onExternalChangeWithUnsavedChanges: { _ in XCTFail("No local edits") },
