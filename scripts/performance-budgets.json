@@ -54,6 +54,24 @@
       "metrics": {
         "medianMilliseconds": { "relativeAllowance": 0.2, "absoluteAllowanceMilliseconds": 20, "ceilingMilliseconds": 500 }
       }
+    },
+    "parquet-query": {
+      "classification": "parquet-query",
+      "metrics": {
+        "medianMilliseconds": { "relativeAllowance": 0.3, "absoluteAllowanceMilliseconds": 50, "ceilingMilliseconds": 2000 }
+      }
+    },
+    "parquet-search": {
+      "classification": "parquet-search",
+      "metrics": {
+        "medianMilliseconds": { "relativeAllowance": 0.3, "absoluteAllowanceMilliseconds": 200, "ceilingMilliseconds": 5000 }
+      }
+    },
+    "parquet-view": {
+      "classification": "parquet-view",
+      "metrics": {
+        "medianMilliseconds": { "relativeAllowance": 0.3, "absoluteAllowanceMilliseconds": 50, "ceilingMilliseconds": 1000 }
+      }
     }
   },
   "scenarios": {
@@ -77,6 +95,12 @@
     "full.token-dense-json": "warm-full-document",
     "full.multiline-bash": "warm-full-document",
     "full.large-markdown": "warm-full-document",
-    "cold.markdown-sql-first-highlight": "cold-initialization"
+    "cold.markdown-sql-first-highlight": "cold-initialization",
+    "parquet.open": "parquet-query",
+    "parquet.sort.numeric": "parquet-query",
+    "parquet.sort.text": "parquet-query",
+    "parquet.filter.rare": "parquet-query",
+    "parquet.search.no-match": "parquet-search",
+    "parquet.wide.view": "parquet-view"
   }
 }

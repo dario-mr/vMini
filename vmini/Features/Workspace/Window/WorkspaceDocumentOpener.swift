@@ -154,7 +154,7 @@ final class WorkspaceDocumentOpener {
         let document: Document
         switch reference {
         case .untitled(let sessionIdentifier):
-            document = Document(sessionIdentifier: sessionIdentifier)
+            document = Document(sessionIdentifier: sessionIdentifier, syntaxOverrideStore: .shared, openDocumentsStore: openDocumentsStore)
         case .file(let path):
             let url = URL(fileURLWithPath: path).standardizedFileURL
             if let existing = documentController.document(for: url) as? Document {
@@ -167,7 +167,7 @@ final class WorkspaceDocumentOpener {
                 if let existing = documentController.document(for: url) as? Document {
                     document = existing
                 } else {
-                    document = Document()
+                    document = Document(sessionIdentifier: UUID(), syntaxOverrideStore: .shared, openDocumentsStore: openDocumentsStore)
                     install(payload, into: document)
                 }
             }
@@ -184,7 +184,7 @@ final class WorkspaceDocumentOpener {
     }
 
     private func install(_ payload: DocumentPayload, into document: Document) {
-        document.installLoadedContent(payload.text, ofType: payload.typeName)
+        document.installLoadedPayload(payload)
         document.fileURL = payload.url
         document.fileType = payload.typeName
         document.updateChangeCount(.changeCleared)

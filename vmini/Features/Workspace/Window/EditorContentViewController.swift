@@ -15,6 +15,7 @@ final class EditorContentViewController: NSViewController {
     private var documentsObservation: ObservationToken?
     private var themeObservation: ObservationToken?
     private var activeDocumentSyntaxObservation: ObservationToken?
+    private var parquetObservation: ObservationToken?
     private var documentState = OpenDocumentsStore.State(documents: [], activeDocument: nil)
     private var navigationHistory = WorkspaceNavigationHistory()
     private weak var displayedDocument: Document?
@@ -310,12 +311,18 @@ final class EditorContentViewController: NSViewController {
 
     private func observeActiveDocumentSyntaxHighlighting(_ document: Document?) {
         activeDocumentSyntaxObservation?.cancel()
+        parquetObservation?.cancel()
+        parquetObservation = document?.parquetSession?.observe { [weak self] in self?.updateStatusBar() }
         activeDocumentSyntaxObservation = document?.observeSyntaxHighlightingChanges { [weak self] _ in
             self?.updateStatusBar()
         }
     }
 
     private func updateStatusBar() {
+        if let session = documentState.activeDocument?.parquetSession {
+            statusBarView.updateParquet(status: session.statusText)
+            return
+        }
         statusBarView.update(
             state: EditorStatusBarStateBuilder.makeState(
                 document: documentState.activeDocument,

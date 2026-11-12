@@ -113,7 +113,7 @@ final class AppCommandDispatcher: NSObject, NSMenuItemValidation {
         }
 
         if menuItem.action == #selector(showGoToLine(_:)) || menuItem.action == #selector(performEditorSearchAction(_:)) {
-            return OpenDocumentsStore.shared.activeDocument != nil
+            return OpenDocumentsStore.shared.activeDocument.map { !$0.isReadOnly } ?? false
         }
 
         if menuItem.action == #selector(reopenClosedDocument(_:)) {
@@ -122,8 +122,10 @@ final class AppCommandDispatcher: NSObject, NSMenuItemValidation {
 
         if menuItem.action == #selector(saveCurrentDocument(_:))
             || menuItem.action == #selector(saveCurrentDocumentAs(_:))
-            || menuItem.action == #selector(closeCurrentDocument(_:))
             || menuItem.action == #selector(formatJSON(_:)) {
+            return OpenDocumentsStore.shared.activeDocument.map { !$0.isReadOnly } ?? false
+        }
+        if menuItem.action == #selector(closeCurrentDocument(_:)) {
             return OpenDocumentsStore.shared.activeDocument != nil
         }
 

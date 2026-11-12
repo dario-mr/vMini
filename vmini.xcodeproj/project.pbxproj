@@ -182,6 +182,23 @@
 		A7D13CC0F9994B4082FC1B06 /* MarkdownHTMLBlocks.swift in Sources */ = {isa = PBXBuildFile; fileRef = C786E356BEFE4BB19949DAE5 /* MarkdownHTMLBlocks.swift */; };
 		69049A838E5047B49510A573 /* MarkdownTableLayoutCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8EFE933261B48D6B5DAEF41 /* MarkdownTableLayoutCache.swift */; };
 		5E49C8469EDE4AA9AC8BCFA3 /* MarkdownTablePerformanceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A7BF67E79D941CFA92B59E6 /* MarkdownTablePerformanceTests.swift */; };
+		FAC000000000000000000002 /* ParquetConnection.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAC000000000000000000001 /* ParquetConnection.swift */; };
+		FAC000000000000000000004 /* ParquetTestFixtures.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAC000000000000000000003 /* ParquetTestFixtures.swift */; };
+		FAC000000000000000000008 /* ParquetIntegrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAC000000000000000000007 /* ParquetIntegrationTests.swift */; };
+		FAC000000000000000000020 /* DuckDB in Frameworks */ = {isa = PBXBuildFile; productRef = FAC000000000000000000021 /* DuckDB */; };
+		FAC000000000000000000023 /* DuckDB in Frameworks */ = {isa = PBXBuildFile; productRef = FAC000000000000000000021 /* DuckDB */; };
+		FAB000000000000000000002 /* ParquetPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAB000000000000000000001 /* ParquetPage.swift */; };
+		FAB000000000000000000004 /* ParquetSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAB000000000000000000003 /* ParquetSession.swift */; };
+		FAB000000000000000000006 /* ParquetViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAB000000000000000000005 /* ParquetViewController.swift */; };
+		FAB000000000000000000008 /* ParquetViewerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAB000000000000000000007 /* ParquetViewerTests.swift */; };
+		FAB00000000000000000000A /* ParquetTableStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAB000000000000000000009 /* ParquetTableStyle.swift */; };
+		FAB000000000000000000051 /* ParquetSkeletonView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAB000000000000000000050 /* ParquetSkeletonView.swift */; };
+		FAB00000000000000000000C /* ParquetTableHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAB00000000000000000000B /* ParquetTableHeaderView.swift */; };
+		FAB00000000000000000000E /* ParquetQuery.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAB00000000000000000000D /* ParquetQuery.swift */; };
+		FAB000000000000000000010 /* ParquetColumnKind.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAB00000000000000000000F /* ParquetColumnKind.swift */; };
+		FAB000000000000000000012 /* ParquetColumnFilterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAB000000000000000000011 /* ParquetColumnFilterView.swift */; };
+		FAB000000000000000000014 /* ParquetQueryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAB000000000000000000013 /* ParquetQueryTests.swift */; };
+		FAB000000000000000000016 /* ParquetPerformanceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAB000000000000000000015 /* ParquetPerformanceTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -359,6 +376,21 @@
 		C786E356BEFE4BB19949DAE5 /* MarkdownHTMLBlocks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownHTMLBlocks.swift; sourceTree = "<group>"; };
 		C8EFE933261B48D6B5DAEF41 /* MarkdownTableLayoutCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownTableLayoutCache.swift; sourceTree = "<group>"; };
 		6A7BF67E79D941CFA92B59E6 /* MarkdownTablePerformanceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownTablePerformanceTests.swift; sourceTree = "<group>"; };
+		FAC000000000000000000001 /* ParquetConnection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParquetConnection.swift; sourceTree = "<group>"; };
+		FAC000000000000000000003 /* ParquetTestFixtures.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParquetTestFixtures.swift; sourceTree = "<group>"; };
+		FAC000000000000000000007 /* ParquetIntegrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParquetIntegrationTests.swift; sourceTree = "<group>"; };
+		FAB000000000000000000001 /* ParquetPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParquetPage.swift; sourceTree = "<group>"; };
+		FAB000000000000000000003 /* ParquetSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParquetSession.swift; sourceTree = "<group>"; };
+		FAB000000000000000000005 /* ParquetViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParquetViewController.swift; sourceTree = "<group>"; };
+		FAB000000000000000000007 /* ParquetViewerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParquetViewerTests.swift; sourceTree = "<group>"; };
+		FAB000000000000000000009 /* ParquetTableStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParquetTableStyle.swift; sourceTree = "<group>"; };
+		FAB000000000000000000050 /* ParquetSkeletonView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParquetSkeletonView.swift; sourceTree = "<group>"; };
+		FAB00000000000000000000B /* ParquetTableHeaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParquetTableHeaderView.swift; sourceTree = "<group>"; };
+		FAB00000000000000000000D /* ParquetQuery.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParquetQuery.swift; sourceTree = "<group>"; };
+		FAB00000000000000000000F /* ParquetColumnKind.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParquetColumnKind.swift; sourceTree = "<group>"; };
+		FAB000000000000000000011 /* ParquetColumnFilterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParquetColumnFilterView.swift; sourceTree = "<group>"; };
+		FAB000000000000000000013 /* ParquetQueryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParquetQueryTests.swift; sourceTree = "<group>"; };
+		FAB000000000000000000015 /* ParquetPerformanceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParquetPerformanceTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -366,6 +398,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				FAC000000000000000000020 /* DuckDB in Frameworks */,
 				A00000000000000000000016 /* Cocoa.framework in Frameworks */,
 				C00000000000000000000007 /* SwiftTreeSitter in Frameworks */,
 				C00000000000000000000008 /* TreeSitterJava in Frameworks */,
@@ -386,6 +419,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				FAC000000000000000000023 /* DuckDB in Frameworks */,
 				A00000000000000000000174 /* Cocoa.framework in Frameworks */,
 				A00000000000000000000175 /* XCTest.framework in Frameworks */,
 			);
@@ -489,6 +523,7 @@
 		A000000000000000000001E2 /* Features */ = {
 			isa = PBXGroup;
 			children = (
+				FAC000000000000000000010 /* Parquet */,
 				A00000000000000000000133 /* Editor */,
 				A00000000000000000000171 /* GoToLine */,
 				A00000000000000000000154 /* Settings */,
@@ -805,6 +840,7 @@
 		5A86F52102FB45A1BBA796D1 /* Features */ = {
 			isa = PBXGroup;
 			children = (
+				FAC000000000000000000011 /* Parquet */,
 				5F9EAA2312C44995ACCA6BD2 /* Editor */,
 				80C5D287E30145E098EB7EC4 /* Sidebar */,
 				5813882C4C5648CC8FBAD5FF /* Workspace */,
@@ -924,6 +960,35 @@
 			path = MarkdownTables;
 			sourceTree = "<group>";
 		};
+		FAC000000000000000000010 /* Parquet */ = {
+			isa = PBXGroup;
+			children = (
+				FAB000000000000000000001 /* ParquetPage.swift */,
+				FAB000000000000000000003 /* ParquetSession.swift */,
+				FAB000000000000000000005 /* ParquetViewController.swift */,
+				FAB000000000000000000011 /* ParquetColumnFilterView.swift */,
+				FAB00000000000000000000F /* ParquetColumnKind.swift */,
+				FAB00000000000000000000D /* ParquetQuery.swift */,
+				FAB00000000000000000000B /* ParquetTableHeaderView.swift */,
+				FAB000000000000000000050 /* ParquetSkeletonView.swift */,
+				FAB000000000000000000009 /* ParquetTableStyle.swift */,
+				FAC000000000000000000001 /* ParquetConnection.swift */,
+			);
+			path = Parquet;
+			sourceTree = "<group>";
+		};
+		FAC000000000000000000011 /* Parquet */ = {
+			isa = PBXGroup;
+			children = (
+				FAB000000000000000000007 /* ParquetViewerTests.swift */,
+				FAB000000000000000000013 /* ParquetQueryTests.swift */,
+				FAB000000000000000000015 /* ParquetPerformanceTests.swift */,
+				FAC000000000000000000007 /* ParquetIntegrationTests.swift */,
+				FAC000000000000000000003 /* ParquetTestFixtures.swift */,
+			);
+			path = Parquet;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -941,6 +1006,7 @@
 			);
 			name = vMini;
 			packageProductDependencies = (
+				FAC000000000000000000021 /* DuckDB */,
 				C00000000000000000000009 /* SwiftTreeSitter */,
 				C0000000000000000000000A /* TreeSitterJava */,
 				C00000000000000000000040 /* TreeSitterBash */,
@@ -971,6 +1037,9 @@
 				A00000000000000000000189 /* PBXTargetDependency */,
 			);
 			name = vminiTests;
+			packageProductDependencies = (
+				FAC000000000000000000021 /* DuckDB */,
+			);
 			productName = vminiTests;
 			productReference = A00000000000000000000182 /* vminiTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
@@ -1006,6 +1075,7 @@
 			preferredProjectObjectVersion = 77;
 			productRefGroup = A00000000000000000000034 /* Products */;
 			packageReferences = (
+				FAC000000000000000000022 /* duckdb-swift */,
 				C0000000000000000000000B /* SwiftTreeSitter */,
 				C00000000000000000000033 /* tree-sitter-ssh-config */,
 				C00000000000000000000035 /* tree-sitter-kotlin */,
@@ -1036,6 +1106,16 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				FAB000000000000000000002 /* ParquetPage.swift in Sources */,
+				FAB000000000000000000004 /* ParquetSession.swift in Sources */,
+				FAB000000000000000000006 /* ParquetViewController.swift in Sources */,
+				FAB000000000000000000012 /* ParquetColumnFilterView.swift in Sources */,
+				FAB000000000000000000010 /* ParquetColumnKind.swift in Sources */,
+				FAB00000000000000000000E /* ParquetQuery.swift in Sources */,
+				FAB00000000000000000000C /* ParquetTableHeaderView.swift in Sources */,
+				FAB00000000000000000000A /* ParquetTableStyle.swift in Sources */,
+				FAB000000000000000000051 /* ParquetSkeletonView.swift in Sources */,
+				FAC000000000000000000002 /* ParquetConnection.swift in Sources */,
 				A0000000000000000000013C /* AppColors.swift in Sources */,
 				A00000000000000000000111 /* AppDelegate.swift in Sources */,
 				A000000000000000000001C0 /* ActiveWorkspaceResolver.swift in Sources */,
@@ -1176,6 +1256,11 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				FAB000000000000000000008 /* ParquetViewerTests.swift in Sources */,
+				FAB000000000000000000014 /* ParquetQueryTests.swift in Sources */,
+				FAB000000000000000000016 /* ParquetPerformanceTests.swift in Sources */,
+				FAC000000000000000000008 /* ParquetIntegrationTests.swift in Sources */,
+				FAC000000000000000000004 /* ParquetTestFixtures.swift in Sources */,
 				745B59FD6A054817B82D2526 /* MarkdownTableColumnTests.swift in Sources */,
 				5E49C8469EDE4AA9AC8BCFA3 /* MarkdownTablePerformanceTests.swift in Sources */,
 				A00000000000000000000177 /* EditorTextEditingTests.swift in Sources */,
@@ -1246,6 +1331,7 @@
 				CLANG_ENABLE_OBJC_ARC = YES;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_CODE_COVERAGE = NO;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
@@ -1350,6 +1436,7 @@
         C00000000000000000000033 /* tree-sitter-ssh-config */ = {isa = XCRemoteSwiftPackageReference; repositoryURL = "https://github.com/tree-sitter-grammars/tree-sitter-ssh-config"; requirement = { kind = exactVersion; version = 0.5.0; }; };
         C00000000000000000000035 /* tree-sitter-kotlin */ = {isa = XCRemoteSwiftPackageReference; repositoryURL = "https://github.com/fwcd/tree-sitter-kotlin"; requirement = { kind = exactVersion; version = 0.3.8; }; };
 		C00000000000000000000037 /* TreeSitterLanguages */ = {isa = XCRemoteSwiftPackageReference; repositoryURL = "https://github.com/simonbs/TreeSitterLanguages"; requirement = { kind = exactVersion; version = 0.1.10; }; };
+		FAC000000000000000000022 /* duckdb-swift */ = {isa = XCRemoteSwiftPackageReference; repositoryURL = "https://github.com/duckdb/duckdb-swift"; requirement = {kind = exactVersion; version = 1.1.3; }; };
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -1373,6 +1460,7 @@
 		C00000000000000000000048 /* TreeSitterSQL */ = {isa = XCSwiftPackageProductDependency; package = C00000000000000000000037 /* TreeSitterLanguages */; productName = TreeSitterSQL; };
 		C00000000000000000000049 /* TreeSitterSQLQueries */ = {isa = XCSwiftPackageProductDependency; package = C00000000000000000000037 /* TreeSitterLanguages */; productName = TreeSitterSQLQueries; };
 		C00000000000000000000060 /* TreeSitterJavaQueries */ = {isa = XCSwiftPackageProductDependency; package = C00000000000000000000037 /* TreeSitterLanguages */; productName = TreeSitterJavaQueries; };
+		FAC000000000000000000021 /* DuckDB */ = {isa = XCSwiftPackageProductDependency; package = FAC000000000000000000022 /* duckdb-swift */; productName = DuckDB; };
 /* End XCSwiftPackageProductDependency section */
 
 /* Begin XCConfigurationList section */

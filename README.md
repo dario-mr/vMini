@@ -36,6 +36,7 @@ Build and run the app:
 
 ```shell
 ./scripts/run.sh
+CONFIGURATION=Release ./scripts/run.sh
 ```
 
 Run tests:

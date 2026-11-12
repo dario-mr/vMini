@@ -2,15 +2,29 @@ import AppKit
 import UniformTypeIdentifiers
 
 struct DocumentPayload: Sendable {
+    enum Content: Sendable {
+        case text(String)
+        case parquet
+    }
+
     let url: URL
     let typeName: String
-    let text: String
+    let content: Content
+}
+
+extension DocumentPayload {
+    init(url: URL, typeName: String, text: String) {
+        self.init(url: url, typeName: typeName, content: .text(text))
+    }
 }
 
 enum DocumentPayloadLoader {
     static func load(from url: URL) async throws -> DocumentPayload {
         try await Task.detached(priority: .userInitiated) {
             let url = url.standardizedFileURL
+            if ParquetPage.recognizes(url) {
+                return DocumentPayload(url: url, typeName: ParquetPage.typeIdentifier, content: .parquet)
+            }
             let typeName = inferredType(for: url)
             let data = try Data(contentsOf: url, options: [.mappedIfSafe])
             guard let text = String(data: data, encoding: .utf8) else {

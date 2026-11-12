@@ -11,4 +11,7 @@ exec xcodebuild \
   -project "$PROJECT_PATH" \
   -scheme "$SCHEME" \
   -configuration "$CONFIGURATION" \
+  ENABLE_CODE_COVERAGE=NO \
+  ONLY_ACTIVE_ARCH=YES \
+  DEBUG_INFORMATION_FORMAT=dwarf \
   build

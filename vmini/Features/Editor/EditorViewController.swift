@@ -368,6 +368,7 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
         scrollView.hasVerticalScroller = true
         scrollView.hasHorizontalScroller = true
         scrollView.autohidesScrollers = true
+        scrollView.scrollerStyle = .overlay
     }
 
     private func linkURL(at index: Int) -> URL? {

@@ -209,6 +209,23 @@ final class WorkspaceStateTests: XCTestCase {
         XCTAssertEqual(store.documents.count, 2)
     }
 
+    func testLongTabTitleIsCutWithFullNameTooltip() throws {
+        let document = makeDocument(openDocumentsStore: OpenDocumentsStore())
+        let tab = DocumentTabView()
+        let title = try XCTUnwrap(tab.subviews.compactMap { $0 as? NSTextField }.first)
+        let longName = String(repeating: "a", count: DocumentTabView.maximumTitleLength) + "b.parquet"
+
+        document.fileURL = URL(fileURLWithPath: "/tmp/short.txt")
+        tab.configure(document: document, isActive: true, isPinned: false)
+        XCTAssertEqual(title.stringValue, "short.txt")
+        XCTAssertNil(title.toolTip)
+
+        document.fileURL = URL(fileURLWithPath: "/tmp/\(longName)")
+        tab.configure(document: document, isActive: true, isPinned: false)
+        XCTAssertEqual(title.stringValue, String(longName.prefix(DocumentTabView.maximumTitleLength)) + "...")
+        XCTAssertEqual(title.toolTip, longName)
+    }
+
     func testPreviewTabUsesItalicUntilDoubleClickKeepsItOpen() throws {
         let store = OpenDocumentsStore()
         let document = makeDocument(openDocumentsStore: store)

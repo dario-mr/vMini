@@ -48,7 +48,7 @@ if (( ! SKIP_BUILD )); then
   swift test -c release list >/dev/null
 fi
 
-BENCHMARK_FILTER='SyntaxHighlightingPerformanceTests/testReleasePerformanceCorpus|JavaHighlightingPerformanceTests/testReleaseJavaHighlighting|EditorEditingPerformanceTests/testWarmEditingScenarios|MarkdownTablePerformanceTests'
+BENCHMARK_FILTER='SyntaxHighlightingPerformanceTests/testReleasePerformanceCorpus|JavaHighlightingPerformanceTests/testReleaseJavaHighlighting|EditorEditingPerformanceTests/testWarmEditingScenarios|MarkdownTablePerformanceTests|ParquetPerformanceTests'
 WARM_LOG="${OUTPUT_PATH%.json}.warm.log"
 LOGS=("$WARM_LOG")
 TEST_FAILED=0

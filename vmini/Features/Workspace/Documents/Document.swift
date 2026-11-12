@@ -3,13 +3,16 @@ import UniformTypeIdentifiers
 
 @MainActor
 final class Document: NSDocument {
-    nonisolated static let supportedTypes: [UTType] = [.plainText, .text]
+    nonisolated static let supportedTypes: [UTType] = [.plainText, .text, ParquetPage.contentType]
 
     let sessionIdentifier: UUID
 
     private let contentController: DocumentContentController
     private var savedText = ""
     private let editorSession = DocumentEditorSession()
+    private(set) var parquetSession: ParquetSession?
+    private var parquetController: ParquetViewController?
+    var isReadOnly: Bool { parquetSession != nil }
     private let openDocumentsStore: OpenDocumentsStore
     private let fileLifecycleController: DocumentFileLifecycleController
     private var syntaxHighlightingObservers: [UUID: (Document) -> Void] = [:]
@@ -23,6 +26,7 @@ final class Document: NSDocument {
     }
 
     override func updateChangeCount(_ change: NSDocument.ChangeType) {
+        guard MainActor.assumeIsolated({ !isReadOnly }) else { return }
         super.updateChangeCount(change)
         MainActor.assumeIsolated {
             if isDocumentEdited {
@@ -142,7 +146,7 @@ final class Document: NSDocument {
     }
 
     override class var writableTypes: [String] {
-        supportedTypes.map(\.identifier)
+        [UTType.plainText.identifier, UTType.text.identifier]
     }
 
     override class var autosavesInPlace: Bool {
@@ -155,12 +159,15 @@ final class Document: NSDocument {
 
     override func close() {
         fileLifecycleController.handleClose()
+        parquetSession?.close()
+        parquetController = nil
         editorSession.clear()
         super.close()
         openDocumentsStore.unregister(self)
     }
 
     override func save(_ sender: Any?) {
+        guard !isReadOnly else { return }
         fileLifecycleController.prepareForSave()
         super.save(sender)
         fileLifecycleController.finishSave(fileURL: fileURL) { [weak self] restartWatcher in
@@ -169,6 +176,7 @@ final class Document: NSDocument {
     }
 
     override func saveAs(_ sender: Any?) {
+        guard !isReadOnly else { return }
         fileLifecycleController.prepareForSave()
         super.saveAs(sender)
         fileLifecycleController.finishSave(fileURL: fileURL) { [weak self] restartWatcher in
@@ -197,7 +205,7 @@ final class Document: NSDocument {
                 isDocumentCurrentlyEdited: { self.isDocumentEdited },
                 reloadEvenIfEdited: reloadEvenIfEdited,
                 installPayload: {
-                    self.installLoadedContent($0.text, ofType: $0.typeName)
+                    self.installLoadedPayload($0)
                     self.fileType = $0.typeName
                 },
                 onReload: {
@@ -258,11 +266,13 @@ final class Document: NSDocument {
 
     override func write(to url: URL, ofType typeName: String) throws {
         try MainActor.assumeIsolated {
+            try validateWrite(to: url, ofType: typeName)
             try writeCurrentText(to: url, atomically: true)
         }
     }
 
     override func writeSafely(to url: URL, ofType typeName: String, for saveOperation: NSDocument.SaveOperationType) throws {
+        try MainActor.assumeIsolated { try validateWrite(to: url, ofType: typeName) }
         let fileManager = FileManager.default
         if !fileManager.isWritableFile(atPath: url.deletingLastPathComponent().path) {
             if
@@ -310,7 +320,25 @@ final class Document: NSDocument {
         editorSession.markChangesSaved()
     }
 
+    private func validateWrite(to url: URL, ofType typeName: String) throws {
+        guard !isReadOnly, typeName != ParquetPage.typeIdentifier, !ParquetPage.recognizes(url) else {
+            throw NSError(domain: NSCocoaErrorDomain, code: NSFileWriteNoPermissionError,
+                          userInfo: [NSLocalizedDescriptionKey: "Parquet files are read-only."])
+        }
+    }
+
+    override func read(from url: URL, ofType typeName: String) throws {
+        if ParquetPage.recognizes(url) || typeName == ParquetPage.typeIdentifier {
+            MainActor.assumeIsolated {
+                installLoadedPayload(DocumentPayload(url: url, typeName: ParquetPage.typeIdentifier, content: .parquet))
+            }
+        } else {
+            try super.read(from: url, ofType: typeName)
+        }
+    }
+
     override func read(from data: Data, ofType typeName: String) throws {
+        guard typeName != ParquetPage.typeIdentifier else { throw CocoaError(.fileReadUnsupportedScheme) }
         if let decoded = String(data: data, encoding: .utf8) {
             MainActor.assumeIsolated {
                 AppPerformanceProfiler.measure("DocumentInstall") {
@@ -324,11 +352,40 @@ final class Document: NSDocument {
     }
 
     func installLoadedContent(_ text: String, ofType typeName: String) {
+        parquetSession?.close()
+        parquetSession = nil
+        parquetController = nil
+        hasUndoManager = true
         contentRevision &+= 1
         contentController.updateRead(typeName: typeName, text: text)
         savedText = text
         editorSession.update(text: text, syntaxLanguage: syntaxLanguage)
         notifySyntaxHighlightingDidChange()
+    }
+
+    func installLoadedPayload(_ payload: DocumentPayload) {
+        switch payload.content {
+        case .text(let text): installLoadedContent(text, ofType: payload.typeName)
+        case .parquet:
+            super.updateChangeCount(.changeCleared)
+            contentRevision &+= 1
+            editorSession.clear()
+            if let parquetSession {
+                parquetSession.reload(from: payload.url)
+            } else {
+                parquetSession = ParquetSession(url: payload.url)
+            }
+            hasUndoManager = false
+            notifySyntaxHighlightingDidChange()
+        }
+    }
+
+    func parquetViewController() -> ParquetViewController? {
+        guard let parquetSession else { return nil }
+        if let parquetController { return parquetController }
+        let controller = ParquetViewController(session: parquetSession)
+        parquetController = controller
+        return controller
     }
 
     func editorViewController(onFileSystemURLsDropped: @escaping ([URL]) -> Void) -> EditorViewController {
@@ -361,6 +418,7 @@ final class Document: NSDocument {
     }
 
     func setSyntaxLanguageOverride(_ language: SyntaxLanguage?) {
+        guard !isReadOnly else { return }
         contentController.setSyntaxLanguageOverride(language, persistenceIdentifier: persistenceIdentifier)
         editorSession.update(
             text: contentController.currentText(editorText: editorSession.currentEditorText()),

@@ -10,8 +10,9 @@ struct EditorStatusBarState {
 
 final class EditorStatusBarView: NSView {
     enum Layout {
-        static let preferredHeight: CGFloat = 26
+        static let preferredHeight: CGFloat = 32
         static let textSize: CGFloat = 12
+        static let parquetTextSize: CGFloat = 13
     }
 
     var onSelectAutomaticSyntaxHighlighting: (() -> Void)?
@@ -43,6 +44,7 @@ final class EditorStatusBarView: NSView {
 
     func update(state: EditorStatusBarState?) {
         self.state = state
+        syntaxStatusButton.isHidden = state == nil
 
         guard let state else {
             cursorPositionLabel.stringValue = ""
@@ -55,6 +57,12 @@ final class EditorStatusBarView: NSView {
         cursorPositionLabel.stringValue = state.cursorPosition.displayText
         syntaxStatusButton.isEnabled = true
         syntaxStatusButton.title = state.title
+        applyTitleAppearance()
+    }
+
+    func updateParquet(status: String) {
+        update(state: nil)
+        cursorPositionLabel.stringValue = status
         applyTitleAppearance()
     }
 
@@ -144,7 +152,12 @@ final class EditorStatusBarView: NSView {
     }
 
     private func applyTitleAppearance() {
-        cursorPositionLabel.textColor = AppColors.sidebarText
+        if state == nil {
+            applyParquetStatusAppearance()
+        } else {
+            cursorPositionLabel.font = .systemFont(ofSize: Layout.textSize, weight: .medium)
+            cursorPositionLabel.textColor = AppColors.sidebarText
+        }
 
         let attributedTitle = NSAttributedString(
             string: syntaxStatusButton.title,
@@ -154,6 +167,19 @@ final class EditorStatusBarView: NSView {
             ]
         )
         syntaxStatusButton.attributedTitle = attributedTitle
+    }
+
+    private func applyParquetStatusAppearance() {
+        let status = NSMutableAttributedString(string: cursorPositionLabel.stringValue, attributes: [
+            .font: NSFont.systemFont(ofSize: Layout.parquetTextSize),
+            .foregroundColor: AppColors.sidebarText,
+        ])
+        let unit = "rows"
+        if status.string.hasSuffix(unit) {
+            status.addAttribute(.foregroundColor, value: AppColors.inactiveTabText,
+                                range: NSRange(location: status.length - unit.utf16.count, length: unit.utf16.count))
+        }
+        cursorPositionLabel.attributedStringValue = status
     }
 
     @objc
