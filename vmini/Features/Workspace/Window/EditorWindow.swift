@@ -23,7 +23,7 @@ final class EditorWindow: NSWindow {
         }
 
         if let action = EditorSearchAction.action(for: event),
-           (contentViewController as? EditorContentViewController)?.performSearchAction(action) == true {
+           (contentViewController as? EditorContentViewController)?.activeEditor?.performSearchAction(action) == true {
             return true
         }
 
@@ -80,27 +80,27 @@ final class EditorWindow: NSWindow {
         }
 
         if modifiers == [.command], characters == "/" {
-            (contentViewController as? EditorContentViewController)?.toggleLineComment()
+            (contentViewController as? EditorContentViewController)?.activeEditor?.toggleLineComment()
             return true
         }
 
         if modifiers == [.command], characters == "d" {
-            (contentViewController as? EditorContentViewController)?.duplicateSelectedLines()
+            (contentViewController as? EditorContentViewController)?.activeEditor?.duplicateSelectedLines()
             return true
         }
 
         if modifiers == [.command], event.keyCode == 51 {
-            (contentViewController as? EditorContentViewController)?.deleteCurrentLine()
+            (contentViewController as? EditorContentViewController)?.activeEditor?.deleteCurrentLine()
             return true
         }
 
         if modifiers == [.command], characters == "j" {
-            (contentViewController as? EditorContentViewController)?.formatJSON()
+            (contentViewController as? EditorContentViewController)?.activeEditor?.formatJSONSelectionOrDocument()
             return true
         }
 
         if modifiers == [.command], characters == "t" {
-            (contentViewController as? EditorContentViewController)?.formatMarkdownTable()
+            (contentViewController as? EditorContentViewController)?.activeEditor?.formatMarkdownTable()
             return true
         }
 
