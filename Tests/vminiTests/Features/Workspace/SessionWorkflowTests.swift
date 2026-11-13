@@ -761,6 +761,24 @@ final class SessionWorkflowTests: XCTestCase {
         }
     }
 
+    func testWatcherRestartedByAReloadStillReloadsInPlaceEdits() async throws {
+        let fileURL = try makeTemporaryFile(named: "replaced-then-edited.txt", contents: "replaced")
+        let lifecycle = DocumentFileLifecycleController(openDocumentsStore: OpenDocumentsStore())
+        defer { lifecycle.handleClose() }
+        let document = ReloadableDocumentStub(fileURL: fileURL)
+
+        // A replaced file (delete or rename) makes the reload restart the watcher.
+        await lifecycle.reload(document, restartWatcher: true).value
+        XCTAssertEqual(document.installedText, "replaced")
+
+        let reloaded = expectation(description: "in-place edit reloaded")
+        document.onInstall = { reloaded.fulfill() }
+        try "edited in place".write(to: fileURL, atomically: false, encoding: .utf8)
+
+        await fulfillment(of: [reloaded], timeout: 5)
+        XCTAssertEqual(document.installedText, "edited in place")
+    }
+
     func testWorkspaceDocumentCoordinatorReopensMostRecentClosedUntitledDocument() {
         let history = ClosedDocumentHistory()
         let store = OpenDocumentsStore()
@@ -898,6 +916,7 @@ private final class ReloadableDocumentStub: ExternallyReloadableDocument {
     var isDocumentEdited = false
     private(set) var installedText: String?
     private(set) var didPresentConflict = false
+    var onInstall: (() -> Void)?
 
     init(fileURL: URL) {
         self.fileURL = fileURL
@@ -906,6 +925,7 @@ private final class ReloadableDocumentStub: ExternallyReloadableDocument {
     func installReloadedPayload(_ payload: DocumentPayload) {
         if case .text(let text) = payload.content { installedText = text }
         contentRevision += 1
+        onInstall?()
     }
 
     func presentExternalChangeAlert(fileIsMissing: Bool) {

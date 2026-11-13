@@ -30,7 +30,7 @@ final class DocumentFileLifecycleController {
     }
 
     func watch(_ document: ExternallyReloadableDocument) {
-        restartWatching(document, fileURL: document.fileURL, replacementEventsOnly: false)
+        restartWatching(document, fileURL: document.fileURL)
     }
 
     func prepareForSave() {
@@ -100,7 +100,7 @@ final class DocumentFileLifecycleController {
         if wasEdited && !reloadEvenIfEdited {
             document.presentExternalChangeAlert(fileIsMissing: false)
             if reloadNeedsWatcherRestart {
-                restartWatching(document, fileURL: fileURL, replacementEventsOnly: true)
+                restartWatching(document, fileURL: fileURL)
             }
             return
         }
@@ -115,7 +115,7 @@ final class DocumentFileLifecycleController {
                     document.presentExternalChangeAlert(fileIsMissing: false)
                 }
                 if reloadNeedsWatcherRestart {
-                    restartWatching(document, fileURL: document.fileURL, replacementEventsOnly: true)
+                    restartWatching(document, fileURL: document.fileURL)
                 }
                 return
             }
@@ -124,25 +124,21 @@ final class DocumentFileLifecycleController {
             openDocumentsStore.refresh()
 
             if reloadNeedsWatcherRestart {
-                restartWatching(document, fileURL: document.fileURL, replacementEventsOnly: true)
+                restartWatching(document, fileURL: document.fileURL)
             }
         } catch {
             guard generation == reloadGeneration else { return }
             NSLog("Could not reload externally changed file %@: %@", fileURL.path as NSString, error.localizedDescription)
             if reloadNeedsWatcherRestart, document.fileURL?.standardizedFileURL == standardizedURL {
-                restartWatching(document, fileURL: document.fileURL, replacementEventsOnly: true)
+                restartWatching(document, fileURL: document.fileURL)
             }
         }
     }
 
-    private func restartWatching(
-        _ document: ExternallyReloadableDocument,
-        fileURL: URL?,
-        replacementEventsOnly: Bool
-    ) {
+    private func restartWatching(_ document: ExternallyReloadableDocument, fileURL: URL?) {
         reloadNeedsWatcherRestart = false
         watcher.watch(fileURL: fileURL) { [weak self, weak document] restartWatcher in
-            guard let self, let document, restartWatcher || !replacementEventsOnly else { return }
+            guard let self, let document else { return }
             self.reload(document, restartWatcher: restartWatcher)
         }
     }
