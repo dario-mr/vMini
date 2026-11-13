@@ -1,7 +1,7 @@
 import AppKit
 
 @MainActor
-class TreeSitterSyntaxHighlighter: SyntaxHighlighter {
+final class TreeSitterSyntaxHighlighter: SyntaxHighlighter {
     let language: SyntaxLanguage
 
     init(language: SyntaxLanguage) {
