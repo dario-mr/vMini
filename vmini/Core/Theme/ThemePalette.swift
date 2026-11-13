@@ -25,7 +25,7 @@ struct ThemePalette {
     let syntaxPalette: SyntaxThemePalette
 
     var syntaxTheme: SyntaxTheme {
-        syntaxPalette.makeSyntaxTheme(plainText: primaryText)
+        SyntaxTheme(plainText: primaryText, palette: syntaxPalette)
     }
 }
 
