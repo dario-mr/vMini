@@ -3,7 +3,6 @@ import AppKit
 @MainActor
 final class DocumentContentController {
     private(set) var text = ""
-    private(set) var typeIdentifier: String?
     private let syntaxOverrideStore: SyntaxOverrideStore
     private var syntaxLanguageOverride: SyntaxLanguage?
 
@@ -17,11 +16,6 @@ final class DocumentContentController {
 
     func currentText(editorText: String?) -> String {
         editorText ?? text
-    }
-
-    func updateRead(typeName: String, text: String) {
-        typeIdentifier = typeName
-        self.text = text
     }
 
     func updateText(_ text: String) {
@@ -48,11 +42,7 @@ final class DocumentContentController {
     }
 
     func autoDetectedSyntaxLanguage(fileURL: URL?, sampleText: String) -> SyntaxLanguage {
-        SyntaxLanguageResolver.resolve(
-            fileURL: fileURL,
-            typeIdentifier: typeIdentifier,
-            content: sampleText
-        )
+        SyntaxLanguageResolver.resolve(fileURL: fileURL, content: sampleText)
     }
 
     func syntaxLanguage(fileURL: URL?, sampleText: String) -> SyntaxLanguage {

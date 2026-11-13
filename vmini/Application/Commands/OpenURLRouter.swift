@@ -2,7 +2,7 @@ import AppKit
 
 @MainActor
 enum OpenURLRouter {
-    static func open(_ urls: [URL], tabbedIn targetWindow: NSWindow?) {
+    static func open(_ urls: [URL]) {
         let folders = urls.filter(isDirectory)
         let files = urls.filter { !isDirectory($0) }
 

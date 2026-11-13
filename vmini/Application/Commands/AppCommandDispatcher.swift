@@ -49,7 +49,7 @@ final class AppCommandDispatcher: NSObject, NSMenuItemValidation {
         openPanel.begin { response in
             guard response == .OK else { return }
             Task { @MainActor in
-                OpenURLRouter.open(openPanel.urls, tabbedIn: self.workspaceResolver.activeWindow())
+                OpenURLRouter.open(openPanel.urls)
             }
         }
     }
@@ -58,7 +58,7 @@ final class AppCommandDispatcher: NSObject, NSMenuItemValidation {
     func openRecentDocument(_ sender: Any?) {
         guard let fileURL = (sender as? NSMenuItem)?.representedObject as? URL else { return }
         guard FileManager.default.fileExists(atPath: fileURL.path) else { return }
-        OpenURLRouter.open([fileURL], tabbedIn: workspaceResolver.activeWindow())
+        OpenURLRouter.open([fileURL])
     }
 
     @objc func clearRecentDocuments(_ sender: Any?) { NSDocumentController.shared.clearRecentDocuments(sender) }
