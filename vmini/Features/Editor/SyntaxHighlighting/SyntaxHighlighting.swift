@@ -7,30 +7,15 @@ enum SyntaxLanguageResolver {
         "zsh": .bash,
     ]
 
-    private static let markdownFileExtensionMap: [String: SyntaxLanguage] = [
+    private static let fileExtensionMap: [String: SyntaxLanguage] = [
         "md": .markdown,
         "markdown": .markdown,
-    ]
-
-    private static let jsonFileExtensionMap: [String: SyntaxLanguage] = [
         "json": .json,
-    ]
-
-    private static let yamlFileExtensionMap: [String: SyntaxLanguage] = [
         "yaml": .yaml,
         "yml": .yaml,
-    ]
-
-    private static let kotlinFileExtensionMap: [String: SyntaxLanguage] = [
         "kt": .kotlin,
         "kts": .kotlin,
-    ]
-
-    private static let javaFileExtensionMap: [String: SyntaxLanguage] = [
         "java": .java,
-    ]
-
-    private static let sqlFileExtensionMap: [String: SyntaxLanguage] = [
         "sql": .sql,
     ]
 
@@ -72,56 +57,27 @@ enum SyntaxLanguageResolver {
     ]
 
     static func resolve(fileURL: URL?, content: String? = nil) -> SyntaxLanguage {
-        if let fileExtension = fileURL?.pathExtension.lowercased(),
-           let language = shellFileExtensionMap[fileExtension] {
+        let fileExtension = fileURL?.pathExtension.lowercased() ?? ""
+        let fileName = fileURL?.lastPathComponent.lowercased() ?? ""
+
+        if let language = shellFileExtensionMap[fileExtension] {
             return language
         }
 
-        if let fileName = fileURL?.lastPathComponent.lowercased(),
-           fileName == ".env" || fileName.hasPrefix(".env.") {
+        if fileName == ".env" || fileName.hasPrefix(".env.") {
             return .dotenv
         }
 
-        if let fileName = fileURL?.lastPathComponent.lowercased(),
-           let language = fileNameMap[fileName] {
+        if let language = fileNameMap[fileName] {
             return language
         }
 
+        // A shebang outranks the remaining extensions, so those stay in their own map.
         if hasShellShebang(in: content) {
             return .bash
         }
 
-        if let fileExtension = fileURL?.pathExtension.lowercased(),
-           let language = jsonFileExtensionMap[fileExtension] {
-            return language
-        }
-
-        if let fileExtension = fileURL?.pathExtension.lowercased(),
-           let language = yamlFileExtensionMap[fileExtension] {
-            return language
-        }
-
-        if let fileExtension = fileURL?.pathExtension.lowercased(),
-           let language = kotlinFileExtensionMap[fileExtension] {
-            return language
-        }
-
-        if let fileExtension = fileURL?.pathExtension.lowercased(),
-           let language = javaFileExtensionMap[fileExtension] {
-            return language
-        }
-
-        if let fileExtension = fileURL?.pathExtension.lowercased(),
-           let language = sqlFileExtensionMap[fileExtension] {
-            return language
-        }
-
-        if let fileExtension = fileURL?.pathExtension.lowercased(),
-           let language = markdownFileExtensionMap[fileExtension] {
-            return language
-        }
-
-        return .plaintext
+        return fileExtensionMap[fileExtension] ?? .plaintext
     }
 
     static func resolveFenceInfoString(_ infoString: String) -> SyntaxLanguage? {

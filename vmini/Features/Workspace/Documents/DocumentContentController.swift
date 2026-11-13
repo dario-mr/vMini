@@ -53,15 +53,6 @@ final class DocumentContentController {
         syntaxLanguageOverride != nil
     }
 
-    func syntaxOverrideMenuTitle(fileURL: URL?, sampleText: String) -> String {
-        let resolvedSyntaxLanguage = syntaxLanguage(fileURL: fileURL, sampleText: sampleText)
-        if hasSyntaxLanguageOverride {
-            return resolvedSyntaxLanguage.displayName
-        }
-
-        return "\(resolvedSyntaxLanguage.displayName) (Auto)"
-    }
-
     func setSyntaxLanguageOverride(_ language: SyntaxLanguage?, persistenceIdentifier: String?) {
         guard syntaxLanguageOverride != language else { return }
         syntaxLanguageOverride = language

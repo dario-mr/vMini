@@ -7,11 +7,15 @@ enum EditorStatusBarStateBuilder {
             return nil
         }
 
+        let hasOverride = document.hasSyntaxLanguageOverride
+        let autoDetectedSyntaxLanguage = document.autoDetectedSyntaxLanguage
+        let selectedSyntaxLanguage = hasOverride ? document.syntaxLanguage : autoDetectedSyntaxLanguage
+
         return EditorStatusBarState(
-            title: document.syntaxOverrideMenuTitle,
-            autoDetectedSyntaxLanguage: document.autoDetectedSyntaxLanguage,
-            selectedSyntaxLanguage: document.syntaxLanguage,
-            hasOverride: document.hasSyntaxLanguageOverride,
+            title: hasOverride ? selectedSyntaxLanguage.displayName : "\(selectedSyntaxLanguage.displayName) (Auto)",
+            autoDetectedSyntaxLanguage: autoDetectedSyntaxLanguage,
+            selectedSyntaxLanguage: selectedSyntaxLanguage,
+            hasOverride: hasOverride,
             cursorPosition: cursorPosition ?? EditorCursorPosition(line: 1, column: 1)
         )
     }
