@@ -443,7 +443,7 @@ final class ParquetQueryTests: XCTestCase {
         XCTAssertTrue(header.subviews.contains { $0 === filter })
         let search = try XCTUnwrap(find(NSSearchField.self, in: viewer.view))
         search.stringValue = "no match"
-        viewer.controlTextDidChange(Notification(name: NSControl.textDidChangeNotification, object: search))
+        search.delegate?.controlTextDidChange?(Notification(name: NSControl.textDidChangeNotification, object: search))
         let searchCount = try await loaded(session).matchingRows
         XCTAssertEqual(searchCount, 0)
         XCTAssertEqual(table.numberOfRows, 0)
