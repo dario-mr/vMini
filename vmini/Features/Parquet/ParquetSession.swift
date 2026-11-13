@@ -68,6 +68,8 @@ final class ParquetSession {
         task?.cancel()
         let url = url
         let query = query
+        // Perf: the schema and row count only change when the file reloads, which clears the page.
+        let schema = page?.schema
         countError = nil
         state = .loading
         notifyObservers()
@@ -78,7 +80,8 @@ final class ParquetSession {
             }
             guard !Task.isCancelled else { return }
             let load = Task.detached(priority: .userInitiated) {
-                try await ParquetPage.load(from: url, query: query, reconcileSchema: reconcileSchema, countMatches: false)
+                try await ParquetPage.load(from: url, query: query, reconcileSchema: reconcileSchema,
+                                           countMatches: false, schema: schema)
             }
             let result = await withTaskCancellationHandler {
                 await load.result
