@@ -42,18 +42,8 @@ final class DocumentController: NSDocumentController {
 
     override func typeForContents(of url: URL) throws -> String {
         if ParquetPage.recognizes(url) { return ParquetPage.typeIdentifier }
-        if
-            let contentType = try? url.resourceValues(forKeys: [.contentTypeKey]).contentType,
-            Document.supportedTypes.contains(where: { contentType.conforms(to: $0) })
-        {
-            return contentType.identifier
-        }
-
-        if
-            let inferredType = UTType(filenameExtension: url.pathExtension),
-            Document.supportedTypes.contains(where: { inferredType.conforms(to: $0) })
-        {
-            return inferredType.identifier
+        if let supportedTypeIdentifier = DocumentPayloadLoader.supportedTypeIdentifier(for: url) {
+            return supportedTypeIdentifier
         }
 
         let inferredTypeIdentifier = try? super.typeForContents(of: url)

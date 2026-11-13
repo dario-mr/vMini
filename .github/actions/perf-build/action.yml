@@ -1,0 +1,54 @@
+name: Build a perf checkout
+description: Restores, builds, and saves the Release test bundle and dependency caches for one checkout.
+
+inputs:
+  path:
+    description: Checkout directory to build (base or candidate)
+    required: true
+  xcode-version:
+    description: Xcode version, part of the build cache key
+    required: true
+
+runs:
+  using: composite
+  steps:
+    # Restore and save are split so a run that later fails its comparison still saves the caches
+    - name: Restore dependencies
+      id: deps-cache
+      uses: actions/cache/restore@v6
+      with:
+        path: ~/Library/Caches/org.swift.swiftpm/repositories
+        key: ${{ runner.os }}-swiftpm-${{ hashFiles(format('{0}/Package.swift', inputs.path), format('{0}/Package.resolved', inputs.path)) }}
+        restore-keys: |
+          ${{ runner.os }}-swiftpm-
+
+    # Reuses DuckDB build objects until the dependencies or Xcode change
+    - name: Restore build products
+      id: build-cache
+      uses: actions/cache/restore@v6
+      with:
+        path: ${{ inputs.path }}/.build
+        key: ${{ runner.os }}-perf-${{ inputs.path }}-build-xcode${{ inputs.xcode-version }}-${{ hashFiles(format('{0}/Package.swift', inputs.path), format('{0}/Package.resolved', inputs.path)) }}
+        restore-keys: |
+          ${{ runner.os }}-perf-${{ inputs.path }}-build-xcode${{ inputs.xcode-version }}-
+
+    - name: Build Release test bundle
+      shell: bash
+      run: |
+        mkdir -p "$GITHUB_WORKSPACE/performance-results"
+        (cd "${{ inputs.path }}" && ./scripts/benchmark-performance.sh --build-only) 2>&1 \
+          | tee "$GITHUB_WORKSPACE/performance-results/${{ inputs.path }}-build.log"
+
+    - name: Save dependencies
+      if: ${{ !cancelled() && steps.deps-cache.outputs.cache-hit != 'true' }}
+      uses: actions/cache/save@v6
+      with:
+        path: ~/Library/Caches/org.swift.swiftpm/repositories
+        key: ${{ steps.deps-cache.outputs.cache-primary-key }}
+
+    - name: Save build products
+      if: ${{ !cancelled() && steps.build-cache.outputs.cache-hit != 'true' }}
+      uses: actions/cache/save@v6
+      with:
+        path: ${{ inputs.path }}/.build
+        key: ${{ steps.build-cache.outputs.cache-primary-key }}

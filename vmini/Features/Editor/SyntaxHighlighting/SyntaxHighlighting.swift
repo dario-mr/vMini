@@ -1,5 +1,4 @@
 import AppKit
-import UniformTypeIdentifiers
 
 enum SyntaxLanguageResolver {
     private static let shellFileExtensionMap: [String: SyntaxLanguage] = [
@@ -8,30 +7,15 @@ enum SyntaxLanguageResolver {
         "zsh": .bash,
     ]
 
-    private static let markdownFileExtensionMap: [String: SyntaxLanguage] = [
+    private static let fileExtensionMap: [String: SyntaxLanguage] = [
         "md": .markdown,
         "markdown": .markdown,
-    ]
-
-    private static let jsonFileExtensionMap: [String: SyntaxLanguage] = [
         "json": .json,
-    ]
-
-    private static let yamlFileExtensionMap: [String: SyntaxLanguage] = [
         "yaml": .yaml,
         "yml": .yaml,
-    ]
-
-    private static let kotlinFileExtensionMap: [String: SyntaxLanguage] = [
         "kt": .kotlin,
         "kts": .kotlin,
-    ]
-
-    private static let javaFileExtensionMap: [String: SyntaxLanguage] = [
         "java": .java,
-    ]
-
-    private static let sqlFileExtensionMap: [String: SyntaxLanguage] = [
         "sql": .sql,
     ]
 
@@ -72,63 +56,28 @@ enum SyntaxLanguageResolver {
         "tsql": .sql,
     ]
 
-    static func resolve(fileURL: URL?, typeIdentifier: String?, content: String? = nil) -> SyntaxLanguage {
-        if let fileExtension = fileURL?.pathExtension.lowercased(),
-           let language = shellFileExtensionMap[fileExtension] {
+    static func resolve(fileURL: URL?, content: String? = nil) -> SyntaxLanguage {
+        let fileExtension = fileURL?.pathExtension.lowercased() ?? ""
+        let fileName = fileURL?.lastPathComponent.lowercased() ?? ""
+
+        if let language = shellFileExtensionMap[fileExtension] {
             return language
         }
 
-        if let fileName = fileURL?.lastPathComponent.lowercased(),
-           fileName == ".env" || fileName.hasPrefix(".env.") {
+        if fileName == ".env" || fileName.hasPrefix(".env.") {
             return .dotenv
         }
 
-        if let fileName = fileURL?.lastPathComponent.lowercased(),
-           let language = fileNameMap[fileName] {
+        if let language = fileNameMap[fileName] {
             return language
         }
 
+        // A shebang outranks the remaining extensions, so those stay in their own map.
         if hasShellShebang(in: content) {
             return .bash
         }
 
-        if let fileExtension = fileURL?.pathExtension.lowercased(),
-           let language = jsonFileExtensionMap[fileExtension] {
-            return language
-        }
-
-        if let fileExtension = fileURL?.pathExtension.lowercased(),
-           let language = yamlFileExtensionMap[fileExtension] {
-            return language
-        }
-
-        if let fileExtension = fileURL?.pathExtension.lowercased(),
-           let language = kotlinFileExtensionMap[fileExtension] {
-            return language
-        }
-
-        if let fileExtension = fileURL?.pathExtension.lowercased(),
-           let language = javaFileExtensionMap[fileExtension] {
-            return language
-        }
-
-        if let fileExtension = fileURL?.pathExtension.lowercased(),
-           let language = sqlFileExtensionMap[fileExtension] {
-            return language
-        }
-
-        if let fileExtension = fileURL?.pathExtension.lowercased(),
-           let language = markdownFileExtensionMap[fileExtension] {
-            return language
-        }
-
-        if let typeIdentifier, let type = UTType(typeIdentifier) {
-            if type.conforms(to: .plainText) || type.conforms(to: .text) {
-                return .plaintext
-            }
-        }
-
-        return .plaintext
+        return fileExtensionMap[fileExtension] ?? .plaintext
     }
 
     static func resolveFenceInfoString(_ infoString: String) -> SyntaxLanguage? {
@@ -190,70 +139,58 @@ enum SyntaxColorRole: Sendable {
     case propertyKey
 }
 
+/// The palette's colours read as `theme.comment`, alongside the theme's plain text colour.
+@dynamicMemberLookup
 struct SyntaxTheme {
     let plainText: NSColor
-    let headingMarker: NSColor
-    let headingText: NSColor
-    let listMarker: NSColor
-    let blockquoteMarker: NSColor
-    let inlineCode: NSColor
-    let codeFence: NSColor
-    let codeBlockBackground: NSColor
-    let linkText: NSColor
-    let linkURL: NSColor
-    let emphasisMarker: NSColor
-    let thematicBreak: NSColor
-    let comment: NSColor
-    let string: NSColor
-    let variable: NSColor
-    let keyword: NSColor
-    let `operator`: NSColor
-    let builtin: NSColor
-    let option: NSColor
-    let propertyKey: NSColor
+    let palette: SyntaxThemePalette
+
+    subscript(dynamicMember keyPath: KeyPath<SyntaxThemePalette, NSColor>) -> NSColor {
+        palette[keyPath: keyPath]
+    }
 
     func color(for role: SyntaxColorRole) -> NSColor {
         switch role {
         case .plainText:
             plainText
         case .headingMarker:
-            headingMarker
+            palette.headingMarker
         case .headingText:
-            headingText
+            palette.headingText
         case .listMarker:
-            listMarker
+            palette.listMarker
         case .blockquoteMarker:
-            blockquoteMarker
+            palette.blockquoteMarker
         case .inlineCode:
-            inlineCode
+            palette.inlineCode
         case .codeFence:
-            codeFence
+            palette.codeFence
         case .codeBlockBackground:
-            codeBlockBackground
+            palette.codeBlockBackground
         case .linkText:
-            linkText
+            palette.linkText
         case .linkURL:
-            linkURL
+            palette.linkURL
         case .emphasisMarker:
-            emphasisMarker
+            palette.emphasisMarker
         case .thematicBreak:
-            thematicBreak
+            palette.thematicBreak
         case .comment:
-            comment
+            palette.comment
         case .string:
-            string
+            palette.string
         case .variable:
-            variable
+            palette.variable
         case .keyword:
-            keyword
+            palette.keyword
         case .operator:
-            self.operator
+            palette.operator
         case .builtin:
-            builtin
+            palette.builtin
         case .option:
-            option
+            palette.option
         case .propertyKey:
-            propertyKey
+            palette.propertyKey
         }
     }
 }
@@ -316,18 +253,9 @@ final class HighlighterRegistry {
     }
 
     convenience init() {
-        self.init(highlighters: [
-            PlainTextSyntaxHighlighter(),
-            BashSyntaxHighlighter(),
-            DotenvSyntaxHighlighter(),
-            SSHConfigSyntaxHighlighter(),
-            MarkdownSyntaxHighlighter(),
-            JSONSyntaxHighlighter(),
-            YAMLSyntaxHighlighter(),
-            KotlinSyntaxHighlighter(),
-            JavaSyntaxHighlighter(),
-            SQLSyntaxHighlighter(),
-        ])
+        let treeSitterLanguages: [SyntaxLanguage] = [.bash, .dotenv, .sshconfig, .json, .yaml, .kotlin, .java, .sql]
+        self.init(highlighters: [PlainTextSyntaxHighlighter(), MarkdownSyntaxHighlighter()]
+            + treeSitterLanguages.map { TreeSitterSyntaxHighlighter(language: $0) })
     }
 
     func highlighter(for language: SyntaxLanguage) -> SyntaxHighlighter {

@@ -114,13 +114,15 @@ final class EditorContentViewController: NSViewController {
         }
     }
 
+    var activeEditor: EditorViewController? { activeEditorCoordinator?.activeEditor }
+
     func increaseEditorFontSize() {
-        activeEditorCoordinator?.increaseFontSize()
+        activeEditor?.increaseFontSize()
         showFontSizeHUD()
     }
 
     func decreaseEditorFontSize() {
-        activeEditorCoordinator?.decreaseFontSize()
+        activeEditor?.decreaseFontSize()
         showFontSizeHUD()
     }
 
@@ -144,55 +146,11 @@ final class EditorContentViewController: NSViewController {
         isRestoringNavigation = true
         defer { isRestoringNavigation = false }
         documentRouter.present(document: target)
-        activeEditorCoordinator?.restoreNavigationSelection(location.selection)
+        activeEditor?.restoreNavigationSelection(location.selection)
     }
 
     func setDocumentOpening(_ isOpening: Bool) {
         statusBarView.setDocumentOpening(isOpening)
-    }
-
-    @discardableResult
-    func performSearchAction(_ action: EditorSearchAction) -> Bool {
-        activeEditorCoordinator?.performSearchAction(action) ?? false
-    }
-
-    func toggleLineComment() {
-        activeEditorCoordinator?.toggleLineComment()
-    }
-
-    func duplicateSelectedLines() {
-        activeEditorCoordinator?.duplicateSelectedLines()
-    }
-
-    func deleteCurrentLine() {
-        activeEditorCoordinator?.deleteCurrentLine()
-    }
-
-    @discardableResult
-    func moveSelectedLinesUp() -> Bool {
-        activeEditorCoordinator?.moveSelectedLinesUp() ?? false
-    }
-
-    @discardableResult
-    func moveSelectedLinesDown() -> Bool {
-        activeEditorCoordinator?.moveSelectedLinesDown() ?? false
-    }
-
-    func formatJSON() {
-        activeEditorCoordinator?.formatJSON()
-    }
-
-    var canFormatMarkdownTable: Bool { activeEditorCoordinator?.canFormatMarkdownTable ?? false }
-
-    func formatMarkdownTable() { activeEditorCoordinator?.formatMarkdownTable() }
-
-    func currentLineNumber() -> Int {
-        activeEditorCoordinator?.currentLineNumber() ?? 1
-    }
-
-    @discardableResult
-    func goToLine(_ lineNumber: Int) -> Bool {
-        activeEditorCoordinator?.goToLine(lineNumber) ?? false
     }
 
     private func configureTabBar() {
@@ -245,10 +203,6 @@ final class EditorContentViewController: NSViewController {
         updateStatusBar()
     }
 
-    private func handleDocumentsDidChange() {
-        syncWorkspace()
-    }
-
     private func handleThemeDidChange() {
         applyTheme()
         updateStatusBar()
@@ -263,7 +217,7 @@ final class EditorContentViewController: NSViewController {
     }
 
     private func showFontSizeHUD() {
-        guard activeEditorCoordinator?.hasActiveEditor == true else { return }
+        guard activeEditor != nil else { return }
         fontSizeHUDView.show(fontSize: EditorSettings.currentFontSize())
     }
 
@@ -326,7 +280,7 @@ final class EditorContentViewController: NSViewController {
         statusBarView.update(
             state: EditorStatusBarStateBuilder.makeState(
                 document: documentState.activeDocument,
-                cursorPosition: activeEditorCoordinator?.currentCursorPosition()
+                cursorPosition: activeEditor?.currentCursorPosition()
             )
         )
     }
@@ -346,6 +300,6 @@ extension EditorContentViewController: FileDropContentViewDelegate {
     }
 
     private func openFileSystemURLs(_ urls: [URL]) {
-        OpenURLRouter.open(urls, tabbedIn: view.window)
+        OpenURLRouter.open(urls)
     }
 }

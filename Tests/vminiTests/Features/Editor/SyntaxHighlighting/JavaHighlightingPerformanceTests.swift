@@ -20,7 +20,7 @@ final class JavaHighlightingPerformanceTests: XCTestCase {
             for sample in 0..<6 {
                 let storage = NSTextStorage(string: text)
                 let start = DispatchTime.now().uptimeNanoseconds
-                JavaSyntaxHighlighter().highlight(
+                TreeSitterSyntaxHighlighter(language: .java).highlight(
                     textStorage: storage, in: nil, baseFont: font, theme: theme, registry: .shared
                 )
                 if sample > 0 { fullSamples.append(PerformanceBenchmark.elapsedMilliseconds(since: start)) }

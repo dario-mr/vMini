@@ -30,8 +30,8 @@ final class WorkspaceSessionManager {
 
         persist(
             SessionSnapshot(
-                documentReferences: openDocumentsStore.documents.map(restorableReference(for:)),
-                activeDocumentReference: openDocumentsStore.activeDocument.map(restorableReference(for:))
+                documentReferences: openDocumentsStore.documents.map(\.restorableReference),
+                activeDocumentReference: openDocumentsStore.activeDocument?.restorableReference
             )
         )
     }
@@ -65,8 +65,8 @@ final class WorkspaceSessionManager {
         guard let terminationState else { return }
         persist(
             SessionSnapshot(
-                documentReferences: terminationState.documents.map(restorableReference(for:)),
-                activeDocumentReference: terminationState.activeDocument.map(restorableReference(for:))
+                documentReferences: terminationState.documents.map(\.restorableReference),
+                activeDocumentReference: terminationState.activeDocument?.restorableReference
             )
         )
     }
@@ -124,13 +124,5 @@ final class WorkspaceSessionManager {
         } else {
             persistence.sessionActiveDocumentReferenceData = nil
         }
-    }
-
-    private func restorableReference(for document: Document) -> RestorableDocumentReference {
-        if let fileURL = document.fileURL {
-            return .file(path: fileURL.standardizedFileURL.path)
-        }
-
-        return .untitled(sessionID: document.sessionIdentifier)
     }
 }

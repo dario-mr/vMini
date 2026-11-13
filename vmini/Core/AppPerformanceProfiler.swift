@@ -8,9 +8,6 @@ enum AppPerformanceProfiler {
     )
     private static let signposter = OSSignposter(logger: logger)
 
-    @MainActor
-    private static var appActivationState: OSSignpostIntervalState?
-
     static func makeSignpostID() -> OSSignpostID? {
         signposter.isEnabled ? signposter.makeSignpostID() : nil
     }
@@ -55,17 +52,5 @@ enum AppPerformanceProfiler {
         let state = beginInterval(name, id: id)
         defer { endInterval(name, state) }
         return try await operation()
-    }
-
-    @MainActor
-    static func beginAppActivation() {
-        appActivationState = beginInterval("AppActivation")
-    }
-
-    @MainActor
-    static func endAppActivation() {
-        guard let appActivationState else { return }
-        endInterval("AppActivation", appActivationState)
-        self.appActivationState = nil
     }
 }

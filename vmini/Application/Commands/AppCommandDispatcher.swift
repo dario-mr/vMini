@@ -28,7 +28,7 @@ final class AppCommandDispatcher: NSObject, NSMenuItemValidation {
 
     @objc func performEditorSearchAction(_ sender: NSMenuItem) {
         guard let action = EditorSearchAction(rawValue: sender.tag) else { return }
-        workspaceResolver.activeEditorContentViewController()?.performSearchAction(action)
+        workspaceResolver.activeEditorContentViewController()?.activeEditor?.performSearchAction(action)
     }
 
     @objc func toggleWordWrap(_ sender: Any?) { EditorSettings.toggleWordWrap() }
@@ -49,7 +49,7 @@ final class AppCommandDispatcher: NSObject, NSMenuItemValidation {
         openPanel.begin { response in
             guard response == .OK else { return }
             Task { @MainActor in
-                OpenURLRouter.open(openPanel.urls, tabbedIn: self.workspaceResolver.activeWindow())
+                OpenURLRouter.open(openPanel.urls)
             }
         }
     }
@@ -58,7 +58,7 @@ final class AppCommandDispatcher: NSObject, NSMenuItemValidation {
     func openRecentDocument(_ sender: Any?) {
         guard let fileURL = (sender as? NSMenuItem)?.representedObject as? URL else { return }
         guard FileManager.default.fileExists(atPath: fileURL.path) else { return }
-        OpenURLRouter.open([fileURL], tabbedIn: workspaceResolver.activeWindow())
+        OpenURLRouter.open([fileURL])
     }
 
     @objc func clearRecentDocuments(_ sender: Any?) { NSDocumentController.shared.clearRecentDocuments(sender) }
@@ -66,12 +66,12 @@ final class AppCommandDispatcher: NSObject, NSMenuItemValidation {
     @objc func saveCurrentDocumentAs(_ sender: Any?) { OpenDocumentsStore.shared.activeDocument?.saveAs(sender) }
     @objc func closeCurrentDocument(_ sender: Any?) { documentRouter.closeCurrentDocument() }
     @objc func reopenClosedDocument(_ sender: Any?) { documentRouter.reopenMostRecentClosedDocument() }
-    @objc func formatJSON(_ sender: Any?) { workspaceResolver.activeEditorContentViewController()?.formatJSON() }
-    @objc func formatMarkdownTable(_ sender: Any?) { workspaceResolver.activeEditorContentViewController()?.formatMarkdownTable() }
+    @objc func formatJSON(_ sender: Any?) { workspaceResolver.activeEditorContentViewController()?.activeEditor?.formatJSONSelectionOrDocument() }
+    @objc func formatMarkdownTable(_ sender: Any?) { workspaceResolver.activeEditorContentViewController()?.activeEditor?.formatMarkdownTable() }
 
     @objc
     func showGoToLine(_ sender: Any?) {
-        guard let editorController = workspaceResolver.activeEditorContentViewController() else { return }
+        guard let editorController = workspaceResolver.activeEditorContentViewController()?.activeEditor else { return }
         guard let window = workspaceResolver.activeWindow() else { return }
 
         goToLineWindowController.present(
@@ -85,7 +85,7 @@ final class AppCommandDispatcher: NSObject, NSMenuItemValidation {
 
     func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
         if menuItem.action == #selector(formatMarkdownTable(_:)) {
-            return workspaceResolver.activeEditorContentViewController()?.canFormatMarkdownTable ?? false
+            return workspaceResolver.activeEditorContentViewController()?.activeEditor?.canFormatMarkdownTable ?? false
         }
         if menuItem.action == #selector(navigateBack(_:)) {
             return workspaceResolver.activeEditorContentViewController()?.canGoBack ?? false

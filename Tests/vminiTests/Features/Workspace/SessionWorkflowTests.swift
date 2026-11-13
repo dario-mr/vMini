@@ -690,7 +690,6 @@ final class SessionWorkflowTests: XCTestCase {
         let payloadLoadStarted = expectation(description: "reload payload load started")
         var payloadContinuations: [CheckedContinuation<DocumentPayload, Error>] = []
         let lifecycle = DocumentFileLifecycleController(
-            externalChangeCoordinator: DocumentExternalChangeCoordinator(),
             openDocumentsStore: store,
             payloadLoader: { _ in
                 try await withCheckedThrowingContinuation { continuation in
@@ -699,38 +698,19 @@ final class SessionWorkflowTests: XCTestCase {
                 }
             }
         )
-        var revision: UInt64 = 1
-        var didInstallPayload = false
-        var didPromptForConflict = false
-        let startingRevision = revision
-        let reload = Task {
-            await lifecycle.reloadFromDiskAfterExternalChange(
-                fileURL: fileURL,
-                currentFileURL: { fileURL },
-                contentRevision: { revision },
-                startingRevision: startingRevision,
-                restartWatcher: false,
-                isDocumentEdited: false,
-                isDocumentCurrentlyEdited: { true },
-                reloadEvenIfEdited: false,
-                installPayload: { _ in didInstallPayload = true },
-                onReload: {},
-                onMissingFile: { XCTFail("File exists") },
-                onMissingFileWithUnsavedChanges: { XCTFail("File exists") },
-                onExternalChangeWithUnsavedChanges: { _ in didPromptForConflict = true },
-                onExternalChangeReload: { _ in }
-            )
-        }
+        let document = ReloadableDocumentStub(fileURL: fileURL)
+        let reload = lifecycle.reload(document, restartWatcher: false)
 
         await fulfillment(of: [payloadLoadStarted], timeout: 2)
-        revision += 1
+        document.contentRevision += 1
+        document.isDocumentEdited = true
         payloadContinuations[0].resume(returning: DocumentPayload(
             url: fileURL, typeName: "public.plain-text", text: "disk version"
         ))
         await reload.value
 
-        XCTAssertFalse(didInstallPayload)
-        XCTAssertTrue(didPromptForConflict)
+        XCTAssertNil(document.installedText)
+        XCTAssertTrue(document.didPresentConflict)
     }
 
     func testExternalReloadOrderingAndLifecycleInvalidation() async throws {
@@ -738,10 +718,8 @@ final class SessionWorkflowTests: XCTestCase {
         for newestFinishesFirst in [false, true] {
             let started = (0..<3).map { expectation(description: "reload \($0) started") }
             var continuations: [CheckedContinuation<DocumentPayload, Error>] = []
-            var revision: UInt64 = 0
-            var installed = "original"
+            let document = ReloadableDocumentStub(fileURL: fileURL)
             let lifecycle = DocumentFileLifecycleController(
-                externalChangeCoordinator: DocumentExternalChangeCoordinator(),
                 openDocumentsStore: OpenDocumentsStore(),
                 payloadLoader: { _ in
                     try await withCheckedThrowingContinuation { continuation in
@@ -751,20 +729,7 @@ final class SessionWorkflowTests: XCTestCase {
                 }
             )
             func reload() async {
-                await lifecycle.reloadFromDiskAfterExternalChange(
-                    fileURL: fileURL, currentFileURL: { fileURL },
-                    contentRevision: { revision }, startingRevision: revision,
-                    restartWatcher: false, isDocumentEdited: false,
-                    isDocumentCurrentlyEdited: { false }, reloadEvenIfEdited: false,
-                    installPayload: {
-                        if case .text(let text) = $0.content { installed = text }
-                        revision += 1
-                    }, onReload: {},
-                    onMissingFile: { XCTFail("File exists") },
-                    onMissingFileWithUnsavedChanges: { XCTFail("File exists") },
-                    onExternalChangeWithUnsavedChanges: { _ in XCTFail("No local edits") },
-                    onExternalChangeReload: { _ in }
-                )
+                await lifecycle.reload(document, restartWatcher: false).value
             }
             let first = Task { await reload() }
             await fulfillment(of: [started[0]], timeout: 2)
@@ -777,8 +742,8 @@ final class SessionWorkflowTests: XCTestCase {
                 ))
                 await tasks[index].value
             }
-            XCTAssertEqual(installed, "version 2")
-            XCTAssertEqual(revision, 1, "Only the latest request should install a payload")
+            XCTAssertEqual(document.installedText, "version 2")
+            XCTAssertEqual(document.contentRevision, 1, "Only the latest request should install a payload")
 
             let obsolete = Task { await reload() }
             await fulfillment(of: [started[2]], timeout: 2)
@@ -791,8 +756,27 @@ final class SessionWorkflowTests: XCTestCase {
                 url: fileURL, typeName: "public.plain-text", text: "obsolete"
             ))
             await obsolete.value
-            XCTAssertEqual(installed, "version 2", "Closing or saving must invalidate pending reads")
+            XCTAssertEqual(document.installedText, "version 2", "Closing or saving must invalidate pending reads")
+            XCTAssertFalse(document.didPresentConflict, "No local edits")
         }
+    }
+
+    func testWatcherRestartedByAReloadStillReloadsInPlaceEdits() async throws {
+        let fileURL = try makeTemporaryFile(named: "replaced-then-edited.txt", contents: "replaced")
+        let lifecycle = DocumentFileLifecycleController(openDocumentsStore: OpenDocumentsStore())
+        defer { lifecycle.handleClose() }
+        let document = ReloadableDocumentStub(fileURL: fileURL)
+
+        // A replaced file (delete or rename) makes the reload restart the watcher.
+        await lifecycle.reload(document, restartWatcher: true).value
+        XCTAssertEqual(document.installedText, "replaced")
+
+        let reloaded = expectation(description: "in-place edit reloaded")
+        document.onInstall = { reloaded.fulfill() }
+        try "edited in place".write(to: fileURL, atomically: false, encoding: .utf8)
+
+        await fulfillment(of: [reloaded], timeout: 5)
+        XCTAssertEqual(document.installedText, "edited in place")
     }
 
     func testWorkspaceDocumentCoordinatorReopensMostRecentClosedUntitledDocument() {
@@ -922,6 +906,35 @@ final class SessionWorkflowTests: XCTestCase {
             userDefaults.removePersistentDomain(forName: suiteName)
         }
         return userDefaults
+    }
+}
+
+@MainActor
+private final class ReloadableDocumentStub: ExternallyReloadableDocument {
+    var fileURL: URL?
+    var contentRevision: UInt64 = 0
+    var isDocumentEdited = false
+    private(set) var installedText: String?
+    private(set) var didPresentConflict = false
+    var onInstall: (() -> Void)?
+
+    init(fileURL: URL) {
+        self.fileURL = fileURL
+    }
+
+    func installReloadedPayload(_ payload: DocumentPayload) {
+        if case .text(let text) = payload.content { installedText = text }
+        contentRevision += 1
+        onInstall?()
+    }
+
+    func presentExternalChangeAlert(fileIsMissing: Bool) {
+        XCTAssertFalse(fileIsMissing, "File exists")
+        didPresentConflict = true
+    }
+
+    func close() {
+        XCTFail("File exists")
     }
 }
 

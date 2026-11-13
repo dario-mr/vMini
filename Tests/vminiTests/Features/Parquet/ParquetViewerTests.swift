@@ -123,8 +123,12 @@ final class ParquetViewerTests: XCTestCase {
             XCTAssertEqual(table.backgroundColor, AppColors.editorBackground)
             let bitmap = try XCTUnwrap(header.bitmapImageRepForCachingDisplay(in: header.bounds))
             header.cacheDisplay(in: header.bounds, to: bitmap)
-            let titleBackground = try XCTUnwrap(bitmap.colorAt(x: 2, y: 5))
-            let filterBackground = try XCTUnwrap(bitmap.colorAt(x: 2, y: Int(ParquetTableHeaderView.titleHeight) + 14))
+            // The bitmap is in pixels, so scale the point offsets to stay in each band on Retina displays.
+            let scale = CGFloat(bitmap.pixelsHigh) / header.bounds.height
+            let titleBackground = try XCTUnwrap(bitmap.colorAt(x: Int(2 * scale), y: Int(5 * scale)))
+            let filterBackground = try XCTUnwrap(bitmap.colorAt(
+                x: Int(2 * scale), y: Int((ParquetTableHeaderView.titleHeight + 14) * scale)
+            ))
             XCTAssertNotEqual(titleBackground, filterBackground)
             XCTAssertEqual(viewer.view.appearance?.name, theme.preferredAppearance)
         }
@@ -253,18 +257,14 @@ final class ParquetViewerTests: XCTestCase {
         XCTAssertEqual(store.documents.count, urls.count)
         let text = try XCTUnwrap(store.activeDocument)
         let editor = text.editorViewController(onFileSystemURLsDropped: { _ in })
-        XCTAssertTrue(workspace.goToLine(2))
+        XCTAssertTrue(workspace.activeEditor?.goToLine(2) == true)
         for url in parquetURLs {
             let document = try XCTUnwrap(controller.document(for: url) as? Document)
             let session = try XCTUnwrap(document.parquetSession)
             let page = try await loadedPage(session)
             XCTAssertEqual(page.rows.count, Int(min(Int64(1_000), page.totalRows)))
             store.select(document)
-            XCTAssertFalse(workspace.goToLine(2))
-            XCTAssertFalse(workspace.performSearchAction(.replace))
-            workspace.duplicateSelectedLines()
-            workspace.deleteCurrentLine()
-            workspace.formatJSON()
+            XCTAssertNil(workspace.activeEditor)
             XCTAssertEqual(editor.text, "one\ntwo")
             let viewer = try XCTUnwrap(document.parquetViewController())
             let table = try XCTUnwrap(find(NSTableView.self, in: viewer.view))
@@ -280,7 +280,7 @@ final class ParquetViewerTests: XCTestCase {
             _ = try await loadedPage(session)
             table.tableColumns[1].width = 247
             store.select(text)
-            XCTAssertTrue(workspace.goToLine(1))
+            XCTAssertTrue(workspace.activeEditor?.goToLine(1) == true)
             store.select(document)
             XCTAssertTrue(document.parquetViewController() === viewer)
             XCTAssertEqual(table.tableColumns[1].width, 247)

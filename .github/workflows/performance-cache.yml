@@ -1,0 +1,44 @@
+name: Performance cache
+
+# Caches saved on main are the only ones every PR's performance regression test can restore
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  seed-performance-cache:
+    runs-on: macos-26
+    env:
+      XCODE_VERSION: "26.6"
+
+    steps:
+      - name: Check out base path
+        uses: actions/checkout@v6
+        with:
+          path: base
+
+      - name: Check out candidate path
+        uses: actions/checkout@v6
+        with:
+          path: candidate
+
+      - name: Select Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: ${{ env.XCODE_VERSION }}
+
+      - name: Build base Release test bundle
+        uses: ./candidate/.github/actions/perf-build
+        with:
+          path: base
+          xcode-version: ${{ env.XCODE_VERSION }}
+
+      - name: Build candidate Release test bundle
+        uses: ./candidate/.github/actions/perf-build
+        with:
+          path: candidate
+          xcode-version: ${{ env.XCODE_VERSION }}

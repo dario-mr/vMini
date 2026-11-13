@@ -38,6 +38,28 @@ final class ParquetQueryTests: XCTestCase {
         XCTAssertEqual(try Data(contentsOf: url), bytes)
     }
 
+    func testLoadReusesAProvidedSchemaInsteadOfReadingItAgain() async throws {
+        let url = try makeFile("SELECT i AS id, 'Customer ' || (i % 5)::VARCHAR AS label FROM range(40) t(i)")
+        defer { try? FileManager.default.removeItem(at: url) }
+        let original = try await ParquetPage.load(from: url)
+        XCTAssertEqual(original.schema.totalRows, 40)
+        var query = ParquetQuery()
+        query.search = "customer 4"
+
+        let fresh = try await ParquetPage.load(from: url, query: query)
+        let reused = try await ParquetPage.load(from: url, query: query, schema: original.schema)
+        XCTAssertEqual(reused.rows, fresh.rows)
+        XCTAssertEqual(reused.columns, fresh.columns)
+        XCTAssertEqual(reused.totalRows, fresh.totalRows)
+        XCTAssertEqual(reused.matchingRows, 8)
+
+        // A row count that differs from the file proves the count query was skipped.
+        let stale = ParquetPage.Schema(columns: original.columns, totalRows: 7)
+        let trusted = try await ParquetPage.load(from: url, query: query, schema: stale)
+        XCTAssertEqual(trusted.totalRows, 7)
+        XCTAssertEqual(trusted.rows, fresh.rows)
+    }
+
     func testRareFilterMatchesInSmallRowGroupsStayWithinMemoryLimit() async throws {
         // Sparse matches across many row groups made DuckDB buffer every batch to keep file order under LIMIT.
         let columns = (1..<8).map { "'value ' || ((i // 7) * \($0))::VARCHAR AS c\($0)" }.joined(separator: ", ")
@@ -421,7 +443,7 @@ final class ParquetQueryTests: XCTestCase {
         XCTAssertTrue(header.subviews.contains { $0 === filter })
         let search = try XCTUnwrap(find(NSSearchField.self, in: viewer.view))
         search.stringValue = "no match"
-        viewer.controlTextDidChange(Notification(name: NSControl.textDidChangeNotification, object: search))
+        search.delegate?.controlTextDidChange?(Notification(name: NSControl.textDidChangeNotification, object: search))
         let searchCount = try await loaded(session).matchingRows
         XCTAssertEqual(searchCount, 0)
         XCTAssertEqual(table.numberOfRows, 0)

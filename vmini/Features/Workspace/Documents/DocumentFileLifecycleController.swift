@@ -1,57 +1,44 @@
 import AppKit
 
 @MainActor
+protocol ExternallyReloadableDocument: AnyObject {
+    var fileURL: URL? { get }
+    var contentRevision: UInt64 { get }
+    var isDocumentEdited: Bool { get }
+
+    func installReloadedPayload(_ payload: DocumentPayload)
+    func presentExternalChangeAlert(fileIsMissing: Bool)
+    func close()
+}
+
+@MainActor
 final class DocumentFileLifecycleController {
     typealias PayloadLoader = (URL) async throws -> DocumentPayload
 
-    private let externalChangeCoordinator: DocumentExternalChangeCoordinator
+    private let watcher = DocumentFileWatcher()
     private let openDocumentsStore: OpenDocumentsStore
     private let payloadLoader: PayloadLoader
     private var reloadGeneration: UInt64 = 0
     private var reloadNeedsWatcherRestart = false
 
     init(
-        externalChangeCoordinator: DocumentExternalChangeCoordinator,
         openDocumentsStore: OpenDocumentsStore,
         payloadLoader: @escaping PayloadLoader = DocumentPayloadLoader.load(from:)
     ) {
-        self.externalChangeCoordinator = externalChangeCoordinator
         self.openDocumentsStore = openDocumentsStore
         self.payloadLoader = payloadLoader
     }
 
-    convenience init(openDocumentsStore: OpenDocumentsStore) {
-        self.init(
-            externalChangeCoordinator: DocumentExternalChangeCoordinator(),
-            openDocumentsStore: openDocumentsStore
-        )
-    }
-
-    func handleFileURLChange(
-        from oldValue: URL?,
-        to newValue: URL?,
-        contentController: DocumentContentController,
-        editorSession: DocumentEditorSession,
-        currentText: String,
-        syntaxLanguage: SyntaxLanguage,
-        onExternalChangeReload: @escaping @MainActor (Bool) -> Void,
-        onSyntaxHighlightingChanged: () -> Void
-    ) {
-        stopWatching()
-        contentController.applyFileURLChange(from: oldValue, to: newValue)
-        restartWatching(fileURL: newValue, onExternalChangeReload: onExternalChangeReload)
-        editorSession.update(text: currentText, syntaxLanguage: syntaxLanguage)
-        onSyntaxHighlightingChanged()
-        openDocumentsStore.refresh()
-        SessionRestorer.refreshTerminationSnapshotIfNeeded()
+    func watch(_ document: ExternallyReloadableDocument) {
+        restartWatching(document, fileURL: document.fileURL)
     }
 
     func prepareForSave() {
         stopWatching()
     }
 
-    func finishSave(fileURL: URL?, onExternalChangeReload: @escaping @MainActor (Bool) -> Void) {
-        restartWatching(fileURL: fileURL, onExternalChangeReload: onExternalChangeReload)
+    func finishSave(_ document: ExternallyReloadableDocument) {
+        watch(document)
         openDocumentsStore.refresh()
     }
 
@@ -62,24 +49,39 @@ final class DocumentFileLifecycleController {
     func stopWatching() {
         reloadGeneration &+= 1
         reloadNeedsWatcherRestart = false
-        externalChangeCoordinator.stop()
+        watcher.stop()
     }
 
-    func reloadFromDiskAfterExternalChange(
-        fileURL: URL?,
-        currentFileURL: () -> URL?,
-        contentRevision: () -> UInt64,
-        startingRevision: UInt64,
+    @discardableResult
+    func reload(
+        _ document: ExternallyReloadableDocument,
         restartWatcher: Bool,
-        isDocumentEdited: Bool,
-        isDocumentCurrentlyEdited: () -> Bool,
-        reloadEvenIfEdited: Bool,
-        installPayload: (DocumentPayload) -> Void,
-        onReload: () -> Void,
-        onMissingFile: () -> Void,
-        onMissingFileWithUnsavedChanges: () -> Void,
-        onExternalChangeWithUnsavedChanges: (Bool) -> Void,
-        onExternalChangeReload: @escaping @MainActor (Bool) -> Void
+        reloadEvenIfEdited: Bool = false
+    ) -> Task<Void, Never> {
+        let fileURL = document.fileURL
+        let startingRevision = document.contentRevision
+        let wasEdited = document.isDocumentEdited
+
+        return Task { [weak document] in
+            guard let document else { return }
+            await self.reload(
+                document,
+                fileURL: fileURL,
+                startingRevision: startingRevision,
+                wasEdited: wasEdited,
+                restartWatcher: restartWatcher,
+                reloadEvenIfEdited: reloadEvenIfEdited
+            )
+        }
+    }
+
+    private func reload(
+        _ document: ExternallyReloadableDocument,
+        fileURL: URL?,
+        startingRevision: UInt64,
+        wasEdited: Bool,
+        restartWatcher: Bool,
+        reloadEvenIfEdited: Bool
     ) async {
         reloadGeneration &+= 1
         let generation = reloadGeneration
@@ -87,18 +89,18 @@ final class DocumentFileLifecycleController {
         guard let fileURL else { return }
         guard FileManager.default.fileExists(atPath: fileURL.path) else {
             stopWatching()
-            if isDocumentEdited {
-                onMissingFileWithUnsavedChanges()
+            if wasEdited {
+                document.presentExternalChangeAlert(fileIsMissing: true)
             } else {
-                onMissingFile()
+                document.close()
             }
             return
         }
 
-        if isDocumentEdited && !reloadEvenIfEdited {
-            onExternalChangeWithUnsavedChanges(reloadNeedsWatcherRestart)
+        if wasEdited && !reloadEvenIfEdited {
+            document.presentExternalChangeAlert(fileIsMissing: false)
             if reloadNeedsWatcherRestart {
-                restartWatching(fileURL: fileURL, onExternalChangeReload: onExternalChangeReload)
+                restartWatching(document, fileURL: fileURL)
             }
             return
         }
@@ -107,38 +109,37 @@ final class DocumentFileLifecycleController {
         do {
             let payload = try await payloadLoader(standardizedURL)
             guard generation == reloadGeneration else { return }
-            guard currentFileURL()?.standardizedFileURL == standardizedURL else { return }
-            guard contentRevision() == startingRevision else {
-                if isDocumentCurrentlyEdited() {
-                    onExternalChangeWithUnsavedChanges(false)
+            guard document.fileURL?.standardizedFileURL == standardizedURL else { return }
+            guard document.contentRevision == startingRevision else {
+                if document.isDocumentEdited {
+                    document.presentExternalChangeAlert(fileIsMissing: false)
                 }
                 if reloadNeedsWatcherRestart {
-                    restartWatching(fileURL: currentFileURL(), onExternalChangeReload: onExternalChangeReload)
+                    restartWatching(document, fileURL: document.fileURL)
                 }
                 return
             }
 
-            installPayload(payload)
-            onReload()
+            document.installReloadedPayload(payload)
             openDocumentsStore.refresh()
 
             if reloadNeedsWatcherRestart {
-                restartWatching(fileURL: currentFileURL(), onExternalChangeReload: onExternalChangeReload)
+                restartWatching(document, fileURL: document.fileURL)
             }
         } catch {
             guard generation == reloadGeneration else { return }
             NSLog("Could not reload externally changed file %@: %@", fileURL.path as NSString, error.localizedDescription)
-            if reloadNeedsWatcherRestart, currentFileURL()?.standardizedFileURL == standardizedURL {
-                restartWatching(fileURL: currentFileURL(), onExternalChangeReload: onExternalChangeReload)
+            if reloadNeedsWatcherRestart, document.fileURL?.standardizedFileURL == standardizedURL {
+                restartWatching(document, fileURL: document.fileURL)
             }
         }
     }
 
-    private func restartWatching(
-        fileURL: URL?,
-        onExternalChangeReload: @escaping @MainActor (Bool) -> Void
-    ) {
+    private func restartWatching(_ document: ExternallyReloadableDocument, fileURL: URL?) {
         reloadNeedsWatcherRestart = false
-        externalChangeCoordinator.watch(fileURL: fileURL, onReload: onExternalChangeReload)
+        watcher.watch(fileURL: fileURL) { [weak self, weak document] restartWatcher in
+            guard let self, let document else { return }
+            self.reload(document, restartWatcher: restartWatcher)
+        }
     }
 }

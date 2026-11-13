@@ -8,14 +8,17 @@ final class Document: NSDocument {
     let sessionIdentifier: UUID
 
     private let contentController: DocumentContentController
-    private var savedText = ""
+    private var savedText = "" {
+        didSet { savedTextLength = (savedText as NSString).length }
+    }
+    private var savedTextLength = 0
     private let editorSession = DocumentEditorSession()
     private(set) var parquetSession: ParquetSession?
     private var parquetController: ParquetViewController?
     var isReadOnly: Bool { parquetSession != nil }
     private let openDocumentsStore: OpenDocumentsStore
     private let fileLifecycleController: DocumentFileLifecycleController
-    private var syntaxHighlightingObservers: [UUID: (Document) -> Void] = [:]
+    private let syntaxHighlightingObservers = Observers<Document>()
     private var isPresentingExternalChangeAlert = false
     private(set) var contentRevision: UInt64 = 0
 
@@ -33,6 +36,10 @@ final class Document: NSDocument {
                 keepOpen()
             }
         }
+    }
+
+    var restorableReference: RestorableDocumentReference {
+        RestorableDocumentReference(fileURL: fileURL, sessionIdentifier: sessionIdentifier)
     }
 
     var sidebarTitle: String {
@@ -63,17 +70,8 @@ final class Document: NSDocument {
         contentController.hasSyntaxLanguageOverride
     }
 
-    var syntaxOverrideMenuTitle: String {
-        contentController.syntaxOverrideMenuTitle(fileURL: fileURL, sampleText: syntaxDetectionContentSample())
-    }
-
     func observeSyntaxHighlightingChanges(_ observer: @escaping (Document) -> Void) -> ObservationToken {
-        let identifier = UUID()
-        syntaxHighlightingObservers[identifier] = observer
-        observer(self)
-        return ObservationToken { [weak self] in
-            self?.syntaxHighlightingObservers.removeValue(forKey: identifier)
-        }
+        syntaxHighlightingObservers.add(observer, initialState: self)
     }
 
     init(
@@ -114,20 +112,15 @@ final class Document: NSDocument {
                     to: fileURL,
                     sessionIdentifier: sessionIdentifier
                 )
-                fileLifecycleController.handleFileURLChange(
-                    from: oldValue,
-                    to: fileURL,
-                    contentController: contentController,
-                    editorSession: editorSession,
-                    currentText: contentController.currentText(editorText: editorSession.currentEditorText()),
-                    syntaxLanguage: syntaxLanguage,
-                    onExternalChangeReload: { [weak self] restartWatcher in
-                        self?.reloadFromDiskAfterExternalChange(restartWatcher: restartWatcher)
-                    },
-                    onSyntaxHighlightingChanged: { [weak self] in
-                        self?.notifySyntaxHighlightingDidChange()
-                    }
-                )
+                let currentText = contentController.currentText(editorText: editorSession.currentEditorText())
+                let currentSyntaxLanguage = syntaxLanguage
+                fileLifecycleController.stopWatching()
+                contentController.applyFileURLChange(from: oldValue, to: fileURL)
+                fileLifecycleController.watch(self)
+                editorSession.update(text: currentText, syntaxLanguage: currentSyntaxLanguage)
+                notifySyntaxHighlightingDidChange()
+                openDocumentsStore.refresh()
+                SessionRestorer.refreshTerminationSnapshotIfNeeded()
 
                 if Self.didMoveToTrash(from: oldValue, to: fileURL) {
                     if isDocumentEdited {
@@ -170,60 +163,17 @@ final class Document: NSDocument {
         guard !isReadOnly else { return }
         fileLifecycleController.prepareForSave()
         super.save(sender)
-        fileLifecycleController.finishSave(fileURL: fileURL) { [weak self] restartWatcher in
-            self?.reloadFromDiskAfterExternalChange(restartWatcher: restartWatcher)
-        }
+        fileLifecycleController.finishSave(self)
     }
 
     override func saveAs(_ sender: Any?) {
         guard !isReadOnly else { return }
         fileLifecycleController.prepareForSave()
         super.saveAs(sender)
-        fileLifecycleController.finishSave(fileURL: fileURL) { [weak self] restartWatcher in
-            self?.reloadFromDiskAfterExternalChange(restartWatcher: restartWatcher)
-        }
+        fileLifecycleController.finishSave(self)
     }
 
-    private func reloadFromDiskAfterExternalChange(restartWatcher: Bool) {
-        reloadFromDiskAfterExternalChange(restartWatcher: restartWatcher, reloadEvenIfEdited: false)
-    }
-
-    private func reloadFromDiskAfterExternalChange(restartWatcher: Bool, reloadEvenIfEdited: Bool) {
-        let requestedFileURL = fileURL
-        let startingRevision = contentRevision
-        let wasEdited = isDocumentEdited
-
-        Task { @MainActor [weak self] in
-            guard let self else { return }
-            await fileLifecycleController.reloadFromDiskAfterExternalChange(
-                fileURL: requestedFileURL,
-                currentFileURL: { self.fileURL },
-                contentRevision: { self.contentRevision },
-                startingRevision: startingRevision,
-                restartWatcher: restartWatcher,
-                isDocumentEdited: wasEdited,
-                isDocumentCurrentlyEdited: { self.isDocumentEdited },
-                reloadEvenIfEdited: reloadEvenIfEdited,
-                installPayload: {
-                    self.installLoadedPayload($0)
-                    self.fileType = $0.typeName
-                },
-                onReload: {
-                    self.updateChangeCount(.changeCleared)
-                    self.undoManager?.removeAllActions()
-                },
-                onMissingFile: { self.close() },
-                onMissingFileWithUnsavedChanges: { self.presentExternalChangeAlert(fileIsMissing: true) },
-                onExternalChangeWithUnsavedChanges: { _ in self.presentExternalChangeAlert(fileIsMissing: false) },
-                onExternalChangeReload: { [weak self] restartWatcher in
-                    guard restartWatcher else { return }
-                    self?.reloadFromDiskAfterExternalChange(restartWatcher: true)
-                }
-            )
-        }
-    }
-
-    private func presentExternalChangeAlert(fileIsMissing: Bool) {
+    func presentExternalChangeAlert(fileIsMissing: Bool) {
         guard !isPresentingExternalChangeAlert else { return }
         isPresentingExternalChangeAlert = true
 
@@ -247,13 +197,13 @@ final class Document: NSDocument {
                 if fileIsMissing {
                     saveAs(nil)
                 } else if let fileURL, !FileManager.default.fileExists(atPath: fileURL.path) {
-                    reloadFromDiskAfterExternalChange(restartWatcher: false)
+                    fileLifecycleController.reload(self, restartWatcher: false)
                 }
                 return
             }
 
             if response == .alertSecondButtonReturn && !fileIsMissing {
-                reloadFromDiskAfterExternalChange(restartWatcher: false, reloadEvenIfEdited: true)
+                fileLifecycleController.reload(self, restartWatcher: false, reloadEvenIfEdited: true)
             }
         }
 
@@ -342,7 +292,7 @@ final class Document: NSDocument {
         if let decoded = String(data: data, encoding: .utf8) {
             MainActor.assumeIsolated {
                 AppPerformanceProfiler.measure("DocumentInstall") {
-                    installLoadedContent(decoded, ofType: typeName)
+                    installLoadedContent(decoded)
                 }
             }
             return
@@ -351,13 +301,13 @@ final class Document: NSDocument {
         throw CocoaError(.fileReadInapplicableStringEncoding)
     }
 
-    func installLoadedContent(_ text: String, ofType typeName: String) {
+    func installLoadedContent(_ text: String) {
         parquetSession?.close()
         parquetSession = nil
         parquetController = nil
         hasUndoManager = true
         contentRevision &+= 1
-        contentController.updateRead(typeName: typeName, text: text)
+        contentController.updateText(text)
         savedText = text
         editorSession.update(text: text, syntaxLanguage: syntaxLanguage)
         notifySyntaxHighlightingDidChange()
@@ -365,7 +315,7 @@ final class Document: NSDocument {
 
     func installLoadedPayload(_ payload: DocumentPayload) {
         switch payload.content {
-        case .text(let text): installLoadedContent(text, ofType: payload.typeName)
+        case .text(let text): installLoadedContent(text)
         case .parquet:
             super.updateChangeCount(.changeCleared)
             contentRevision &+= 1
@@ -403,7 +353,10 @@ final class Document: NSDocument {
             contentRevision &+= 1
             contentController.updateText(editorViewController.text)
             let wasEdited = isDocumentEdited
-            updateChangeCount(editorViewController.text.utf8.elementsEqual(savedText.utf8) ? .changeCleared : .changeDone)
+            // Perf: a different length proves an edit without walking the whole text on every keystroke.
+            let matchesSavedText = (editorViewController.text as NSString).length == savedTextLength
+                && editorViewController.text.utf8.elementsEqual(savedText.utf8)
+            updateChangeCount(matchesSavedText ? .changeCleared : .changeDone)
 
             if wasEdited != isDocumentEdited {
                 openDocumentsStore.refresh()
@@ -455,8 +408,15 @@ final class Document: NSDocument {
     }
 
     private func notifySyntaxHighlightingDidChange() {
-        for observer in syntaxHighlightingObservers.values {
-            observer(self)
-        }
+        syntaxHighlightingObservers.notify(self)
+    }
+}
+
+extension Document: ExternallyReloadableDocument {
+    func installReloadedPayload(_ payload: DocumentPayload) {
+        installLoadedPayload(payload)
+        fileType = payload.typeName
+        updateChangeCount(.changeCleared)
+        undoManager?.removeAllActions()
     }
 }

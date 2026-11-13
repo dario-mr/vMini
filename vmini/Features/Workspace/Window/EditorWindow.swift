@@ -1,8 +1,6 @@
 import AppKit
 
 final class EditorWindow: NSWindow {
-    private let commandDispatcher = AppCommandDispatcher()
-
     override func sendEvent(_ event: NSEvent) {
         if (event.type == .otherMouseDown || event.type == .otherMouseUp),
            event.buttonNumber == 3 || event.buttonNumber == 4,
@@ -23,7 +21,7 @@ final class EditorWindow: NSWindow {
         }
 
         if let action = EditorSearchAction.action(for: event),
-           (contentViewController as? EditorContentViewController)?.performSearchAction(action) == true {
+           (contentViewController as? EditorContentViewController)?.activeEditor?.performSearchAction(action) == true {
             return true
         }
 
@@ -34,38 +32,6 @@ final class EditorWindow: NSWindow {
             if let undoManager = firstResponder?.undoManager, undoManager.canRedo {
                 undoManager.redo()
             }
-            return true
-        }
-
-        if modifiers == [.command], characters == "[" || characters == "]", attachedSheet == nil,
-           let workspace = contentViewController as? EditorContentViewController {
-            if characters == "[" { workspace.navigateBack() }
-            else { workspace.navigateForward() }
-            return true
-        }
-
-        if modifiers == [.command], characters == "n" {
-            commandDispatcher.newDocument(self)
-            return true
-        }
-
-        if modifiers == [.command], characters == "o" {
-            commandDispatcher.openDocumentOrFolder(self)
-            return true
-        }
-
-        if modifiers == [.command], characters == "s" {
-            commandDispatcher.saveCurrentDocument(self)
-            return true
-        }
-
-        if modifiers == [.command, .shift], characters == "s" {
-            commandDispatcher.saveCurrentDocumentAs(self)
-            return true
-        }
-
-        if modifiers == [.command], characters == "w" {
-            commandDispatcher.closeCurrentDocument(self)
             return true
         }
 
@@ -80,27 +46,17 @@ final class EditorWindow: NSWindow {
         }
 
         if modifiers == [.command], characters == "/" {
-            (contentViewController as? EditorContentViewController)?.toggleLineComment()
+            (contentViewController as? EditorContentViewController)?.activeEditor?.toggleLineComment()
             return true
         }
 
         if modifiers == [.command], characters == "d" {
-            (contentViewController as? EditorContentViewController)?.duplicateSelectedLines()
+            (contentViewController as? EditorContentViewController)?.activeEditor?.duplicateSelectedLines()
             return true
         }
 
         if modifiers == [.command], event.keyCode == 51 {
-            (contentViewController as? EditorContentViewController)?.deleteCurrentLine()
-            return true
-        }
-
-        if modifiers == [.command], characters == "j" {
-            (contentViewController as? EditorContentViewController)?.formatJSON()
-            return true
-        }
-
-        if modifiers == [.command], characters == "t" {
-            (contentViewController as? EditorContentViewController)?.formatMarkdownTable()
+            (contentViewController as? EditorContentViewController)?.activeEditor?.deleteCurrentLine()
             return true
         }
 

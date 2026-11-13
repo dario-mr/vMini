@@ -48,7 +48,6 @@
 		A0000000000000000000019B /* ClosedDocumentHistory.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000019A /* ClosedDocumentHistory.swift */; };
 		A000000000000000000001C4 /* DocumentContentController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000001C5 /* DocumentContentController.swift */; };
 		A000000000000000000001C6 /* DocumentEditorSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000001C7 /* DocumentEditorSession.swift */; };
-		A000000000000000000001C8 /* DocumentExternalChangeCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000001C9 /* DocumentExternalChangeCoordinator.swift */; };
 		A00000000000000000000203 /* DocumentFileLifecycleController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000202 /* DocumentFileLifecycleController.swift */; };
 		A00000000000000000000227 /* DocumentPayloadLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000228 /* DocumentPayloadLoader.swift */; };
 		A0000000000000000000012C /* DocumentFileWatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000012D /* DocumentFileWatcher.swift */; };
@@ -82,14 +81,6 @@
 		A00000000000000000000221 /* MarkdownSyntaxHighlighter+FenceCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000224 /* MarkdownSyntaxHighlighter+FenceCache.swift */; };
 		A00000000000000000000222 /* MarkdownSyntaxHighlighter+LineStyles.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000225 /* MarkdownSyntaxHighlighter+LineStyles.swift */; };
 		A00000000000000000000143 /* PlainTextSyntaxHighlighter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000144 /* PlainTextSyntaxHighlighter.swift */; };
-		A00000000000000000000156 /* BashSyntaxHighlighter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000157 /* BashSyntaxHighlighter.swift */; };
-		A00000000000000000000158 /* SSHConfigSyntaxHighlighter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000159 /* SSHConfigSyntaxHighlighter.swift */; };
-		A0000000000000000000015A /* JSONSyntaxHighlighter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000015B /* JSONSyntaxHighlighter.swift */; };
-		A000000000000000000001A0 /* YAMLSyntaxHighlighter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000001A1 /* YAMLSyntaxHighlighter.swift */; };
-		A0000000000000000000022B /* KotlinSyntaxHighlighter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000022C /* KotlinSyntaxHighlighter.swift */; };
-		A0000000000000000000022D /* JavaSyntaxHighlighter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000022E /* JavaSyntaxHighlighter.swift */; };
-		A00000000000000000000240 /* SQLSyntaxHighlighter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000241 /* SQLSyntaxHighlighter.swift */; };
-		A0000000000000000000022A /* DotenvSyntaxHighlighter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000229 /* DotenvSyntaxHighlighter.swift */; };
 		A0000000000000000000011A /* OpenFilesSidebar.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000010A /* OpenFilesSidebar.swift */; };
 		A000000000000000000001D0 /* FolderSidebarExpansionController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000001D1 /* FolderSidebarExpansionController.swift */; };
 		A000000000000000000001D2 /* FolderSidebarSelectionController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000001D3 /* FolderSidebarSelectionController.swift */; };
@@ -169,6 +160,7 @@
 		02C4F523ED5D47B18B42282F /* EditorSelectionOccurrenceRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 689124A3A1BA46258A389069 /* EditorSelectionOccurrenceRenderer.swift */; };
 		1525E53EF80844E5BF185033 /* EditorWordSelection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18058472A45C4334AA643FA0 /* EditorWordSelection.swift */; };
 		455109A8ADEE4B368BA981FF /* EditorLineIndex.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8861F7E996DB457A87277497 /* EditorLineIndex.swift */; };
+		8F367D36FB12489AB0904010 /* EditedLineDiff.swift in Sources */ = {isa = PBXBuildFile; fileRef = F22AD69C73714DB68E5A1432 /* EditedLineDiff.swift */; };
 		11CD518C8263421A9AFB774D /* PendingSyntaxHighlight.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF8474A84D684150943E8C36 /* PendingSyntaxHighlight.swift */; };
 		3EE67BCE41B6427C8420C532 /* EditorLineIndexTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6EA99B131CD4154ADAC0ABF /* EditorLineIndexTests.swift */; };
 		5649223B9F824A6BBF171D1C /* PendingSyntaxHighlightTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FCB4CED5E5F41B2B0E17343 /* PendingSyntaxHighlightTests.swift */; };
@@ -193,6 +185,7 @@
 		FAB000000000000000000008 /* ParquetViewerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAB000000000000000000007 /* ParquetViewerTests.swift */; };
 		FAB00000000000000000000A /* ParquetTableStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAB000000000000000000009 /* ParquetTableStyle.swift */; };
 		FAB000000000000000000053 /* ParquetTableView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAB000000000000000000052 /* ParquetTableView.swift */; };
+		4483977ACA364CC29F1374A1 /* ParquetToolbarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FECFD487B8A0462A82EAA911 /* ParquetToolbarView.swift */; };
 		FAB000000000000000000051 /* ParquetSkeletonView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAB000000000000000000050 /* ParquetSkeletonView.swift */; };
 		FAB00000000000000000000C /* ParquetTableHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAB00000000000000000000B /* ParquetTableHeaderView.swift */; };
 		FAB00000000000000000000E /* ParquetQuery.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAB00000000000000000000D /* ParquetQuery.swift */; };
@@ -271,7 +264,6 @@
 		A0000000000000000000019A /* ClosedDocumentHistory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClosedDocumentHistory.swift; sourceTree = "<group>"; };
 		A000000000000000000001C5 /* DocumentContentController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentContentController.swift; sourceTree = "<group>"; };
 		A000000000000000000001C7 /* DocumentEditorSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentEditorSession.swift; sourceTree = "<group>"; };
-		A000000000000000000001C9 /* DocumentExternalChangeCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentExternalChangeCoordinator.swift; sourceTree = "<group>"; };
 		A00000000000000000000202 /* DocumentFileLifecycleController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentFileLifecycleController.swift; sourceTree = "<group>"; };
 		A00000000000000000000228 /* DocumentPayloadLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentPayloadLoader.swift; sourceTree = "<group>"; };
 		A0000000000000000000012D /* DocumentFileWatcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentFileWatcher.swift; sourceTree = "<group>"; };
@@ -302,14 +294,6 @@
 		A00000000000000000000224 /* MarkdownSyntaxHighlighter+FenceCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MarkdownSyntaxHighlighter+FenceCache.swift"; sourceTree = "<group>"; };
 		A00000000000000000000225 /* MarkdownSyntaxHighlighter+LineStyles.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MarkdownSyntaxHighlighter+LineStyles.swift"; sourceTree = "<group>"; };
 		A00000000000000000000144 /* PlainTextSyntaxHighlighter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlainTextSyntaxHighlighter.swift; sourceTree = "<group>"; };
-		A00000000000000000000157 /* BashSyntaxHighlighter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BashSyntaxHighlighter.swift; sourceTree = "<group>"; };
-		A00000000000000000000159 /* SSHConfigSyntaxHighlighter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SSHConfigSyntaxHighlighter.swift; sourceTree = "<group>"; };
-		A0000000000000000000015B /* JSONSyntaxHighlighter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JSONSyntaxHighlighter.swift; sourceTree = "<group>"; };
-		A000000000000000000001A1 /* YAMLSyntaxHighlighter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YAMLSyntaxHighlighter.swift; sourceTree = "<group>"; };
-		A00000000000000000000229 /* DotenvSyntaxHighlighter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DotenvSyntaxHighlighter.swift; sourceTree = "<group>"; };
-		A0000000000000000000022C /* KotlinSyntaxHighlighter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KotlinSyntaxHighlighter.swift; sourceTree = "<group>"; };
-		A0000000000000000000022E /* JavaSyntaxHighlighter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JavaSyntaxHighlighter.swift; sourceTree = "<group>"; };
-		A00000000000000000000241 /* SQLSyntaxHighlighter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SQLSyntaxHighlighter.swift; sourceTree = "<group>"; };
 		A0000000000000000000010A /* OpenFilesSidebar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenFilesSidebar.swift; sourceTree = "<group>"; };
 		A000000000000000000001D1 /* FolderSidebarExpansionController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FolderSidebarExpansionController.swift; sourceTree = "<group>"; };
 		A000000000000000000001D3 /* FolderSidebarSelectionController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FolderSidebarSelectionController.swift; sourceTree = "<group>"; };
@@ -364,6 +348,7 @@
 		689124A3A1BA46258A389069 /* EditorSelectionOccurrenceRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorSelectionOccurrenceRenderer.swift; sourceTree = "<group>"; };
 		18058472A45C4334AA643FA0 /* EditorWordSelection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorWordSelection.swift; sourceTree = "<group>"; };
 		8861F7E996DB457A87277497 /* EditorLineIndex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorLineIndex.swift; sourceTree = "<group>"; };
+		F22AD69C73714DB68E5A1432 /* EditedLineDiff.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditedLineDiff.swift; sourceTree = "<group>"; };
 		FF8474A84D684150943E8C36 /* PendingSyntaxHighlight.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PendingSyntaxHighlight.swift; sourceTree = "<group>"; };
 		E6EA99B131CD4154ADAC0ABF /* EditorLineIndexTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorLineIndexTests.swift; sourceTree = "<group>"; };
 		5FCB4CED5E5F41B2B0E17343 /* PendingSyntaxHighlightTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PendingSyntaxHighlightTests.swift; sourceTree = "<group>"; };
@@ -386,6 +371,7 @@
 		FAB000000000000000000007 /* ParquetViewerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParquetViewerTests.swift; sourceTree = "<group>"; };
 		FAB000000000000000000009 /* ParquetTableStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParquetTableStyle.swift; sourceTree = "<group>"; };
 		FAB000000000000000000052 /* ParquetTableView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParquetTableView.swift; sourceTree = "<group>"; };
+		FECFD487B8A0462A82EAA911 /* ParquetToolbarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParquetToolbarView.swift; sourceTree = "<group>"; };
 		FAB000000000000000000050 /* ParquetSkeletonView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParquetSkeletonView.swift; sourceTree = "<group>"; };
 		FAB00000000000000000000B /* ParquetTableHeaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParquetTableHeaderView.swift; sourceTree = "<group>"; };
 		FAB00000000000000000000D /* ParquetQuery.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParquetQuery.swift; sourceTree = "<group>"; };
@@ -599,7 +585,6 @@
 				A0000000000000000000019A /* ClosedDocumentHistory.swift */,
 				A000000000000000000001C5 /* DocumentContentController.swift */,
 				A000000000000000000001C7 /* DocumentEditorSession.swift */,
-				A000000000000000000001C9 /* DocumentExternalChangeCoordinator.swift */,
 				A00000000000000000000202 /* DocumentFileLifecycleController.swift */,
 				A00000000000000000000228 /* DocumentPayloadLoader.swift */,
 				A00000000000000000000104 /* Document.swift */,
@@ -631,6 +616,7 @@
 				A00000000000000000000108 /* EditorViewController.swift */,
 				A00000000000000000000109 /* LineNumberRuler.swift */,
 				8861F7E996DB457A87277497 /* EditorLineIndex.swift */,
+				F22AD69C73714DB68E5A1432 /* EditedLineDiff.swift */,
 				A00000000000000000000142 /* SyntaxHighlighting */,
 				7AA30571BFCF499990BBC7FC /* Search */,
 				A5F82711564E4621B951CE75 /* Selection */,
@@ -645,18 +631,10 @@
 				A0000000000000000000018F /* SyntaxLanguage.swift */,
 				A0000000000000000000013F /* SyntaxHighlighting.swift */,
 				A00000000000000000000144 /* PlainTextSyntaxHighlighter.swift */,
-				A00000000000000000000157 /* BashSyntaxHighlighter.swift */,
-				A00000000000000000000159 /* SSHConfigSyntaxHighlighter.swift */,
-				A0000000000000000000015B /* JSONSyntaxHighlighter.swift */,
-				A000000000000000000001A1 /* YAMLSyntaxHighlighter.swift */,
-				A0000000000000000000022C /* KotlinSyntaxHighlighter.swift */,
-				A0000000000000000000022E /* JavaSyntaxHighlighter.swift */,
 				C00000000000000000000013 /* TreeSitterSyntaxGrammar.swift */,
 				C00000000000000000000014 /* TreeSitterSyntaxParser.swift */,
 				D00000000000000000000002 /* SQLNestedComments.swift */,
 				C00000000000000000000015 /* TreeSitterSyntaxHighlighter.swift */,
-				A00000000000000000000241 /* SQLSyntaxHighlighter.swift */,
-				A00000000000000000000229 /* DotenvSyntaxHighlighter.swift */,
 				A00000000000000000000141 /* MarkdownSyntaxHighlighter.swift */,
 				A00000000000000000000226 /* Markdown */,
 				A00000000000000000000195 /* EditorSyntaxHighlightController.swift */,
@@ -969,6 +947,7 @@
 				FAB000000000000000000003 /* ParquetSession.swift */,
 				FAB000000000000000000005 /* ParquetViewController.swift */,
 				FAB000000000000000000052 /* ParquetTableView.swift */,
+				FECFD487B8A0462A82EAA911 /* ParquetToolbarView.swift */,
 				FAB000000000000000000011 /* ParquetColumnFilterView.swift */,
 				FAB00000000000000000000F /* ParquetColumnKind.swift */,
 				FAB00000000000000000000D /* ParquetQuery.swift */,
@@ -1119,6 +1098,7 @@
 				FAB00000000000000000000A /* ParquetTableStyle.swift in Sources */,
 				FAB000000000000000000051 /* ParquetSkeletonView.swift in Sources */,
 				FAB000000000000000000053 /* ParquetTableView.swift in Sources */,
+				4483977ACA364CC29F1374A1 /* ParquetToolbarView.swift in Sources */,
 				FAC000000000000000000002 /* ParquetConnection.swift in Sources */,
 				A0000000000000000000013C /* AppColors.swift in Sources */,
 				A00000000000000000000111 /* AppDelegate.swift in Sources */,
@@ -1158,7 +1138,6 @@
 				A0000000000000000000019B /* ClosedDocumentHistory.swift in Sources */,
 				A000000000000000000001C4 /* DocumentContentController.swift in Sources */,
 				A000000000000000000001C6 /* DocumentEditorSession.swift in Sources */,
-				A000000000000000000001C8 /* DocumentExternalChangeCoordinator.swift in Sources */,
 				A00000000000000000000203 /* DocumentFileLifecycleController.swift in Sources */,
 				A00000000000000000000227 /* DocumentPayloadLoader.swift in Sources */,
 				A0000000000000000000012C /* DocumentFileWatcher.swift in Sources */,
@@ -1203,21 +1182,14 @@
 				A0000000000000000000015C /* JSONPrettifier.swift in Sources */,
 				A00000000000000000000119 /* LineNumberRuler.swift in Sources */,
 				455109A8ADEE4B368BA981FF /* EditorLineIndex.swift in Sources */,
+				8F367D36FB12489AB0904010 /* EditedLineDiff.swift in Sources */,
 				A0000000000000000000018D /* SyntaxLanguage.swift in Sources */,
 				A0000000000000000000013E /* SyntaxHighlighting.swift in Sources */,
 				A00000000000000000000143 /* PlainTextSyntaxHighlighter.swift in Sources */,
-				A00000000000000000000156 /* BashSyntaxHighlighter.swift in Sources */,
-				A00000000000000000000158 /* SSHConfigSyntaxHighlighter.swift in Sources */,
-				A0000000000000000000015A /* JSONSyntaxHighlighter.swift in Sources */,
-				A000000000000000000001A0 /* YAMLSyntaxHighlighter.swift in Sources */,
-				A0000000000000000000022B /* KotlinSyntaxHighlighter.swift in Sources */,
-				A0000000000000000000022D /* JavaSyntaxHighlighter.swift in Sources */,
 				C00000000000000000000010 /* TreeSitterSyntaxGrammar.swift in Sources */,
 				C00000000000000000000011 /* TreeSitterSyntaxParser.swift in Sources */,
 				D00000000000000000000001 /* SQLNestedComments.swift in Sources */,
 				C00000000000000000000012 /* TreeSitterSyntaxHighlighter.swift in Sources */,
-				A00000000000000000000240 /* SQLSyntaxHighlighter.swift in Sources */,
-				A0000000000000000000022A /* DotenvSyntaxHighlighter.swift in Sources */,
 				A00000000000000000000140 /* MarkdownSyntaxHighlighter.swift in Sources */,
 				A00000000000000000000220 /* MarkdownSyntaxHighlighter+AttributeStyling.swift in Sources */,
 				D00000000000000000000003 /* MarkdownFenceHighlighter.swift in Sources */,

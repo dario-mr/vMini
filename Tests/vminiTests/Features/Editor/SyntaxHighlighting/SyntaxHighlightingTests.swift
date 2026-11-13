@@ -37,29 +37,29 @@ private final class RecordingSyntaxHighlighter: SyntaxHighlighter {
 final class SyntaxHighlightingTests: XCTestCase {
     func testLanguageResolverRecognizesMarkdownExtensions() {
         XCTAssertEqual(
-            SyntaxLanguageResolver.resolve(fileURL: URL(fileURLWithPath: "/tmp/notes.md"), typeIdentifier: nil),
+            SyntaxLanguageResolver.resolve(fileURL: URL(fileURLWithPath: "/tmp/notes.md")),
             .markdown
         )
         XCTAssertEqual(
-            SyntaxLanguageResolver.resolve(fileURL: URL(fileURLWithPath: "/tmp/notes.markdown"), typeIdentifier: nil),
+            SyntaxLanguageResolver.resolve(fileURL: URL(fileURLWithPath: "/tmp/notes.markdown")),
             .markdown
         )
     }
 
     func testLanguageResolverRecognizesJSONExtensions() {
         XCTAssertEqual(
-            SyntaxLanguageResolver.resolve(fileURL: URL(fileURLWithPath: "/tmp/data.json"), typeIdentifier: UTType.json.identifier),
+            SyntaxLanguageResolver.resolve(fileURL: URL(fileURLWithPath: "/tmp/data.json")),
             .json
         )
     }
 
     func testLanguageResolverRecognizesYAMLExtensions() {
         XCTAssertEqual(
-            SyntaxLanguageResolver.resolve(fileURL: URL(fileURLWithPath: "/tmp/config.yaml"), typeIdentifier: UTType.text.identifier),
+            SyntaxLanguageResolver.resolve(fileURL: URL(fileURLWithPath: "/tmp/config.yaml")),
             .yaml
         )
         XCTAssertEqual(
-            SyntaxLanguageResolver.resolve(fileURL: URL(fileURLWithPath: "/tmp/config.yml"), typeIdentifier: UTType.text.identifier),
+            SyntaxLanguageResolver.resolve(fileURL: URL(fileURLWithPath: "/tmp/config.yml")),
             .yaml
         )
     }
@@ -68,18 +68,17 @@ final class SyntaxHighlightingTests: XCTestCase {
         for fileName in ["Main.kt", "build.kts"] {
             XCTAssertEqual(
                 SyntaxLanguageResolver.resolve(
-                    fileURL: URL(fileURLWithPath: "/tmp/\(fileName)"),
-                    typeIdentifier: UTType.plainText.identifier
+                    fileURL: URL(fileURLWithPath: "/tmp/\(fileName)")
                 ),
                 .kotlin
             )
         }
 
         let registry = HighlighterRegistry.shared
-        XCTAssertTrue(registry.highlighter(for: .kotlin) is KotlinSyntaxHighlighter)
+        XCTAssertEqual(registry.highlighter(for: .kotlin).language, .kotlin)
         for infoString in ["kotlin", "kt", "kts"] {
             XCTAssertEqual(SyntaxLanguageResolver.resolveFenceInfoString(infoString), .kotlin)
-            XCTAssertTrue(registry.highlighter(forFenceInfoString: infoString) as? KotlinSyntaxHighlighter != nil)
+            XCTAssertEqual(registry.highlighter(forFenceInfoString: infoString)?.language, .kotlin)
         }
     }
 
@@ -87,33 +86,31 @@ final class SyntaxHighlightingTests: XCTestCase {
         for fileName in ["Main.java", "module-info.java"] {
             XCTAssertEqual(
                 SyntaxLanguageResolver.resolve(
-                    fileURL: URL(fileURLWithPath: "/tmp/\(fileName)"),
-                    typeIdentifier: UTType.plainText.identifier
+                    fileURL: URL(fileURLWithPath: "/tmp/\(fileName)")
                 ),
                 .java
             )
         }
 
         let registry = HighlighterRegistry.shared
-        XCTAssertTrue(registry.highlighter(for: .java) is JavaSyntaxHighlighter)
+        XCTAssertEqual(registry.highlighter(for: .java).language, .java)
         XCTAssertEqual(SyntaxLanguageResolver.resolveFenceInfoString("java"), .java)
-        XCTAssertTrue(registry.highlighter(forFenceInfoString: "java") is JavaSyntaxHighlighter)
+        XCTAssertEqual(registry.highlighter(forFenceInfoString: "java")?.language, .java)
     }
 
     func testLanguageResolverAndRegistryRecognizeSQL() {
         XCTAssertEqual(
             SyntaxLanguageResolver.resolve(
-                fileURL: URL(fileURLWithPath: "/tmp/query.SQL"),
-                typeIdentifier: UTType.plainText.identifier
+                fileURL: URL(fileURLWithPath: "/tmp/query.SQL")
             ),
             .sql
         )
 
         let registry = HighlighterRegistry.shared
-        XCTAssertTrue(registry.highlighter(for: .sql) is SQLSyntaxHighlighter)
+        XCTAssertEqual(registry.highlighter(for: .sql).language, .sql)
         for infoString in ["sql", "postgresql"] {
             XCTAssertEqual(SyntaxLanguageResolver.resolveFenceInfoString(infoString), .sql)
-            XCTAssertTrue(registry.highlighter(forFenceInfoString: infoString) is SQLSyntaxHighlighter)
+            XCTAssertEqual(registry.highlighter(forFenceInfoString: infoString)?.language, .sql)
         }
     }
 
@@ -121,32 +118,30 @@ final class SyntaxHighlightingTests: XCTestCase {
         for fileName in [".env", ".env.development", ".env.development.local", ".ENV.Production"] {
             XCTAssertEqual(
                 SyntaxLanguageResolver.resolve(
-                    fileURL: URL(fileURLWithPath: "/tmp/\(fileName)"),
-                    typeIdentifier: UTType.plainText.identifier
+                    fileURL: URL(fileURLWithPath: "/tmp/\(fileName)")
                 ),
                 .dotenv
             )
         }
 
         XCTAssertEqual(
-            SyntaxLanguageResolver.resolve(fileURL: URL(fileURLWithPath: "/tmp/.envrc"), typeIdentifier: UTType.plainText.identifier),
+            SyntaxLanguageResolver.resolve(fileURL: URL(fileURLWithPath: "/tmp/.envrc")),
             .plaintext
         )
     }
 
     func testLanguageResolverRecognizesShellFilesAndShebangs() {
         XCTAssertEqual(
-            SyntaxLanguageResolver.resolve(fileURL: URL(fileURLWithPath: "/tmp/script.sh"), typeIdentifier: UTType.plainText.identifier),
+            SyntaxLanguageResolver.resolve(fileURL: URL(fileURLWithPath: "/tmp/script.sh")),
             .bash
         )
         XCTAssertEqual(
-            SyntaxLanguageResolver.resolve(fileURL: URL(fileURLWithPath: "/tmp/.zshenv"), typeIdentifier: UTType.plainText.identifier),
+            SyntaxLanguageResolver.resolve(fileURL: URL(fileURLWithPath: "/tmp/.zshenv")),
             .bash
         )
         XCTAssertEqual(
             SyntaxLanguageResolver.resolve(
                 fileURL: URL(fileURLWithPath: "/tmp/config"),
-                typeIdentifier: UTType.text.identifier,
                 content: "#!/usr/bin/env bash\nexport PATH=/tmp"
             ),
             .sshconfig
@@ -154,7 +149,6 @@ final class SyntaxHighlightingTests: XCTestCase {
         XCTAssertEqual(
             SyntaxLanguageResolver.resolve(
                 fileURL: URL(fileURLWithPath: "/tmp/config"),
-                typeIdentifier: UTType.text.identifier,
                 content: "plain text"
             ),
             .sshconfig
@@ -269,11 +263,11 @@ final class SyntaxHighlightingTests: XCTestCase {
 
     func testLanguageResolverDefaultsOtherTextFilesToPlaintext() {
         XCTAssertEqual(
-            SyntaxLanguageResolver.resolve(fileURL: URL(fileURLWithPath: "/tmp/notes.txt"), typeIdentifier: UTType.plainText.identifier),
+            SyntaxLanguageResolver.resolve(fileURL: URL(fileURLWithPath: "/tmp/notes.txt")),
             .plaintext
         )
         XCTAssertEqual(
-            SyntaxLanguageResolver.resolve(fileURL: URL(fileURLWithPath: "/tmp/config"), typeIdentifier: UTType.text.identifier),
+            SyntaxLanguageResolver.resolve(fileURL: URL(fileURLWithPath: "/tmp/config")),
             .sshconfig
         )
     }
@@ -549,7 +543,7 @@ final class SyntaxHighlightingTests: XCTestCase {
     }
 
     func testJavaHighlighterLeavesRangeExpansionToTheIncrementalParser() {
-        let highlighter = JavaSyntaxHighlighter()
+        let highlighter = TreeSitterSyntaxHighlighter(language: .java)
 
         for (delimiter, replacement) in [("/*", "//"), ("\"\"\"", "\"")] {
             let oldText = "before\n\(delimiter) content\nend" as NSString
