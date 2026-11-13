@@ -76,7 +76,7 @@ final class LineNumberRulerView: NSView {
             )
         }
         editedLineStarts = Set(
-            Self.editedLineIndexes(currentText: text as String, savedText: savedText)
+            EditedLineDiff.lineIndexes(currentText: text as String, savedText: savedText)
                 .map { lineIndex.lineStarts[$0] }
         )
         synchronizeRuleThickness()
@@ -93,21 +93,6 @@ final class LineNumberRulerView: NSView {
     func hasUnsavedChanges(onLine lineNumber: Int) -> Bool {
         guard lineIndex.lineStarts.indices.contains(lineNumber - 1) else { return false }
         return editedLineStarts.contains(lineIndex.lineStarts[lineNumber - 1])
-    }
-
-    static func editedLineIndexes(currentText: String, savedText: String) -> Set<Int> {
-        let currentLines = currentText.components(separatedBy: "\n")
-        let savedLines = savedText.components(separatedBy: "\n")
-        return Set(currentLines.difference(from: savedLines).compactMap { change in
-            let lineIndex: Int
-            switch change {
-            case let .insert(offset, _, _):
-                lineIndex = offset
-            case let .remove(offset, _, _):
-                lineIndex = min(offset, currentLines.count - 1)
-            }
-            return (0..<currentLines.count).contains(lineIndex) ? lineIndex : nil
-        })
     }
 
     func currentCursorPosition() -> EditorCursorPosition {

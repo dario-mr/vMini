@@ -169,6 +169,7 @@
 		02C4F523ED5D47B18B42282F /* EditorSelectionOccurrenceRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 689124A3A1BA46258A389069 /* EditorSelectionOccurrenceRenderer.swift */; };
 		1525E53EF80844E5BF185033 /* EditorWordSelection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18058472A45C4334AA643FA0 /* EditorWordSelection.swift */; };
 		455109A8ADEE4B368BA981FF /* EditorLineIndex.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8861F7E996DB457A87277497 /* EditorLineIndex.swift */; };
+		8F367D36FB12489AB0904010 /* EditedLineDiff.swift in Sources */ = {isa = PBXBuildFile; fileRef = F22AD69C73714DB68E5A1432 /* EditedLineDiff.swift */; };
 		11CD518C8263421A9AFB774D /* PendingSyntaxHighlight.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF8474A84D684150943E8C36 /* PendingSyntaxHighlight.swift */; };
 		3EE67BCE41B6427C8420C532 /* EditorLineIndexTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6EA99B131CD4154ADAC0ABF /* EditorLineIndexTests.swift */; };
 		5649223B9F824A6BBF171D1C /* PendingSyntaxHighlightTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FCB4CED5E5F41B2B0E17343 /* PendingSyntaxHighlightTests.swift */; };
@@ -364,6 +365,7 @@
 		689124A3A1BA46258A389069 /* EditorSelectionOccurrenceRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorSelectionOccurrenceRenderer.swift; sourceTree = "<group>"; };
 		18058472A45C4334AA643FA0 /* EditorWordSelection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorWordSelection.swift; sourceTree = "<group>"; };
 		8861F7E996DB457A87277497 /* EditorLineIndex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorLineIndex.swift; sourceTree = "<group>"; };
+		F22AD69C73714DB68E5A1432 /* EditedLineDiff.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditedLineDiff.swift; sourceTree = "<group>"; };
 		FF8474A84D684150943E8C36 /* PendingSyntaxHighlight.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PendingSyntaxHighlight.swift; sourceTree = "<group>"; };
 		E6EA99B131CD4154ADAC0ABF /* EditorLineIndexTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorLineIndexTests.swift; sourceTree = "<group>"; };
 		5FCB4CED5E5F41B2B0E17343 /* PendingSyntaxHighlightTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PendingSyntaxHighlightTests.swift; sourceTree = "<group>"; };
@@ -631,6 +633,7 @@
 				A00000000000000000000108 /* EditorViewController.swift */,
 				A00000000000000000000109 /* LineNumberRuler.swift */,
 				8861F7E996DB457A87277497 /* EditorLineIndex.swift */,
+				F22AD69C73714DB68E5A1432 /* EditedLineDiff.swift */,
 				A00000000000000000000142 /* SyntaxHighlighting */,
 				7AA30571BFCF499990BBC7FC /* Search */,
 				A5F82711564E4621B951CE75 /* Selection */,
@@ -1203,6 +1206,7 @@
 				A0000000000000000000015C /* JSONPrettifier.swift in Sources */,
 				A00000000000000000000119 /* LineNumberRuler.swift in Sources */,
 				455109A8ADEE4B368BA981FF /* EditorLineIndex.swift in Sources */,
+				8F367D36FB12489AB0904010 /* EditedLineDiff.swift in Sources */,
 				A0000000000000000000018D /* SyntaxLanguage.swift in Sources */,
 				A0000000000000000000013E /* SyntaxHighlighting.swift in Sources */,
 				A00000000000000000000143 /* PlainTextSyntaxHighlighter.swift in Sources */,

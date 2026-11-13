@@ -241,14 +241,48 @@ final class EditorTextEditingTests: XCTestCase {
 
     @MainActor
     func testEditedLineIndexesHandlesEmptyTextLineChangesAndReverts() {
-        XCTAssertEqual(LineNumberRulerView.editedLineIndexes(currentText: "a", savedText: ""), [0])
-        XCTAssertEqual(LineNumberRulerView.editedLineIndexes(currentText: "", savedText: ""), [])
-        XCTAssertEqual(LineNumberRulerView.editedLineIndexes(currentText: "one\nTWO\nthree", savedText: "one\ntwo\nthree"), [1])
-        XCTAssertEqual(LineNumberRulerView.editedLineIndexes(currentText: "one\nthree", savedText: "one\ntwo\nthree"), [1])
-        XCTAssertEqual(LineNumberRulerView.editedLineIndexes(currentText: "one\ntwo\nthree", savedText: "one\nthree"), [1])
-        XCTAssertEqual(LineNumberRulerView.editedLineIndexes(currentText: "line\n", savedText: "line"), [1])
-        XCTAssertEqual(LineNumberRulerView.editedLineIndexes(currentText: "line", savedText: "line\n"), [0])
-        XCTAssertEqual(LineNumberRulerView.editedLineIndexes(currentText: "a", savedText: "a"), [])
+        XCTAssertEqual(EditedLineDiff.lineIndexes(currentText: "a", savedText: ""), [0])
+        XCTAssertEqual(EditedLineDiff.lineIndexes(currentText: "", savedText: ""), [])
+        XCTAssertEqual(EditedLineDiff.lineIndexes(currentText: "one\nTWO\nthree", savedText: "one\ntwo\nthree"), [1])
+        XCTAssertEqual(EditedLineDiff.lineIndexes(currentText: "one\nthree", savedText: "one\ntwo\nthree"), [1])
+        XCTAssertEqual(EditedLineDiff.lineIndexes(currentText: "one\ntwo\nthree", savedText: "one\nthree"), [1])
+        XCTAssertEqual(EditedLineDiff.lineIndexes(currentText: "line\n", savedText: "line"), [1])
+        XCTAssertEqual(EditedLineDiff.lineIndexes(currentText: "line", savedText: "line\n"), [0])
+        XCTAssertEqual(EditedLineDiff.lineIndexes(currentText: "a", savedText: "a"), [])
+    }
+
+    func testEditedLineDiffMatchesWholeFileDiff() {
+        func wholeFileDiff(currentText: String, savedText: String) -> Set<Int> {
+            let currentLines = currentText.components(separatedBy: "\n")
+            let savedLines = savedText.components(separatedBy: "\n")
+            return Set(currentLines.difference(from: savedLines).compactMap { change in
+                let lineIndex: Int
+                switch change {
+                case let .insert(offset, _, _): lineIndex = offset
+                case let .remove(offset, _, _): lineIndex = min(offset, currentLines.count - 1)
+                }
+                return (0..<currentLines.count).contains(lineIndex) ? lineIndex : nil
+            })
+        }
+
+        let saved = (1...40).map { "line \($0 % 7)" }.joined(separator: "\n") + "\n"
+        var lines = saved.components(separatedBy: "\n")
+        var edits = [saved, "", "\n", saved + "tail", "head\n" + saved, String(saved.dropLast()), saved + saved]
+        lines[0] = "first"; edits.append(lines.joined(separator: "\n"))
+        lines[39] = "last é"; edits.append(lines.joined(separator: "\n"))
+        lines.remove(at: 20); edits.append(lines.joined(separator: "\n"))
+        lines.removeSubrange(5...12); edits.append(lines.joined(separator: "\n"))
+        lines.insert(contentsOf: ["line 3", "line 3", "x\r"], at: 9); edits.append(lines.joined(separator: "\n"))
+
+        for edit in edits {
+            for (current, saved) in [(edit, saved), (saved, edit)] {
+                XCTAssertEqual(
+                    EditedLineDiff.lineIndexes(currentText: current, savedText: saved),
+                    wholeFileDiff(currentText: current, savedText: saved),
+                    "current: \(current.debugDescription)"
+                )
+            }
+        }
     }
 
     func testCharacterLocationForLineNumberClampsToDocumentEnd() {
