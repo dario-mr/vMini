@@ -203,10 +203,6 @@ final class EditorContentViewController: NSViewController {
         updateStatusBar()
     }
 
-    private func handleDocumentsDidChange() {
-        syncWorkspace()
-    }
-
     private func handleThemeDidChange() {
         applyTheme()
         updateStatusBar()
@@ -304,6 +300,6 @@ extension EditorContentViewController: FileDropContentViewDelegate {
     }
 
     private func openFileSystemURLs(_ urls: [URL]) {
-        OpenURLRouter.open(urls, tabbedIn: view.window)
+        OpenURLRouter.open(urls)
     }
 }
