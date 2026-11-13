@@ -183,6 +183,30 @@ final class WorkspaceNavigationTests: XCTestCase {
         }
     }
 
+    func testWindowShortcutsEditTheActiveDocument() throws {
+        let (workspace, store) = makeWorkspace()
+        let window = EditorWindow(contentRect: NSRect(x: 0, y: 0, width: 800, height: 600),
+                                  styleMask: [.titled], backing: .buffered, defer: false)
+        window.contentViewController = workspace
+        defer { window.orderOut(nil) }
+        let inactive = makeDocument(store)
+        store.register(inactive)
+        editor(inactive).text = "untouched"
+        let active = makeDocument(store)
+        store.register(active)
+        store.select(active)
+        let activeEditor = editor(active)
+        activeEditor.text = "one\ntwo"
+
+        XCTAssertTrue(window.performKeyEquivalent(with: try keyEvent("/", code: 44, modifiers: .command)))
+        XCTAssertEqual(activeEditor.text, "//one\ntwo")
+        XCTAssertTrue(window.performKeyEquivalent(with: try keyEvent("d", code: 2, modifiers: .command)))
+        XCTAssertEqual(activeEditor.text, "//one\n//one\ntwo")
+        XCTAssertTrue(window.performKeyEquivalent(with: try keyEvent("\u{7F}", code: 51, modifiers: .command)))
+        XCTAssertEqual(activeEditor.text, "//one\ntwo")
+        XCTAssertEqual(editor(inactive).text, "untouched")
+    }
+
     func testCommandTFormatsTablesInTheActiveDocument() throws {
         let (workspace, store) = makeWorkspace()
         let window = EditorWindow(contentRect: NSRect(x: 0, y: 0, width: 800, height: 600),
