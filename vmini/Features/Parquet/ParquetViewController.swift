@@ -1,19 +1,11 @@
 import AppKit
 
-final class ParquetViewController: NSViewController, NSTableViewDataSource, NSTableViewDelegate, NSSearchFieldDelegate,
-    NSMenuItemValidation {
+final class ParquetViewController: NSViewController, NSTableViewDataSource, NSTableViewDelegate, NSMenuItemValidation {
     private let session: ParquetSession
     private let tableView = ParquetTableView()
     private let scrollView = NSScrollView()
     private let headerView = ParquetTableHeaderView()
-    private let toolbar = NSView()
-    private let search = ParquetSearchField()
-    private var searchFocused = false
-    private let clear = AppButton(title: "Clear all", style: .primary)
-    private let toolbarDivider = NSView()
-    private let searchBox = NSView()
-    private let searchIcon = NSImageView(image: NSImage(systemSymbolName: "magnifyingglass", accessibilityDescription: nil)!
-        .withSymbolConfiguration(NSImage.SymbolConfiguration(pointSize: 12, weight: .regular))!)
+    private let toolbar = ParquetToolbarView()
     private let queryMessage = NSTextField(wrappingLabelWithString: "")
     private var queryMessageHeight: NSLayoutConstraint!
     private let messageLabel = NSTextField(wrappingLabelWithString: "")
@@ -134,63 +126,19 @@ final class ParquetViewController: NSViewController, NSTableViewDataSource, NSTa
     @objc private func retry() { session.reload(from: session.url) }
 
     private func configureToolbar() {
-        toolbar.translatesAutoresizingMaskIntoConstraints = false
-        toolbar.wantsLayer = true
-        view.addSubview(toolbar)
-        search.stringValue = session.query.search
-        search.font = .systemFont(ofSize: ParquetTableStyle.Layout.chromeFontSize)
-        (search.cell as? NSSearchFieldCell)?.searchButtonCell = nil
-        search.isBezeled = false
-        search.drawsBackground = false
-        search.focusRingType = .none
-        search.onFocusChange = { [weak self] focused in
-            self?.searchFocused = focused
-            self?.applySearchBorder()
+        toolbar.searchField.stringValue = session.query.search
+        toolbar.onSearchChanged = { [weak self] search in
+            guard let self else { return }
+            var query = session.query
+            query.search = search
+            session.apply(query, debounce: true)
         }
-        search.translatesAutoresizingMaskIntoConstraints = false
-        searchBox.wantsLayer = true
-        searchBox.layer?.cornerRadius = 6
-        searchBox.layer?.borderWidth = 1
-        searchIcon.translatesAutoresizingMaskIntoConstraints = false
-        searchIcon.imageScaling = .scaleNone
-        searchIcon.imageAlignment = .alignCenter
-        searchBox.addSubview(searchIcon)
-        searchBox.addSubview(search)
-        search.setAccessibilityLabel("Search all Parquet columns")
-        search.isEnabled = false
-        search.delegate = self
-        clear.isEnabled = false
-        clear.alphaValue = 0.35
-        clear.target = self
-        clear.action = #selector(clearFilters)
-        let controls = NSStackView(views: [searchBox, clear])
-        controls.spacing = 12
-        controls.alignment = .centerY
-        controls.translatesAutoresizingMaskIntoConstraints = false
-        toolbar.addSubview(controls)
-        toolbarDivider.wantsLayer = true
-        toolbarDivider.translatesAutoresizingMaskIntoConstraints = false
-        toolbar.addSubview(toolbarDivider)
+        toolbar.onClear = { [weak self] in self?.clearFilters() }
+        view.addSubview(toolbar)
         NSLayoutConstraint.activate([
             toolbar.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             toolbar.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             toolbar.topAnchor.constraint(equalTo: view.topAnchor),
-            toolbar.heightAnchor.constraint(equalToConstant: 56),
-            controls.leadingAnchor.constraint(equalTo: toolbar.leadingAnchor, constant: 12),
-            controls.trailingAnchor.constraint(equalTo: toolbar.trailingAnchor, constant: -12),
-            controls.centerYAnchor.constraint(equalTo: toolbar.centerYAnchor),
-            searchBox.heightAnchor.constraint(equalToConstant: 32),
-            searchIcon.leadingAnchor.constraint(equalTo: searchBox.leadingAnchor, constant: 10),
-            searchIcon.centerYAnchor.constraint(equalTo: searchBox.centerYAnchor),
-            searchIcon.widthAnchor.constraint(equalToConstant: 16),
-            searchIcon.heightAnchor.constraint(equalToConstant: 16),
-            search.leadingAnchor.constraint(equalTo: searchIcon.trailingAnchor, constant: 6),
-            search.trailingAnchor.constraint(equalTo: searchBox.trailingAnchor, constant: -6),
-            search.centerYAnchor.constraint(equalTo: searchBox.centerYAnchor),
-            toolbarDivider.leadingAnchor.constraint(equalTo: toolbar.leadingAnchor),
-            toolbarDivider.trailingAnchor.constraint(equalTo: toolbar.trailingAnchor),
-            toolbarDivider.bottomAnchor.constraint(equalTo: toolbar.bottomAnchor),
-            toolbarDivider.heightAnchor.constraint(equalToConstant: 1),
         ])
     }
 
@@ -233,9 +181,8 @@ final class ParquetViewController: NSViewController, NSTableViewDataSource, NSTa
         skeleton.setActive(isLoading && page != nil)
         // Without rows, hide the empty grid so only the message shows under the header.
         tableView.gridStyleMask = page?.rows.isEmpty == false ? [.solidVerticalGridLineMask, .solidHorizontalGridLineMask] : []
-        search.isEnabled = page != nil
-        clear.isEnabled = session.query.isFiltered
-        clear.alphaValue = clear.isEnabled ? 1 : 0.35
+        toolbar.searchField.isEnabled = page != nil
+        toolbar.setClearEnabled(session.query.isFiltered)
         headerView.update(query: session.query)
         if displayedRevision != session.resultRevision {
             displayedRevision = session.resultRevision
@@ -279,8 +226,8 @@ final class ParquetViewController: NSViewController, NSTableViewDataSource, NSTa
 
     // Programmatic views get no Tab order, so link search → column filters → table → search.
     private func updateKeyViewLoop() {
-        let keyViews: [NSView] = [search] + headerView.filterControls + [tableView]
-        for (view, next) in zip(keyViews, keyViews.dropFirst() + [search]) { view.nextKeyView = next }
+        let keyViews: [NSView] = [toolbar.searchField] + headerView.filterControls + [tableView]
+        for (view, next) in zip(keyViews, keyViews.dropFirst() + [toolbar.searchField]) { view.nextKeyView = next }
     }
 
     private func showQueryMessage(_ message: String) {
@@ -290,16 +237,9 @@ final class ParquetViewController: NSViewController, NSTableViewDataSource, NSTa
         queryMessageHeight.constant = 36
     }
 
-    func controlTextDidChange(_ notification: Notification) {
-        guard notification.object as? NSSearchField === search else { return }
-        var query = session.query
-        query.search = search.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
-        session.apply(query, debounce: true)
-    }
-
-    @objc private func clearFilters() {
+    private func clearFilters() {
         view.window?.makeFirstResponder(tableView)
-        search.stringValue = ""
+        toolbar.searchField.stringValue = ""
         session.clearFilters()
         headerView.update(query: session.query, resetControls: true)
     }
@@ -309,24 +249,12 @@ final class ParquetViewController: NSViewController, NSTableViewDataSource, NSTa
         session.cycleSort(column: page.columns[index])
     }
 
-    private func applySearchBorder() {
-        searchBox.layer?.borderColor = (searchFocused ? ParquetTableStyle.focusBorder : ParquetTableStyle.searchBorder).cgColor
-    }
-
     private func applyTheme() {
         view.layer?.backgroundColor = AppColors.editorBackground.cgColor
         scrollView.backgroundColor = AppColors.editorBackground
         tableView.backgroundColor = AppColors.editorBackground
         tableView.gridColor = ParquetTableStyle.grid
-        toolbar.layer?.backgroundColor = ParquetTableStyle.filter.cgColor
-        toolbarDivider.layer?.backgroundColor = ParquetTableStyle.grid.cgColor
-        searchBox.layer?.backgroundColor = ParquetTableStyle.searchFill.cgColor
-        applySearchBorder()
-        searchIcon.contentTintColor = ParquetTableStyle.mutedText
-        search.textColor = AppColors.primaryText
-        search.placeholderAttributedString = NSAttributedString(string: "Search all", attributes: [
-            .foregroundColor: ParquetTableStyle.mutedText, .font: search.font as Any,
-        ])
+        toolbar.applyTheme()
         headerView.applyTheme()
         view.appearance = NSAppearance(named: AppColors.editorBackground.brightnessComponent < 0.5 ? .darkAqua : .aqua)
         messageLabel.textColor = AppColors.primaryText
@@ -436,20 +364,5 @@ final class ParquetViewController: NSViewController, NSTableViewDataSource, NSTa
         tableView.enumerateAvailableRowViews { row, _ in
             (row as? ParquetTableRowView)?.refreshHover()
         }
-    }
-}
-
-final class ParquetSearchField: NSSearchField {
-    var onFocusChange: ((Bool) -> Void)?
-
-    override func becomeFirstResponder() -> Bool {
-        let became = super.becomeFirstResponder()
-        if became { onFocusChange?(true) }
-        return became
-    }
-
-    override func textDidEndEditing(_ notification: Notification) {
-        super.textDidEndEditing(notification)
-        onFocusChange?(false)
     }
 }
