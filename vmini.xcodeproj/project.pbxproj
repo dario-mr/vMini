@@ -81,14 +81,6 @@
 		A00000000000000000000221 /* MarkdownSyntaxHighlighter+FenceCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000224 /* MarkdownSyntaxHighlighter+FenceCache.swift */; };
 		A00000000000000000000222 /* MarkdownSyntaxHighlighter+LineStyles.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000225 /* MarkdownSyntaxHighlighter+LineStyles.swift */; };
 		A00000000000000000000143 /* PlainTextSyntaxHighlighter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000144 /* PlainTextSyntaxHighlighter.swift */; };
-		A00000000000000000000156 /* BashSyntaxHighlighter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000157 /* BashSyntaxHighlighter.swift */; };
-		A00000000000000000000158 /* SSHConfigSyntaxHighlighter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000159 /* SSHConfigSyntaxHighlighter.swift */; };
-		A0000000000000000000015A /* JSONSyntaxHighlighter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000015B /* JSONSyntaxHighlighter.swift */; };
-		A000000000000000000001A0 /* YAMLSyntaxHighlighter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000001A1 /* YAMLSyntaxHighlighter.swift */; };
-		A0000000000000000000022B /* KotlinSyntaxHighlighter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000022C /* KotlinSyntaxHighlighter.swift */; };
-		A0000000000000000000022D /* JavaSyntaxHighlighter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000022E /* JavaSyntaxHighlighter.swift */; };
-		A00000000000000000000240 /* SQLSyntaxHighlighter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000241 /* SQLSyntaxHighlighter.swift */; };
-		A0000000000000000000022A /* DotenvSyntaxHighlighter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000229 /* DotenvSyntaxHighlighter.swift */; };
 		A0000000000000000000011A /* OpenFilesSidebar.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000010A /* OpenFilesSidebar.swift */; };
 		A000000000000000000001D0 /* FolderSidebarExpansionController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000001D1 /* FolderSidebarExpansionController.swift */; };
 		A000000000000000000001D2 /* FolderSidebarSelectionController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000001D3 /* FolderSidebarSelectionController.swift */; };
@@ -301,14 +293,6 @@
 		A00000000000000000000224 /* MarkdownSyntaxHighlighter+FenceCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MarkdownSyntaxHighlighter+FenceCache.swift"; sourceTree = "<group>"; };
 		A00000000000000000000225 /* MarkdownSyntaxHighlighter+LineStyles.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MarkdownSyntaxHighlighter+LineStyles.swift"; sourceTree = "<group>"; };
 		A00000000000000000000144 /* PlainTextSyntaxHighlighter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlainTextSyntaxHighlighter.swift; sourceTree = "<group>"; };
-		A00000000000000000000157 /* BashSyntaxHighlighter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BashSyntaxHighlighter.swift; sourceTree = "<group>"; };
-		A00000000000000000000159 /* SSHConfigSyntaxHighlighter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SSHConfigSyntaxHighlighter.swift; sourceTree = "<group>"; };
-		A0000000000000000000015B /* JSONSyntaxHighlighter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JSONSyntaxHighlighter.swift; sourceTree = "<group>"; };
-		A000000000000000000001A1 /* YAMLSyntaxHighlighter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YAMLSyntaxHighlighter.swift; sourceTree = "<group>"; };
-		A00000000000000000000229 /* DotenvSyntaxHighlighter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DotenvSyntaxHighlighter.swift; sourceTree = "<group>"; };
-		A0000000000000000000022C /* KotlinSyntaxHighlighter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KotlinSyntaxHighlighter.swift; sourceTree = "<group>"; };
-		A0000000000000000000022E /* JavaSyntaxHighlighter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JavaSyntaxHighlighter.swift; sourceTree = "<group>"; };
-		A00000000000000000000241 /* SQLSyntaxHighlighter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SQLSyntaxHighlighter.swift; sourceTree = "<group>"; };
 		A0000000000000000000010A /* OpenFilesSidebar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenFilesSidebar.swift; sourceTree = "<group>"; };
 		A000000000000000000001D1 /* FolderSidebarExpansionController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FolderSidebarExpansionController.swift; sourceTree = "<group>"; };
 		A000000000000000000001D3 /* FolderSidebarSelectionController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FolderSidebarSelectionController.swift; sourceTree = "<group>"; };
@@ -645,18 +629,10 @@
 				A0000000000000000000018F /* SyntaxLanguage.swift */,
 				A0000000000000000000013F /* SyntaxHighlighting.swift */,
 				A00000000000000000000144 /* PlainTextSyntaxHighlighter.swift */,
-				A00000000000000000000157 /* BashSyntaxHighlighter.swift */,
-				A00000000000000000000159 /* SSHConfigSyntaxHighlighter.swift */,
-				A0000000000000000000015B /* JSONSyntaxHighlighter.swift */,
-				A000000000000000000001A1 /* YAMLSyntaxHighlighter.swift */,
-				A0000000000000000000022C /* KotlinSyntaxHighlighter.swift */,
-				A0000000000000000000022E /* JavaSyntaxHighlighter.swift */,
 				C00000000000000000000013 /* TreeSitterSyntaxGrammar.swift */,
 				C00000000000000000000014 /* TreeSitterSyntaxParser.swift */,
 				D00000000000000000000002 /* SQLNestedComments.swift */,
 				C00000000000000000000015 /* TreeSitterSyntaxHighlighter.swift */,
-				A00000000000000000000241 /* SQLSyntaxHighlighter.swift */,
-				A00000000000000000000229 /* DotenvSyntaxHighlighter.swift */,
 				A00000000000000000000141 /* MarkdownSyntaxHighlighter.swift */,
 				A00000000000000000000226 /* Markdown */,
 				A00000000000000000000195 /* EditorSyntaxHighlightController.swift */,
@@ -1206,18 +1182,10 @@
 				A0000000000000000000018D /* SyntaxLanguage.swift in Sources */,
 				A0000000000000000000013E /* SyntaxHighlighting.swift in Sources */,
 				A00000000000000000000143 /* PlainTextSyntaxHighlighter.swift in Sources */,
-				A00000000000000000000156 /* BashSyntaxHighlighter.swift in Sources */,
-				A00000000000000000000158 /* SSHConfigSyntaxHighlighter.swift in Sources */,
-				A0000000000000000000015A /* JSONSyntaxHighlighter.swift in Sources */,
-				A000000000000000000001A0 /* YAMLSyntaxHighlighter.swift in Sources */,
-				A0000000000000000000022B /* KotlinSyntaxHighlighter.swift in Sources */,
-				A0000000000000000000022D /* JavaSyntaxHighlighter.swift in Sources */,
 				C00000000000000000000010 /* TreeSitterSyntaxGrammar.swift in Sources */,
 				C00000000000000000000011 /* TreeSitterSyntaxParser.swift in Sources */,
 				D00000000000000000000001 /* SQLNestedComments.swift in Sources */,
 				C00000000000000000000012 /* TreeSitterSyntaxHighlighter.swift in Sources */,
-				A00000000000000000000240 /* SQLSyntaxHighlighter.swift in Sources */,
-				A0000000000000000000022A /* DotenvSyntaxHighlighter.swift in Sources */,
 				A00000000000000000000140 /* MarkdownSyntaxHighlighter.swift in Sources */,
 				A00000000000000000000220 /* MarkdownSyntaxHighlighter+AttributeStyling.swift in Sources */,
 				D00000000000000000000003 /* MarkdownFenceHighlighter.swift in Sources */,

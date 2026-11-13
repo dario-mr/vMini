@@ -20,29 +20,4 @@ struct SyntaxThemePalette {
     let builtin: NSColor
     let option: NSColor
     let propertyKey: NSColor
-
-    func makeSyntaxTheme(plainText: NSColor) -> SyntaxTheme {
-        SyntaxTheme(
-            plainText: plainText,
-            headingMarker: headingMarker,
-            headingText: headingText,
-            listMarker: listMarker,
-            blockquoteMarker: blockquoteMarker,
-            inlineCode: inlineCode,
-            codeFence: codeFence,
-            codeBlockBackground: codeBlockBackground,
-            linkText: linkText,
-            linkURL: linkURL,
-            emphasisMarker: emphasisMarker,
-            thematicBreak: thematicBreak,
-            comment: comment,
-            string: string,
-            variable: variable,
-            keyword: keyword,
-            operator: self.operator,
-            builtin: builtin,
-            option: option,
-            propertyKey: propertyKey
-        )
-    }
 }

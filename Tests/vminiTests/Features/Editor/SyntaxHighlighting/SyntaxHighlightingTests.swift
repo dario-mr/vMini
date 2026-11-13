@@ -75,10 +75,10 @@ final class SyntaxHighlightingTests: XCTestCase {
         }
 
         let registry = HighlighterRegistry.shared
-        XCTAssertTrue(registry.highlighter(for: .kotlin) is KotlinSyntaxHighlighter)
+        XCTAssertEqual(registry.highlighter(for: .kotlin).language, .kotlin)
         for infoString in ["kotlin", "kt", "kts"] {
             XCTAssertEqual(SyntaxLanguageResolver.resolveFenceInfoString(infoString), .kotlin)
-            XCTAssertTrue(registry.highlighter(forFenceInfoString: infoString) as? KotlinSyntaxHighlighter != nil)
+            XCTAssertEqual(registry.highlighter(forFenceInfoString: infoString)?.language, .kotlin)
         }
     }
 
@@ -93,9 +93,9 @@ final class SyntaxHighlightingTests: XCTestCase {
         }
 
         let registry = HighlighterRegistry.shared
-        XCTAssertTrue(registry.highlighter(for: .java) is JavaSyntaxHighlighter)
+        XCTAssertEqual(registry.highlighter(for: .java).language, .java)
         XCTAssertEqual(SyntaxLanguageResolver.resolveFenceInfoString("java"), .java)
-        XCTAssertTrue(registry.highlighter(forFenceInfoString: "java") is JavaSyntaxHighlighter)
+        XCTAssertEqual(registry.highlighter(forFenceInfoString: "java")?.language, .java)
     }
 
     func testLanguageResolverAndRegistryRecognizeSQL() {
@@ -107,10 +107,10 @@ final class SyntaxHighlightingTests: XCTestCase {
         )
 
         let registry = HighlighterRegistry.shared
-        XCTAssertTrue(registry.highlighter(for: .sql) is SQLSyntaxHighlighter)
+        XCTAssertEqual(registry.highlighter(for: .sql).language, .sql)
         for infoString in ["sql", "postgresql"] {
             XCTAssertEqual(SyntaxLanguageResolver.resolveFenceInfoString(infoString), .sql)
-            XCTAssertTrue(registry.highlighter(forFenceInfoString: infoString) is SQLSyntaxHighlighter)
+            XCTAssertEqual(registry.highlighter(forFenceInfoString: infoString)?.language, .sql)
         }
     }
 
@@ -543,7 +543,7 @@ final class SyntaxHighlightingTests: XCTestCase {
     }
 
     func testJavaHighlighterLeavesRangeExpansionToTheIncrementalParser() {
-        let highlighter = JavaSyntaxHighlighter()
+        let highlighter = TreeSitterSyntaxHighlighter(language: .java)
 
         for (delimiter, replacement) in [("/*", "//"), ("\"\"\"", "\"")] {
             let oldText = "before\n\(delimiter) content\nend" as NSString
