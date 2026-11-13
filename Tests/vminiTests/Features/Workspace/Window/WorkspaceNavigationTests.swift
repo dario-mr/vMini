@@ -11,13 +11,13 @@ final class WorkspaceNavigationTests: XCTestCase {
         store.register(first)
         let firstEditor = editor(first)
         firstEditor.text = "one\ntwo\nthree\nfour"
-        XCTAssertTrue(workspace.goToLine(3))
-        XCTAssertTrue(workspace.goToLine(4))
+        XCTAssertTrue(workspace.activeEditor?.goToLine(3) == true)
+        XCTAssertTrue(workspace.activeEditor?.goToLine(4) == true)
         store.register(second)
         store.select(second)
         let secondEditor = editor(second)
         secondEditor.text = "a\nb\nc"
-        XCTAssertTrue(workspace.goToLine(2))
+        XCTAssertTrue(workspace.activeEditor?.goToLine(2) == true)
 
         workspace.navigateBack()
         XCTAssertTrue(store.activeDocument === second)
@@ -48,13 +48,13 @@ final class WorkspaceNavigationTests: XCTestCase {
         let document = makeDocument(store)
         store.register(document)
         editor(document).text = "one\ntwo\nthree"
-        workspace.goToLine(2)
-        workspace.goToLine(3)
+        workspace.activeEditor?.goToLine(2)
+        workspace.activeEditor?.goToLine(3)
         workspace.navigateBack()
         XCTAssertTrue(workspace.canGoForward)
-        workspace.goToLine(2)
+        workspace.activeEditor?.goToLine(2)
         XCTAssertTrue(workspace.canGoForward)
-        workspace.goToLine(1)
+        workspace.activeEditor?.goToLine(1)
         XCTAssertFalse(workspace.canGoForward)
         workspace.navigateBack()
         XCTAssertEqual(editor(document).currentLineNumber(), 2)
@@ -87,8 +87,8 @@ final class WorkspaceNavigationTests: XCTestCase {
         editor.text = "foo bar foo"
         let search = editor.searchController
         search.panel.searchField.stringValue = "foo"
-        workspace.performSearchAction(.find)
-        workspace.performSearchAction(.next)
+        workspace.activeEditor?.performSearchAction(.find)
+        workspace.activeEditor?.performSearchAction(.next)
         XCTAssertEqual(editor.navigationSelection, NSRange(location: 8, length: 3))
         workspace.navigateBack()
         XCTAssertEqual(editor.navigationSelection, NSRange(location: 0, length: 3))
@@ -102,7 +102,7 @@ final class WorkspaceNavigationTests: XCTestCase {
         store.register(document)
         let editor = editor(document)
         editor.text = "one\ntwo"
-        workspace.goToLine(2)
+        workspace.activeEditor?.goToLine(2)
         let textView = try XCTUnwrap(findTextView(in: editor.view))
         textView.insertText("😀", replacementRange: textView.selectedRange())
         let selectionAfterTyping = textView.selectedRange()
@@ -120,8 +120,8 @@ final class WorkspaceNavigationTests: XCTestCase {
         store.register(document)
         let editor = editor(document)
         editor.text = "one\ntwo\nthree"
-        workspace.goToLine(3)
-        workspace.goToLine(1)
+        workspace.activeEditor?.goToLine(3)
+        workspace.activeEditor?.goToLine(1)
         editor.text = "😀"
         workspace.navigateBack()
         XCTAssertEqual(editor.navigationSelection, NSRange(location: 2, length: 0))
@@ -158,8 +158,8 @@ final class WorkspaceNavigationTests: XCTestCase {
         store.register(document)
         let editor = editor(document)
         editor.text = "one\ntwo\nthree"
-        workspace.goToLine(2)
-        workspace.goToLine(3)
+        workspace.activeEditor?.goToLine(2)
+        workspace.activeEditor?.goToLine(3)
         XCTAssertTrue(window.performKeyEquivalent(with: try keyEvent("[", code: 33, modifiers: .command)))
         XCTAssertEqual(editor.currentLineNumber(), 2)
         XCTAssertTrue(window.performKeyEquivalent(with: try keyEvent("]", code: 30, modifiers: .command)))
@@ -202,7 +202,7 @@ final class WorkspaceNavigationTests: XCTestCase {
         store.select(active)
         let activeEditor = editor(active)
         activeEditor.text = "Intro\n\na|b\n---|---\nx|y\n\nc|d\n---|---\nz|w"
-        XCTAssertTrue(workspace.canFormatMarkdownTable)
+        XCTAssertTrue(workspace.activeEditor?.canFormatMarkdownTable == true)
         XCTAssertTrue(window.performKeyEquivalent(with: try keyEvent("t", code: 17, modifiers: .command)))
         XCTAssertTrue(activeEditor.text.contains("| a   | b   |"))
         XCTAssertTrue(activeEditor.text.contains("| c   | d   |"))

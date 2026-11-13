@@ -9,7 +9,7 @@ final class ActiveEditorCoordinator {
     private weak var parentViewController: NSViewController?
     private weak var containerView: NSView?
     private var currentViewController: NSViewController?
-    private var currentEditorViewController: EditorViewController? { currentViewController as? EditorViewController }
+    var activeEditor: EditorViewController? { currentViewController as? EditorViewController }
 
     init(parentViewController: NSViewController, containerView: NSView) {
         self.parentViewController = parentViewController
@@ -31,7 +31,7 @@ final class ActiveEditorCoordinator {
             let editor = document.editorViewController { [weak self] urls in self?.onOpenURLs?(urls) }
             editor.onCursorPositionChanged = { [weak self] in self?.onCursorPositionChanged?() }
             editor.onNavigationCheckpoint = { [weak self, weak document, weak editor] before, after in
-                guard let self, let document, currentEditorViewController === editor else { return }
+                guard let self, let document, activeEditor === editor else { return }
                 onNavigationCheckpoint?(document, before, after)
             }
             controller = editor
@@ -57,77 +57,13 @@ final class ActiveEditorCoordinator {
         focusEditor()
     }
 
-    func increaseFontSize() {
-        currentEditorViewController?.increaseFontSize()
-    }
-
-    func decreaseFontSize() {
-        currentEditorViewController?.decreaseFontSize()
-    }
-
     func focusEditor() {
-        currentEditorViewController?.focusTextView()
+        activeEditor?.focusTextView()
         (currentViewController as? ParquetViewController)?.focusTable()
     }
 
-    @discardableResult
-    func performSearchAction(_ action: EditorSearchAction) -> Bool {
-        currentEditorViewController?.performSearchAction(action) ?? false
-    }
-
-    func toggleLineComment() {
-        currentEditorViewController?.toggleLineComment()
-    }
-
-    func duplicateSelectedLines() {
-        currentEditorViewController?.duplicateSelectedLines()
-    }
-
-    func deleteCurrentLine() {
-        currentEditorViewController?.deleteCurrentLine()
-    }
-
-    @discardableResult
-    func moveSelectedLinesUp() -> Bool {
-        currentEditorViewController?.moveSelectedLinesUp() ?? false
-    }
-
-    @discardableResult
-    func moveSelectedLinesDown() -> Bool {
-        currentEditorViewController?.moveSelectedLinesDown() ?? false
-    }
-
-    func formatJSON() {
-        currentEditorViewController?.formatJSONSelectionOrDocument()
-    }
-
-    var canFormatMarkdownTable: Bool { currentEditorViewController?.canFormatMarkdownTable ?? false }
-
-    func formatMarkdownTable() { currentEditorViewController?.formatMarkdownTable() }
-
-    func currentLineNumber() -> Int {
-        currentEditorViewController?.currentLineNumber() ?? 1
-    }
-
-    @discardableResult
-    func goToLine(_ lineNumber: Int) -> Bool {
-        currentEditorViewController?.goToLine(lineNumber) ?? false
-    }
-
-    func currentCursorPosition() -> EditorCursorPosition? {
-        currentEditorViewController?.currentCursorPosition()
-    }
-
-    var hasActiveEditor: Bool {
-        currentEditorViewController != nil
-    }
-
     var navigationSelection: NSRange? {
-        currentEditorViewController?.navigationSelection
+        activeEditor?.navigationSelection
             ?? (currentViewController is ParquetViewController ? NSRange(location: 0, length: 0) : nil)
-    }
-
-    func restoreNavigationSelection(_ selection: NSRange) {
-        currentEditorViewController?.restoreNavigationSelection(selection)
     }
 }
