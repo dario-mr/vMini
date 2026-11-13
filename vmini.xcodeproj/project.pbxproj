@@ -48,7 +48,6 @@
 		A0000000000000000000019B /* ClosedDocumentHistory.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000019A /* ClosedDocumentHistory.swift */; };
 		A000000000000000000001C4 /* DocumentContentController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000001C5 /* DocumentContentController.swift */; };
 		A000000000000000000001C6 /* DocumentEditorSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000001C7 /* DocumentEditorSession.swift */; };
-		A000000000000000000001C8 /* DocumentExternalChangeCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000001C9 /* DocumentExternalChangeCoordinator.swift */; };
 		A00000000000000000000203 /* DocumentFileLifecycleController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000202 /* DocumentFileLifecycleController.swift */; };
 		A00000000000000000000227 /* DocumentPayloadLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000228 /* DocumentPayloadLoader.swift */; };
 		A0000000000000000000012C /* DocumentFileWatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000012D /* DocumentFileWatcher.swift */; };
@@ -272,7 +271,6 @@
 		A0000000000000000000019A /* ClosedDocumentHistory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClosedDocumentHistory.swift; sourceTree = "<group>"; };
 		A000000000000000000001C5 /* DocumentContentController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentContentController.swift; sourceTree = "<group>"; };
 		A000000000000000000001C7 /* DocumentEditorSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentEditorSession.swift; sourceTree = "<group>"; };
-		A000000000000000000001C9 /* DocumentExternalChangeCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentExternalChangeCoordinator.swift; sourceTree = "<group>"; };
 		A00000000000000000000202 /* DocumentFileLifecycleController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentFileLifecycleController.swift; sourceTree = "<group>"; };
 		A00000000000000000000228 /* DocumentPayloadLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentPayloadLoader.swift; sourceTree = "<group>"; };
 		A0000000000000000000012D /* DocumentFileWatcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentFileWatcher.swift; sourceTree = "<group>"; };
@@ -601,7 +599,6 @@
 				A0000000000000000000019A /* ClosedDocumentHistory.swift */,
 				A000000000000000000001C5 /* DocumentContentController.swift */,
 				A000000000000000000001C7 /* DocumentEditorSession.swift */,
-				A000000000000000000001C9 /* DocumentExternalChangeCoordinator.swift */,
 				A00000000000000000000202 /* DocumentFileLifecycleController.swift */,
 				A00000000000000000000228 /* DocumentPayloadLoader.swift */,
 				A00000000000000000000104 /* Document.swift */,
@@ -1161,7 +1158,6 @@
 				A0000000000000000000019B /* ClosedDocumentHistory.swift in Sources */,
 				A000000000000000000001C4 /* DocumentContentController.swift in Sources */,
 				A000000000000000000001C6 /* DocumentEditorSession.swift in Sources */,
-				A000000000000000000001C8 /* DocumentExternalChangeCoordinator.swift in Sources */,
 				A00000000000000000000203 /* DocumentFileLifecycleController.swift in Sources */,
 				A00000000000000000000227 /* DocumentPayloadLoader.swift in Sources */,
 				A0000000000000000000012C /* DocumentFileWatcher.swift in Sources */,
