@@ -8,7 +8,10 @@ final class Document: NSDocument {
     let sessionIdentifier: UUID
 
     private let contentController: DocumentContentController
-    private var savedText = ""
+    private var savedText = "" {
+        didSet { savedTextLength = (savedText as NSString).length }
+    }
+    private var savedTextLength = 0
     private let editorSession = DocumentEditorSession()
     private(set) var parquetSession: ParquetSession?
     private var parquetController: ParquetViewController?
@@ -403,7 +406,10 @@ final class Document: NSDocument {
             contentRevision &+= 1
             contentController.updateText(editorViewController.text)
             let wasEdited = isDocumentEdited
-            updateChangeCount(editorViewController.text.utf8.elementsEqual(savedText.utf8) ? .changeCleared : .changeDone)
+            // Perf: a different length proves an edit without walking the whole text on every keystroke.
+            let matchesSavedText = (editorViewController.text as NSString).length == savedTextLength
+                && editorViewController.text.utf8.elementsEqual(savedText.utf8)
+            updateChangeCount(matchesSavedText ? .changeCleared : .changeDone)
 
             if wasEdited != isDocumentEdited {
                 openDocumentsStore.refresh()
