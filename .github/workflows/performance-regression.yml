@@ -48,31 +48,6 @@ jobs:
         with:
           xcode-version: ${{ env.XCODE_VERSION }}
 
-      - name: Cache dependencies
-        uses: actions/cache@v6
-        with:
-          path: ~/Library/Caches/org.swift.swiftpm/repositories
-          key: ${{ runner.os }}-swiftpm-${{ hashFiles('candidate/Package.swift', 'candidate/Package.resolved') }}
-          restore-keys: |
-            ${{ runner.os }}-swiftpm-
-
-      # Both revisions reuse DuckDB build objects until the dependencies or Xcode change
-      - name: Cache base build products
-        uses: actions/cache@v6
-        with:
-          path: base/.build
-          key: ${{ runner.os }}-perf-base-build-xcode${{ env.XCODE_VERSION }}-${{ hashFiles('base/Package.swift', 'base/Package.resolved') }}
-          restore-keys: |
-            ${{ runner.os }}-perf-base-build-xcode${{ env.XCODE_VERSION }}-
-
-      - name: Cache candidate build products
-        uses: actions/cache@v6
-        with:
-          path: candidate/.build
-          key: ${{ runner.os }}-perf-candidate-build-xcode${{ env.XCODE_VERSION }}-${{ hashFiles('candidate/Package.swift', 'candidate/Package.resolved') }}
-          restore-keys: |
-            ${{ runner.os }}-perf-candidate-build-xcode${{ env.XCODE_VERSION }}-
-
       - name: Overlay identical benchmark harness and fixtures on base
         run: |
           for file in \
@@ -99,12 +74,18 @@ jobs:
       - name: Test the performance comparator
         run: python3 -m unittest discover -s candidate/scripts -p 'test_compare_performance.py' -v
 
-      - name: Build both Release test bundles before timing
-        shell: bash
-        run: |
-          mkdir -p performance-results
-          (cd base && ./scripts/benchmark-performance.sh --build-only) 2>&1 | tee performance-results/base-build.log
-          (cd candidate && ./scripts/benchmark-performance.sh --build-only) 2>&1 | tee performance-results/candidate-build.log
+      # The candidate's copy of the action, so a PR can change how both revisions are built
+      - name: Build base Release test bundle
+        uses: ./candidate/.github/actions/perf-build
+        with:
+          path: base
+          xcode-version: ${{ env.XCODE_VERSION }}
+
+      - name: Build candidate Release test bundle
+        uses: ./candidate/.github/actions/perf-build
+        with:
+          path: candidate
+          xcode-version: ${{ env.XCODE_VERSION }}
 
       - name: Measure base and candidate in alternating order
         id: benchmarks
