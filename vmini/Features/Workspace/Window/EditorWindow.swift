@@ -1,8 +1,6 @@
 import AppKit
 
 final class EditorWindow: NSWindow {
-    private let commandDispatcher = AppCommandDispatcher()
-
     override func sendEvent(_ event: NSEvent) {
         if (event.type == .otherMouseDown || event.type == .otherMouseUp),
            event.buttonNumber == 3 || event.buttonNumber == 4,
@@ -37,38 +35,6 @@ final class EditorWindow: NSWindow {
             return true
         }
 
-        if modifiers == [.command], characters == "[" || characters == "]", attachedSheet == nil,
-           let workspace = contentViewController as? EditorContentViewController {
-            if characters == "[" { workspace.navigateBack() }
-            else { workspace.navigateForward() }
-            return true
-        }
-
-        if modifiers == [.command], characters == "n" {
-            commandDispatcher.newDocument(self)
-            return true
-        }
-
-        if modifiers == [.command], characters == "o" {
-            commandDispatcher.openDocumentOrFolder(self)
-            return true
-        }
-
-        if modifiers == [.command], characters == "s" {
-            commandDispatcher.saveCurrentDocument(self)
-            return true
-        }
-
-        if modifiers == [.command, .shift], characters == "s" {
-            commandDispatcher.saveCurrentDocumentAs(self)
-            return true
-        }
-
-        if modifiers == [.command], characters == "w" {
-            commandDispatcher.closeCurrentDocument(self)
-            return true
-        }
-
         if modifiers == [.command], characters == "+" || characters == "=" {
             (contentViewController as? EditorContentViewController)?.increaseEditorFontSize()
             return true
@@ -91,16 +57,6 @@ final class EditorWindow: NSWindow {
 
         if modifiers == [.command], event.keyCode == 51 {
             (contentViewController as? EditorContentViewController)?.activeEditor?.deleteCurrentLine()
-            return true
-        }
-
-        if modifiers == [.command], characters == "j" {
-            (contentViewController as? EditorContentViewController)?.activeEditor?.formatJSONSelectionOrDocument()
-            return true
-        }
-
-        if modifiers == [.command], characters == "t" {
-            (contentViewController as? EditorContentViewController)?.activeEditor?.formatMarkdownTable()
             return true
         }
 
