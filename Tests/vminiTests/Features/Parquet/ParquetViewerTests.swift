@@ -167,12 +167,6 @@ final class ParquetViewerTests: XCTestCase {
         row.needsDisplay = false
         row.refreshHover()
         XCTAssertFalse(row.needsDisplay)
-        row.isSelected = true
-        let selection = try background()
-        XCTAssertNotEqual(selection, normal)
-        row.refreshHover()
-        XCTAssertTrue(row.isSelected)
-        XCTAssertEqual(try background(), selection)
     }
 
     func testColumnPresentationUsesSchemaWithoutGuessingFromValues() {

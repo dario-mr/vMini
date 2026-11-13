@@ -192,6 +192,7 @@
 		FAB000000000000000000006 /* ParquetViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAB000000000000000000005 /* ParquetViewController.swift */; };
 		FAB000000000000000000008 /* ParquetViewerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAB000000000000000000007 /* ParquetViewerTests.swift */; };
 		FAB00000000000000000000A /* ParquetTableStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAB000000000000000000009 /* ParquetTableStyle.swift */; };
+		FAB000000000000000000053 /* ParquetTableView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAB000000000000000000052 /* ParquetTableView.swift */; };
 		FAB000000000000000000051 /* ParquetSkeletonView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAB000000000000000000050 /* ParquetSkeletonView.swift */; };
 		FAB00000000000000000000C /* ParquetTableHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAB00000000000000000000B /* ParquetTableHeaderView.swift */; };
 		FAB00000000000000000000E /* ParquetQuery.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAB00000000000000000000D /* ParquetQuery.swift */; };
@@ -384,6 +385,7 @@
 		FAB000000000000000000005 /* ParquetViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParquetViewController.swift; sourceTree = "<group>"; };
 		FAB000000000000000000007 /* ParquetViewerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParquetViewerTests.swift; sourceTree = "<group>"; };
 		FAB000000000000000000009 /* ParquetTableStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParquetTableStyle.swift; sourceTree = "<group>"; };
+		FAB000000000000000000052 /* ParquetTableView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParquetTableView.swift; sourceTree = "<group>"; };
 		FAB000000000000000000050 /* ParquetSkeletonView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParquetSkeletonView.swift; sourceTree = "<group>"; };
 		FAB00000000000000000000B /* ParquetTableHeaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParquetTableHeaderView.swift; sourceTree = "<group>"; };
 		FAB00000000000000000000D /* ParquetQuery.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParquetQuery.swift; sourceTree = "<group>"; };
@@ -966,6 +968,7 @@
 				FAB000000000000000000001 /* ParquetPage.swift */,
 				FAB000000000000000000003 /* ParquetSession.swift */,
 				FAB000000000000000000005 /* ParquetViewController.swift */,
+				FAB000000000000000000052 /* ParquetTableView.swift */,
 				FAB000000000000000000011 /* ParquetColumnFilterView.swift */,
 				FAB00000000000000000000F /* ParquetColumnKind.swift */,
 				FAB00000000000000000000D /* ParquetQuery.swift */,
@@ -1115,6 +1118,7 @@
 				FAB00000000000000000000C /* ParquetTableHeaderView.swift in Sources */,
 				FAB00000000000000000000A /* ParquetTableStyle.swift in Sources */,
 				FAB000000000000000000051 /* ParquetSkeletonView.swift in Sources */,
+				FAB000000000000000000053 /* ParquetTableView.swift in Sources */,
 				FAC000000000000000000002 /* ParquetConnection.swift in Sources */,
 				A0000000000000000000013C /* AppColors.swift in Sources */,
 				A00000000000000000000111 /* AppDelegate.swift in Sources */,
