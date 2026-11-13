@@ -296,7 +296,7 @@ final class Document: NSDocument {
         if let decoded = String(data: data, encoding: .utf8) {
             MainActor.assumeIsolated {
                 AppPerformanceProfiler.measure("DocumentInstall") {
-                    installLoadedContent(decoded, ofType: typeName)
+                    installLoadedContent(decoded)
                 }
             }
             return
@@ -305,13 +305,13 @@ final class Document: NSDocument {
         throw CocoaError(.fileReadInapplicableStringEncoding)
     }
 
-    func installLoadedContent(_ text: String, ofType typeName: String) {
+    func installLoadedContent(_ text: String) {
         parquetSession?.close()
         parquetSession = nil
         parquetController = nil
         hasUndoManager = true
         contentRevision &+= 1
-        contentController.updateRead(typeName: typeName, text: text)
+        contentController.updateText(text)
         savedText = text
         editorSession.update(text: text, syntaxLanguage: syntaxLanguage)
         notifySyntaxHighlightingDidChange()
@@ -319,7 +319,7 @@ final class Document: NSDocument {
 
     func installLoadedPayload(_ payload: DocumentPayload) {
         switch payload.content {
-        case .text(let text): installLoadedContent(text, ofType: payload.typeName)
+        case .text(let text): installLoadedContent(text)
         case .parquet:
             super.updateChangeCount(.changeCleared)
             contentRevision &+= 1

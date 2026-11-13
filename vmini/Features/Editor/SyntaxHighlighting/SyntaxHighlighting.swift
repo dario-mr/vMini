@@ -1,5 +1,4 @@
 import AppKit
-import UniformTypeIdentifiers
 
 enum SyntaxLanguageResolver {
     private static let shellFileExtensionMap: [String: SyntaxLanguage] = [
@@ -72,7 +71,7 @@ enum SyntaxLanguageResolver {
         "tsql": .sql,
     ]
 
-    static func resolve(fileURL: URL?, typeIdentifier: String?, content: String? = nil) -> SyntaxLanguage {
+    static func resolve(fileURL: URL?, content: String? = nil) -> SyntaxLanguage {
         if let fileExtension = fileURL?.pathExtension.lowercased(),
            let language = shellFileExtensionMap[fileExtension] {
             return language
@@ -120,12 +119,6 @@ enum SyntaxLanguageResolver {
         if let fileExtension = fileURL?.pathExtension.lowercased(),
            let language = markdownFileExtensionMap[fileExtension] {
             return language
-        }
-
-        if let typeIdentifier, let type = UTType(typeIdentifier) {
-            if type.conforms(to: .plainText) || type.conforms(to: .text) {
-                return .plaintext
-            }
         }
 
         return .plaintext
