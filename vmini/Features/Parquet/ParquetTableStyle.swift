@@ -22,6 +22,8 @@ enum ParquetTableStyle {
     static var focusBorder: NSColor { AppColors.activeControlTint.withAlphaComponent(0.7) }
     static var mutedText: NSColor { blend(AppColors.primaryText, AppColors.editorBackground, 0.4) }
     static var selection: NSColor { blend(row, AppColors.primaryActionBackground, 0.5) }
+    static var cellSelection: NSColor { AppColors.primaryActionBackground.withAlphaComponent(0.14) }
+    static var cellSelectionBorder: NSColor { AppColors.primaryActionBackground.withAlphaComponent(0.8) }
 
     private static func blend(_ background: NSColor, _ foreground: NSColor, _ fraction: CGFloat) -> NSColor {
         background.blended(withFraction: fraction, of: foreground) ?? background
@@ -59,10 +61,34 @@ final class ParquetTableRowView: NSTableRowView {
         let background = alternate ? ParquetTableStyle.alternateRow : ParquetTableStyle.row
         (hovered ? background.blended(withFraction: 0.08, of: AppColors.primaryText) ?? background : background).setFill()
         dirtyRect.fill()
+        if let rect = cellSelectionRect() {
+            ParquetTableStyle.cellSelection.setFill()
+            rect.rect.fill(using: .sourceOver)
+        }
     }
 
-    override func drawSelection(in dirtyRect: NSRect) {
-        ParquetTableStyle.selection.setFill()
-        dirtyRect.fill()
+    override func draw(_ dirtyRect: NSRect) {
+        super.draw(dirtyRect)
+        guard let (rect, isTop, isBottom) = cellSelectionRect() else { return }
+        let path = NSBezierPath()
+        let box = rect.insetBy(dx: 0.5, dy: 0.5)
+        path.move(to: NSPoint(x: box.minX, y: rect.minY))
+        path.line(to: NSPoint(x: box.minX, y: rect.maxY))
+        path.move(to: NSPoint(x: box.maxX, y: rect.minY))
+        path.line(to: NSPoint(x: box.maxX, y: rect.maxY))
+        if isTop { path.move(to: NSPoint(x: box.minX, y: box.minY)); path.line(to: NSPoint(x: box.maxX, y: box.minY)) }
+        if isBottom { path.move(to: NSPoint(x: box.minX, y: box.maxY)); path.line(to: NSPoint(x: box.maxX, y: box.maxY)) }
+        ParquetTableStyle.cellSelectionBorder.setStroke()
+        path.stroke()
+    }
+
+    private func cellSelectionRect() -> (rect: NSRect, isTop: Bool, isBottom: Bool)? {
+        guard let table = superview as? ParquetTableView, let selection = table.cellSelection,
+              selection.columns.upperBound < table.numberOfColumns else { return nil }
+        let row = table.row(for: self)
+        guard selection.rows.contains(row) else { return nil }
+        let columns = table.rect(ofColumn: selection.columns.lowerBound).union(table.rect(ofColumn: selection.columns.upperBound))
+        let rect = NSRect(x: columns.minX - frame.minX, y: 0, width: columns.width, height: bounds.height)
+        return (rect, row == selection.rows.lowerBound, row == selection.rows.upperBound)
     }
 }
