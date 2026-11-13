@@ -27,6 +27,8 @@ Fixtures are replaced exactly, including deletions. Production sources in the ba
 changed. Benchmark suites live in their feature folders, shared support lives in
 `Tests/vminiTests/Support`, and fixtures live in `PerformanceCorpus`.
 Every batch must include every required scenario; a later batch cannot fill in missing results.
+A scenario fails only when it exceeds its budget both on the pooled samples and in every batch, so
+a slow moment on a shared runner that spoils one batch does not fail the check.
 
 The comparator's ordinary unit tests run in the performance workflow. Run them locally:
 

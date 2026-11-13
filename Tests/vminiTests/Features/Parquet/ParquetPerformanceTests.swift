@@ -6,6 +6,7 @@ import XCTest
 @MainActor
 final class ParquetPerformanceTests: XCTestCase {
     private static let sampleCount = 5
+    private static let wideViewSampleCount = 20
     // Bump the version when the fixture queries change, so stale cached files are not reused.
     private static let fixtureDirectory = FileManager.default.temporaryDirectory.appendingPathComponent("vmini-parquet-perf-v1")
 
@@ -65,7 +66,7 @@ final class ParquetPerformanceTests: XCTestCase {
         while case .loading = session.state { try await Task.sleep(nanoseconds: 10_000_000) }
         var samples: [Double] = []
         var largestGrowth = 0
-        for _ in 0..<Self.sampleCount {
+        for _ in 0..<Self.wideViewSampleCount {
             let before = Self.footprintMegabytes()
             let start = DispatchTime.now()
             let viewer = ParquetViewController(session: session)

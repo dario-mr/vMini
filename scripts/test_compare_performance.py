@@ -156,6 +156,13 @@ class ComparePerformanceTests(unittest.TestCase):
         _, errors = self.compare(report, self.report(10))
         self.assertTrue(any("p95 does not match raw samples" in error for error in errors))
 
+    def test_regression_must_fail_in_every_batch_pair(self):
+        rows, _ = compare_reports([self.report(10), self.report(10)], [self.report(30), self.report(10)], self.budgets())
+        self.assertTrue(all(row["status"] == "passed" for row in rows))
+        self.assertTrue(all("not reproduced in batch 2" in row["reasons"][0] for row in rows))
+        rows, _ = compare_reports([self.report(10), self.report(10)], [self.report(30), self.report(30)], self.budgets())
+        self.assertTrue(all(row["status"] == "failed" for row in rows))
+
     def test_every_batch_must_include_every_required_scenario(self):
         missing = self.report(10)
         missing["results"] = []

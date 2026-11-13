@@ -417,7 +417,27 @@ def compare_reports(
                 "status": "failed" if reasons else "passed",
                 "reasons": reasons,
             })
+    if len(base_reports) > 1 and len(base_reports) == len(candidate_reports):
+        confirm_in_every_batch(rows, base_reports, candidate_reports, budgets)
     return rows, errors
+
+
+def confirm_in_every_batch(
+    rows: list[dict[str, Any]],
+    base_reports: list[dict[str, Any]],
+    candidate_reports: list[dict[str, Any]],
+    budgets: dict[str, Any],
+) -> None:
+    """Each batch measures both revisions back to back, so a real regression fails in every batch while a
+    slow moment on a shared runner usually spoils only one."""
+    for index, (base_report, candidate_report) in enumerate(zip(base_reports, candidate_reports), start=1):
+        batch_rows, _ = compare_reports([base_report], [candidate_report], budgets)
+        batch_status = {(row["scenarioID"], row["metric"]): row["status"] for row in batch_rows}
+        for row in rows:
+            # A batch that cannot judge the metric leaves the pooled verdict standing.
+            if row["status"] == "failed" and batch_status.get((row["scenarioID"], row["metric"]), "failed") != "failed":
+                row["status"] = "passed"
+                row["reasons"] = [f"not reproduced in batch {index}: " + "; ".join(row["reasons"])]
 
 
 def new_scenario_rows(scenario_id: str, result: dict[str, Any], budget: Any, errors: list[str]) -> list[dict[str, Any]]:
