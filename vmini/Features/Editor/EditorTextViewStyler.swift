@@ -79,6 +79,8 @@ final class EditorTextViewStyler {
     func applyParagraphStyle() {
         let paragraphStyle = NSMutableParagraphStyle()
         paragraphStyle.lineSpacing = lineSpacing
+        paragraphStyle.tabStops = []
+        paragraphStyle.defaultTabInterval = 28
 
         textView.defaultParagraphStyle = paragraphStyle
         textView.typingAttributes[.paragraphStyle] = paragraphStyle

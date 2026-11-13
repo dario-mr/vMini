@@ -3,7 +3,7 @@ import AppKit
 final class ParquetViewController: NSViewController, NSTableViewDataSource, NSTableViewDelegate, NSSearchFieldDelegate,
     NSMenuItemValidation {
     private let session: ParquetSession
-    private let tableView = NSTableView()
+    private let tableView = ParquetTableView()
     private let scrollView = NSScrollView()
     private let headerView = ParquetTableHeaderView()
     private let toolbar = NSView()
@@ -28,7 +28,6 @@ final class ParquetViewController: NSViewController, NSTableViewDataSource, NSTa
     private var page: ParquetPage?
     private var displayedRevision = -1
     private var nearbyColumns = IndexSet()
-    private var copyColumn = 1
     var pasteboard = NSPasteboard.general
 
     init(session: ParquetSession) {
@@ -47,13 +46,11 @@ final class ParquetViewController: NSViewController, NSTableViewDataSource, NSTa
         tableView.columnAutoresizingStyle = .noColumnAutoresizing
         tableView.style = .plain
         tableView.headerView = headerView
-        tableView.allowsMultipleSelection = true
+        tableView.selectionHighlightStyle = .none
         tableView.intercellSpacing = .zero
         tableView.gridStyleMask = [.solidVerticalGridLineMask, .solidHorizontalGridLineMask]
         tableView.rowHeight = 35
         tableView.setAccessibilityLabel("Read-only Parquet table")
-        tableView.target = self
-        tableView.action = #selector(cellClicked)
         scrollView.documentView = tableView
         scrollView.hasVerticalScroller = true
         scrollView.hasHorizontalScroller = true
@@ -257,9 +254,9 @@ final class ParquetViewController: NSViewController, NSTableViewDataSource, NSTa
         rowNumber.headerCell = ParquetTableHeaderCell(textCell: "#")
         rowNumber.headerCell.alignment = .center
         rowNumber.isEditable = false
-        rowNumber.width = 44
-        rowNumber.minWidth = 44
-        rowNumber.maxWidth = 44
+        rowNumber.width = 52
+        rowNumber.minWidth = 52
+        rowNumber.maxWidth = 52
         rowNumber.resizingMask = []
         tableView.addTableColumn(rowNumber)
         for (index, column) in page.columns.enumerated() {
@@ -389,22 +386,20 @@ final class ParquetViewController: NSViewController, NSTableViewDataSource, NSTa
 
     func tableView(_ tableView: NSTableView, shouldEdit tableColumn: NSTableColumn?, row: Int) -> Bool { false }
 
-    @objc private func cellClicked() {
-        if tableView.clickedColumn >= 0 { copyColumn = tableView.clickedColumn }
-    }
-
-    /// NULL copies as empty text.
+    /// Copies the selected rectangle as tab-separated rows; NULL copies as empty text.
     @objc func copy(_ sender: Any?) {
-        guard let page, tableView.tableColumns.indices.contains(copyColumn) else { return }
-        let index = Int(tableView.tableColumns[copyColumn].identifier.rawValue)
-        let values = tableView.selectedRowIndexes.map { row in index.map { page.rows[row][$0] ?? "" } ?? String(row + 1) }
-        guard !values.isEmpty else { return }
+        guard let page, let selection = tableView.cellSelection else { return }
+        let columns = selection.columns.filter(tableView.tableColumns.indices.contains).map { Int(tableView.tableColumns[$0].identifier.rawValue) }
+        let lines = selection.rows.filter(page.rows.indices.contains).map { row in
+            columns.map { index in index.map { page.rows[row][$0] ?? "" } ?? String(row + 1) }.joined(separator: "\t")
+        }
+        guard !lines.isEmpty else { return }
         pasteboard.clearContents()
-        pasteboard.setString(values.joined(separator: "\n"), forType: .string)
+        pasteboard.setString(lines.joined(separator: "\n"), forType: .string)
     }
 
     func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
-        menuItem.action == #selector(copy(_:)) ? page != nil && !tableView.selectedRowIndexes.isEmpty : true
+        menuItem.action == #selector(copy(_:)) ? page != nil && tableView.cellSelection != nil : true
     }
 
     func tableView(_ tableView: NSTableView, rowViewForRow row: Int) -> NSTableRowView? {
@@ -412,11 +407,12 @@ final class ParquetViewController: NSViewController, NSTableViewDataSource, NSTa
         let view = tableView.makeView(withIdentifier: identifier, owner: self) as? ParquetTableRowView ?? ParquetTableRowView()
         view.identifier = identifier
         view.alternate = !row.isMultiple(of: 2)
+        view.needsDisplay = true
         return view
     }
 
-    func tableViewColumnDidResize(_ notification: Notification) { headerView.needsLayout = true; skeleton.needsDisplay = true; updateNearbyColumns() }
-    func tableViewColumnDidMove(_ notification: Notification) { headerView.needsLayout = true; skeleton.needsDisplay = true; updateNearbyColumns() }
+    func tableViewColumnDidResize(_ notification: Notification) { tableView.refreshCellSelection(); headerView.needsLayout = true; skeleton.needsDisplay = true; updateNearbyColumns() }
+    func tableViewColumnDidMove(_ notification: Notification) { tableView.refreshCellSelection(); headerView.needsLayout = true; skeleton.needsDisplay = true; updateNearbyColumns() }
 
     // Perf: realize only nearby columns and reload columns as they come into range.
     private func updateNearbyColumns(reload: Bool = true) {

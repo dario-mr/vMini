@@ -43,6 +43,25 @@ private final class StaleGlyphLayoutManager: NSLayoutManager {
 }
 
 final class EditorTextEditingTests: XCTestCase {
+    @MainActor
+    func testManyTabsStayOnOneVisualLine() throws {
+        let textView = NSTextView()
+        EditorTextViewStyler(textView: textView, scrollView: NSScrollView(), lineSpacing: 0, invalidateLineNumbers: {}).applyParagraphStyle()
+        let style = try XCTUnwrap(textView.defaultParagraphStyle)
+        let storage = NSTextStorage(string: Array(repeating: "2026-11-26 00:00:00", count: 20).joined(separator: "\t"),
+                                    attributes: [.paragraphStyle: style, .font: NSFont.monospacedSystemFont(ofSize: 13, weight: .regular)])
+        let layoutManager = NSLayoutManager()
+        storage.addLayoutManager(layoutManager)
+        let container = NSTextContainer(size: NSSize(width: 1e7, height: 1e7))
+        layoutManager.addTextContainer(container)
+        layoutManager.ensureLayout(for: container)
+        var fragments = 0
+        layoutManager.enumerateLineFragments(forGlyphRange: NSRange(location: 0, length: layoutManager.numberOfGlyphs)) { _, _, _, _, _ in
+            fragments += 1
+        }
+        XCTAssertEqual(fragments, 1, "Tabs past the last fixed tab stop must not break the line")
+    }
+
     func testCurrentCursorPositionUsesOneBasedLineAndColumn() {
         let text = "alpha\nbeta\ngamma" as NSString
         let cursor = EditorTextEditing.currentCursorPosition(in: text, selectedRange: NSRange(location: 8, length: 0))

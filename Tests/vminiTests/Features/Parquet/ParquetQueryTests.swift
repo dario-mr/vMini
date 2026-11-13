@@ -402,11 +402,12 @@ final class ParquetQueryTests: XCTestCase {
         defer { pasteboard.releaseGlobally() }
         viewer.pasteboard = pasteboard
         let copyItem = NSMenuItem(title: "Copy", action: #selector(NSText.copy(_:)), keyEquivalent: "c")
-        XCTAssertFalse(viewer.validateMenuItem(copyItem), "Copy needs a selected row")
-        table.selectRowIndexes(IndexSet([0, 2]), byExtendingSelection: false)
+        XCTAssertFalse(viewer.validateMenuItem(copyItem), "Copy needs a selected cell")
+        let parquetTable = try XCTUnwrap(table as? ParquetTableView)
+        parquetTable.cellSelection = .init(anchor: .init(row: 2, column: 1), focus: .init(row: 0, column: 0))
         XCTAssertTrue(viewer.validateMenuItem(copyItem))
         viewer.copy(nil)
-        XCTAssertEqual(pasteboard.string(forType: .string), "0\n2", "Copy takes the cell's column from each selected row")
+        XCTAssertEqual(pasteboard.string(forType: .string), "1\t0\n2\t1\n3\t2", "Copy takes the selected rectangle")
         table.deselectAll(nil)
         input.stringValue = "29"
         filter.controlTextDidChange(Notification(name: NSControl.textDidChangeNotification, object: input))
