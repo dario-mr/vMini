@@ -15,18 +15,18 @@ private struct FolderChildSnapshot: Sendable {
     let children: [Child]
 
     static func load(for url: URL) -> FolderChildSnapshot {
-        let values: [URLResourceKey] = [.isDirectoryKey, .isPackageKey]
         let urls = (try? FileManager.default.contentsOfDirectory(
             at: url,
-            includingPropertiesForKeys: values,
+            includingPropertiesForKeys: [.isDirectoryKey],
             options: [.skipsPackageDescendants]
         )) ?? []
 
         return FolderChildSnapshot(children: urls
             .filter { $0.lastPathComponent != ".DS_Store" }
             .map { childURL in
+                // Perf: read the value the listing prefetched; a standardized copy would stat the file again.
+                let isDirectory = (try? childURL.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
                 let standardizedURL = childURL.standardizedFileURL
-                let isDirectory = (try? standardizedURL.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
                 return Child(
                     url: standardizedURL,
                     title: standardizedURL.lastPathComponent,
