@@ -18,7 +18,7 @@ final class OpenFoldersStore {
     private var expandedFolderPaths: Set<String> = []
     private var contentVersion = 0
     private var refreshedFolderPaths: Set<String> = []
-    private var observers: [UUID: (State) -> Void] = [:]
+    private let observers = Observers<State>()
     private var isObserverNotificationScheduled = false
 
     init(persistence: WorkspacePersistence) {
@@ -32,12 +32,7 @@ final class OpenFoldersStore {
     }
 
     func observe(_ observer: @escaping (State) -> Void) -> ObservationToken {
-        let identifier = UUID()
-        observers[identifier] = observer
-        observer(currentState())
-        return ObservationToken { [weak self] in
-            self?.observers.removeValue(forKey: identifier)
-        }
+        observers.add(observer, initialState: currentState())
     }
 
     func add(_ urls: [URL]) {
@@ -134,9 +129,7 @@ final class OpenFoldersStore {
     private func notifyObservers() {
         let state = currentState()
         refreshedFolderPaths.removeAll()
-        for observer in observers.values {
-            observer(state)
-        }
+        observers.notify(state)
     }
 
     private func scheduleObserverNotification() {

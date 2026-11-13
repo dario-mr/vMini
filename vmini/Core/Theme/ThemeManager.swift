@@ -12,7 +12,7 @@ final class ThemeManager {
 
     private let store: ThemeStore
     private(set) var selectedThemeID: ThemeID
-    private var observers: [UUID: (State) -> Void] = [:]
+    private let observers = Observers<State>()
 
     private init(store: ThemeStore) {
         self.store = store
@@ -32,12 +32,7 @@ final class ThemeManager {
     }
 
     func observe(_ observer: @escaping (State) -> Void) -> ObservationToken {
-        let identifier = UUID()
-        observers[identifier] = observer
-        observer(currentState())
-        return ObservationToken { [weak self] in
-            self?.observers.removeValue(forKey: identifier)
-        }
+        observers.add(observer, initialState: currentState())
     }
 
     func setThemeID(_ themeID: ThemeID) {
@@ -59,9 +54,6 @@ final class ThemeManager {
     }
 
     private func notifyObservers() {
-        let state = currentState()
-        for observer in observers.values {
-            observer(state)
-        }
+        observers.notify(currentState())
     }
 }

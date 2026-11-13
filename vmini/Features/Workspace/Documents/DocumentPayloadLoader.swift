@@ -35,20 +35,17 @@ enum DocumentPayloadLoader {
     }
 
     private nonisolated static func inferredType(for url: URL) -> String {
-        if
-            let contentType = try? url.resourceValues(forKeys: [.contentTypeKey]).contentType,
-            Document.supportedTypes.contains(where: { contentType.conforms(to: $0) })
-        {
-            return contentType.identifier
-        }
+        supportedTypeIdentifier(for: url) ?? UTType.plainText.identifier
+    }
 
-        if
-            let inferredType = UTType(filenameExtension: url.pathExtension),
-            Document.supportedTypes.contains(where: { inferredType.conforms(to: $0) })
-        {
-            return inferredType.identifier
-        }
-
-        return UTType.plainText.identifier
+    /// The file's own type, or the one its extension implies, when the editor can open it.
+    nonisolated static func supportedTypeIdentifier(for url: URL) -> String? {
+        let candidates = [
+            try? url.resourceValues(forKeys: [.contentTypeKey]).contentType,
+            UTType(filenameExtension: url.pathExtension),
+        ]
+        return candidates.compactMap { $0 }
+            .first { type in Document.supportedTypes.contains(where: { type.conforms(to: $0) }) }?
+            .identifier
     }
 }
