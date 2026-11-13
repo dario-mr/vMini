@@ -15,7 +15,7 @@ final class ClosedDocumentHistory {
     }
 
     func record(document: Document) {
-        let reference = makeReference(for: document)
+        let reference = document.restorableReference
         references.removeAll { $0.persistenceIdentifier == reference.persistenceIdentifier }
         references.append(reference)
 
@@ -26,13 +26,5 @@ final class ClosedDocumentHistory {
 
     func popMostRecent() -> RestorableDocumentReference? {
         references.popLast()
-    }
-
-    private func makeReference(for document: Document) -> RestorableDocumentReference {
-        if let fileURL = document.fileURL {
-            return .file(path: fileURL.standardizedFileURL.path)
-        }
-
-        return .untitled(sessionID: document.sessionIdentifier)
     }
 }

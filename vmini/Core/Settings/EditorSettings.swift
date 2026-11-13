@@ -17,15 +17,10 @@ enum EditorSettings {
     }
 
     static var userDefaults: UserDefaults = .standard
-    private static var observers: [UUID: (State) -> Void] = [:]
+    private static let observers = Observers<State>()
 
     static func observe(_ observer: @escaping (State) -> Void) -> ObservationToken {
-        let identifier = UUID()
-        observers[identifier] = observer
-        observer(currentState())
-        return ObservationToken {
-            observers.removeValue(forKey: identifier)
-        }
+        observers.add(observer, initialState: currentState())
     }
 
     static func currentFontID() -> EditorFontID {
@@ -124,9 +119,6 @@ enum EditorSettings {
     }
 
     private static func notifyObservers() {
-        let state = currentState()
-        for observer in observers.values {
-            observer(state)
-        }
+        observers.notify(currentState())
     }
 }

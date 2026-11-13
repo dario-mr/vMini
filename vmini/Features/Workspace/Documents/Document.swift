@@ -18,7 +18,7 @@ final class Document: NSDocument {
     var isReadOnly: Bool { parquetSession != nil }
     private let openDocumentsStore: OpenDocumentsStore
     private let fileLifecycleController: DocumentFileLifecycleController
-    private var syntaxHighlightingObservers: [UUID: (Document) -> Void] = [:]
+    private let syntaxHighlightingObservers = Observers<Document>()
     private var isPresentingExternalChangeAlert = false
     private(set) var contentRevision: UInt64 = 0
 
@@ -36,6 +36,10 @@ final class Document: NSDocument {
                 keepOpen()
             }
         }
+    }
+
+    var restorableReference: RestorableDocumentReference {
+        RestorableDocumentReference(fileURL: fileURL, sessionIdentifier: sessionIdentifier)
     }
 
     var sidebarTitle: String {
@@ -71,12 +75,7 @@ final class Document: NSDocument {
     }
 
     func observeSyntaxHighlightingChanges(_ observer: @escaping (Document) -> Void) -> ObservationToken {
-        let identifier = UUID()
-        syntaxHighlightingObservers[identifier] = observer
-        observer(self)
-        return ObservationToken { [weak self] in
-            self?.syntaxHighlightingObservers.removeValue(forKey: identifier)
-        }
+        syntaxHighlightingObservers.add(observer, initialState: self)
     }
 
     init(
@@ -413,9 +412,7 @@ final class Document: NSDocument {
     }
 
     private func notifySyntaxHighlightingDidChange() {
-        for observer in syntaxHighlightingObservers.values {
-            observer(self)
-        }
+        syntaxHighlightingObservers.notify(self)
     }
 }
 

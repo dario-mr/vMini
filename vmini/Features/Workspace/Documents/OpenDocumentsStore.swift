@@ -14,7 +14,7 @@ final class OpenDocumentsStore {
     private(set) var documents: [Document] = []
     private(set) var activeDocument: Document?
     private(set) var previewDocument: Document?
-    private var observers: [UUID: (State) -> Void] = [:]
+    private let observers = Observers<State>()
     private var mutationDepth = 0
     private var pendingNotification = false
 
@@ -25,12 +25,7 @@ final class OpenDocumentsStore {
     }
 
     func observe(_ observer: @escaping (State) -> Void) -> ObservationToken {
-        let identifier = UUID()
-        observers[identifier] = observer
-        observer(currentState())
-        return ObservationToken { [weak self] in
-            self?.observers.removeValue(forKey: identifier)
-        }
+        observers.add(observer, initialState: currentState())
     }
 
     func contains(_ document: Document) -> Bool {
@@ -199,17 +194,11 @@ final class OpenDocumentsStore {
     }
 
     private static func pinIdentifier(for document: Document) -> String {
-        pinIdentifier(for: document.fileURL, sessionIdentifier: document.sessionIdentifier)
+        document.restorableReference.persistenceIdentifier
     }
 
     private static func pinIdentifier(for fileURL: URL?, sessionIdentifier: UUID) -> String {
-        let reference: RestorableDocumentReference
-        if let fileURL {
-            reference = .file(path: fileURL.standardizedFileURL.path)
-        } else {
-            reference = .untitled(sessionID: sessionIdentifier)
-        }
-        return reference.persistenceIdentifier
+        RestorableDocumentReference(fileURL: fileURL, sessionIdentifier: sessionIdentifier).persistenceIdentifier
     }
 
     private func stateDidChange() {
@@ -222,9 +211,6 @@ final class OpenDocumentsStore {
     }
 
     private func notifyObservers() {
-        let state = currentState()
-        for observer in observers.values {
-            observer(state)
-        }
+        observers.notify(currentState())
     }
 }

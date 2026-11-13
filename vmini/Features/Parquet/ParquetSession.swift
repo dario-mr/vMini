@@ -11,7 +11,7 @@ final class ParquetSession {
 
     private(set) var state: State = .loading
     private var task: Task<Void, Never>?
-    private var observers: [UUID: () -> Void] = [:]
+    private let observers = Observers<Void>()
     private(set) var url: URL
     private(set) var query = ParquetQuery()
     private(set) var page: ParquetPage?
@@ -30,10 +30,7 @@ final class ParquetSession {
     deinit { task?.cancel() }
 
     func observe(_ observer: @escaping () -> Void) -> ObservationToken {
-        let id = UUID()
-        observers[id] = observer
-        observer()
-        return ObservationToken { [weak self] in self?.observers.removeValue(forKey: id) }
+        observers.add({ _ in observer() }, initialState: ())
     }
 
     func reload(from url: URL) {
@@ -151,7 +148,7 @@ final class ParquetSession {
     }
 
     private func notifyObservers() {
-        for observer in observers.values { observer() }
+        observers.notify(())
     }
 
 }
