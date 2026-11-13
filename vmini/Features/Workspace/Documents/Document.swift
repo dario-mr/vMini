@@ -117,20 +117,15 @@ final class Document: NSDocument {
                     to: fileURL,
                     sessionIdentifier: sessionIdentifier
                 )
-                fileLifecycleController.handleFileURLChange(
-                    from: oldValue,
-                    to: fileURL,
-                    contentController: contentController,
-                    editorSession: editorSession,
-                    currentText: contentController.currentText(editorText: editorSession.currentEditorText()),
-                    syntaxLanguage: syntaxLanguage,
-                    onExternalChangeReload: { [weak self] restartWatcher in
-                        self?.reloadFromDiskAfterExternalChange(restartWatcher: restartWatcher)
-                    },
-                    onSyntaxHighlightingChanged: { [weak self] in
-                        self?.notifySyntaxHighlightingDidChange()
-                    }
-                )
+                let currentText = contentController.currentText(editorText: editorSession.currentEditorText())
+                let currentSyntaxLanguage = syntaxLanguage
+                fileLifecycleController.stopWatching()
+                contentController.applyFileURLChange(from: oldValue, to: fileURL)
+                fileLifecycleController.watch(self)
+                editorSession.update(text: currentText, syntaxLanguage: currentSyntaxLanguage)
+                notifySyntaxHighlightingDidChange()
+                openDocumentsStore.refresh()
+                SessionRestorer.refreshTerminationSnapshotIfNeeded()
 
                 if Self.didMoveToTrash(from: oldValue, to: fileURL) {
                     if isDocumentEdited {
@@ -173,60 +168,17 @@ final class Document: NSDocument {
         guard !isReadOnly else { return }
         fileLifecycleController.prepareForSave()
         super.save(sender)
-        fileLifecycleController.finishSave(fileURL: fileURL) { [weak self] restartWatcher in
-            self?.reloadFromDiskAfterExternalChange(restartWatcher: restartWatcher)
-        }
+        fileLifecycleController.finishSave(self)
     }
 
     override func saveAs(_ sender: Any?) {
         guard !isReadOnly else { return }
         fileLifecycleController.prepareForSave()
         super.saveAs(sender)
-        fileLifecycleController.finishSave(fileURL: fileURL) { [weak self] restartWatcher in
-            self?.reloadFromDiskAfterExternalChange(restartWatcher: restartWatcher)
-        }
+        fileLifecycleController.finishSave(self)
     }
 
-    private func reloadFromDiskAfterExternalChange(restartWatcher: Bool) {
-        reloadFromDiskAfterExternalChange(restartWatcher: restartWatcher, reloadEvenIfEdited: false)
-    }
-
-    private func reloadFromDiskAfterExternalChange(restartWatcher: Bool, reloadEvenIfEdited: Bool) {
-        let requestedFileURL = fileURL
-        let startingRevision = contentRevision
-        let wasEdited = isDocumentEdited
-
-        Task { @MainActor [weak self] in
-            guard let self else { return }
-            await fileLifecycleController.reloadFromDiskAfterExternalChange(
-                fileURL: requestedFileURL,
-                currentFileURL: { self.fileURL },
-                contentRevision: { self.contentRevision },
-                startingRevision: startingRevision,
-                restartWatcher: restartWatcher,
-                isDocumentEdited: wasEdited,
-                isDocumentCurrentlyEdited: { self.isDocumentEdited },
-                reloadEvenIfEdited: reloadEvenIfEdited,
-                installPayload: {
-                    self.installLoadedPayload($0)
-                    self.fileType = $0.typeName
-                },
-                onReload: {
-                    self.updateChangeCount(.changeCleared)
-                    self.undoManager?.removeAllActions()
-                },
-                onMissingFile: { self.close() },
-                onMissingFileWithUnsavedChanges: { self.presentExternalChangeAlert(fileIsMissing: true) },
-                onExternalChangeWithUnsavedChanges: { _ in self.presentExternalChangeAlert(fileIsMissing: false) },
-                onExternalChangeReload: { [weak self] restartWatcher in
-                    guard restartWatcher else { return }
-                    self?.reloadFromDiskAfterExternalChange(restartWatcher: true)
-                }
-            )
-        }
-    }
-
-    private func presentExternalChangeAlert(fileIsMissing: Bool) {
+    func presentExternalChangeAlert(fileIsMissing: Bool) {
         guard !isPresentingExternalChangeAlert else { return }
         isPresentingExternalChangeAlert = true
 
@@ -250,13 +202,13 @@ final class Document: NSDocument {
                 if fileIsMissing {
                     saveAs(nil)
                 } else if let fileURL, !FileManager.default.fileExists(atPath: fileURL.path) {
-                    reloadFromDiskAfterExternalChange(restartWatcher: false)
+                    fileLifecycleController.reload(self, restartWatcher: false)
                 }
                 return
             }
 
             if response == .alertSecondButtonReturn && !fileIsMissing {
-                reloadFromDiskAfterExternalChange(restartWatcher: false, reloadEvenIfEdited: true)
+                fileLifecycleController.reload(self, restartWatcher: false, reloadEvenIfEdited: true)
             }
         }
 
@@ -464,5 +416,14 @@ final class Document: NSDocument {
         for observer in syntaxHighlightingObservers.values {
             observer(self)
         }
+    }
+}
+
+extension Document: ExternallyReloadableDocument {
+    func installReloadedPayload(_ payload: DocumentPayload) {
+        installLoadedPayload(payload)
+        fileType = payload.typeName
+        updateChangeCount(.changeCleared)
+        undoManager?.removeAllActions()
     }
 }
