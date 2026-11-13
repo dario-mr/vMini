@@ -70,10 +70,6 @@ final class Document: NSDocument {
         contentController.hasSyntaxLanguageOverride
     }
 
-    var syntaxOverrideMenuTitle: String {
-        contentController.syntaxOverrideMenuTitle(fileURL: fileURL, sampleText: syntaxDetectionContentSample())
-    }
-
     func observeSyntaxHighlightingChanges(_ observer: @escaping (Document) -> Void) -> ObservationToken {
         syntaxHighlightingObservers.add(observer, initialState: self)
     }
