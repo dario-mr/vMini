@@ -160,9 +160,17 @@ final class WorkspaceNavigationTests: XCTestCase {
         editor.text = "one\ntwo\nthree"
         workspace.activeEditor?.goToLine(2)
         workspace.activeEditor?.goToLine(3)
-        XCTAssertTrue(window.performKeyEquivalent(with: try keyEvent("[", code: 33, modifiers: .command)))
+        let oldMenu = NSApp.mainMenu
+        let oldWindowsMenu = NSApp.windowsMenu
+        defer {
+            NSApp.mainMenu = oldMenu
+            NSApp.windowsMenu = oldWindowsMenu
+        }
+        let dispatcher = makeDispatcher(for: workspace)
+        MenuBuilder.installMainMenu(commandTarget: dispatcher)
+        XCTAssertTrue(NSApp.mainMenu?.performKeyEquivalent(with: try keyEvent("[", code: 33, modifiers: .command)) == true)
         XCTAssertEqual(editor.currentLineNumber(), 2)
-        XCTAssertTrue(window.performKeyEquivalent(with: try keyEvent("]", code: 30, modifiers: .command)))
+        XCTAssertTrue(NSApp.mainMenu?.performKeyEquivalent(with: try keyEvent("]", code: 30, modifiers: .command)) == true)
         XCTAssertEqual(editor.currentLineNumber(), 3)
 
         for type in [CGEventType.otherMouseDown, .otherMouseUp] {
@@ -187,7 +195,8 @@ final class WorkspaceNavigationTests: XCTestCase {
             NSApp.windowsMenu = oldWindowsMenu
             window.orderOut(nil)
         }
-        MenuBuilder.installMainMenu(commandTarget: nil)
+        let dispatcher = makeDispatcher(for: workspace)
+        MenuBuilder.installMainMenu(commandTarget: dispatcher)
         let formatItem = try XCTUnwrap(NSApp.mainMenu?.item(withTitle: "Edit")?.submenu?.items.first {
             $0.action == #selector(AppCommandDispatcher.formatMarkdownTable(_:))
         })
@@ -203,7 +212,7 @@ final class WorkspaceNavigationTests: XCTestCase {
         let activeEditor = editor(active)
         activeEditor.text = "Intro\n\na|b\n---|---\nx|y\n\nc|d\n---|---\nz|w"
         XCTAssertTrue(workspace.activeEditor?.canFormatMarkdownTable == true)
-        XCTAssertTrue(window.performKeyEquivalent(with: try keyEvent("t", code: 17, modifiers: .command)))
+        XCTAssertTrue(NSApp.mainMenu?.performKeyEquivalent(with: try keyEvent("t", code: 17, modifiers: .command)) == true)
         XCTAssertTrue(activeEditor.text.contains("| a   | b   |"))
         XCTAssertTrue(activeEditor.text.contains("| c   | d   |"))
         XCTAssertEqual(editor(inactive).text, "a|b\n---|---\nx|y")
@@ -220,6 +229,14 @@ final class WorkspaceNavigationTests: XCTestCase {
         let workspace = EditorContentViewController(documentStore: store, documentRouter: router)
         _ = workspace.view
         return (workspace, store)
+    }
+
+    private func makeDispatcher(for workspace: EditorContentViewController) -> AppCommandDispatcher {
+        AppCommandDispatcher(
+            workspaceResolver: WorkspaceResolverStub(workspace),
+            documentRouter: WorkspaceDocumentCoordinator.shared,
+            makeGoToLineWindowController: { GoToLineWindowController() }
+        )
     }
 
     private func makeDocument(_ store: OpenDocumentsStore) -> Document {
@@ -246,5 +263,17 @@ final class WorkspaceNavigationTests: XCTestCase {
         let cgEvent = try XCTUnwrap(CGEvent(mouseEventSource: nil, mouseType: type, mouseCursorPosition: .zero,
                                            mouseButton: CGMouseButton(rawValue: button)!))
         return try XCTUnwrap(NSEvent(cgEvent: cgEvent))
+    }
+}
+
+private final class WorkspaceResolverStub: ActiveWorkspaceResolver {
+    private let workspace: EditorContentViewController
+
+    init(_ workspace: EditorContentViewController) {
+        self.workspace = workspace
+    }
+
+    override func activeEditorContentViewController() -> EditorContentViewController? {
+        workspace
     }
 }

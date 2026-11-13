@@ -1,7 +1,7 @@
 import AppKit
 
 @MainActor
-final class ActiveWorkspaceResolver {
+class ActiveWorkspaceResolver {
     func activeEditorContentViewController() -> EditorContentViewController? {
         (NSApp.keyWindow?.contentViewController as? EditorContentViewController)
             ?? (NSApp.mainWindow?.contentViewController as? EditorContentViewController)
