@@ -277,6 +277,40 @@ final class MarkdownTableTests: XCTestCase {
     }
 
     @MainActor
+    func testFormatterAlignsAsciiCellsAtEveryFontSize() throws {
+        let source = "| column C |\n| --- |\n| aa |\n| dadasdd |"
+        let table = try XCTUnwrap(parse(source).first)
+        for size in 10...24 {
+            let font = NSFont.monospacedSystemFont(ofSize: CGFloat(size), weight: .regular)
+            for name in ["JetBrainsMono-Regular", "Menlo-Regular"] {
+                let result = MarkdownTableFormatter.format(table, in: source as NSString,
+                                                           font: NSFont(name: name, size: CGFloat(size)) ?? font)
+                XCTAssertEqual(result, "| column C |\n| -------- |\n| aa       |\n| dadasdd  |", "\(name) \(size)")
+            }
+        }
+    }
+
+    @MainActor
+    func testFormattingMeasuresWithTableFontNotLeadingHeadingFont() throws {
+        let font = try XCTUnwrap(NSFont(name: "JetBrainsMono-Regular", size: 14) ?? NSFont(name: "Menlo-Regular", size: 14))
+        let editor = EditorViewController()
+        let window = EditorWindow(contentRect: NSRect(x: 0, y: 0, width: 640, height: 300),
+                                  styleMask: [.titled], backing: .buffered, defer: false)
+        window.contentViewController = editor
+        defer { window.orderOut(nil) }
+        editor.syntaxLanguage = .markdown
+        let textView = try XCTUnwrap(findTextView(editor.view))
+        textView.font = font
+        editor.text = "# Notes\n\n| column C |\n| --- |\n| aa |\n| dadasdd |\n"
+        // A 1.5x bold heading at the document start must not become the measuring font.
+        textView.textStorage?.addAttribute(.font, value: NSFontManager.shared.convert(font, toSize: 21),
+                                           range: NSRange(location: 0, length: 7))
+        textView.setSelectedRange(NSRange(location: 0, length: 0))
+        editor.formatMarkdownTable()
+        XCTAssertEqual(editor.text, "# Notes\n\n| column C |\n| -------- |\n| aa       |\n| dadasdd  |\n")
+    }
+
+    @MainActor
     func testFormatterKeepsExtraCellsAndPadsMissingCells() throws {
         let source = "a|b\n-|--\nx|y|ignored\n|z|\n"
         let table = try XCTUnwrap(parse(source).first)
