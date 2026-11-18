@@ -135,9 +135,10 @@ final class EditorCommandController {
     func formatMarkdownTable() {
         guard let storage = textView.textStorage else { return }
         let text = textView.string as NSString
-        let font = textView.font ?? NSFont.monospacedSystemFont(ofSize: 13, weight: .regular)
+        let fallbackFont = textView.font ?? NSFont.monospacedSystemFont(ofSize: 13, weight: .regular)
         let selection = textView.selectedRange()
         let edits = markdownTablesToFormat.compactMap { table -> (range: NSRange, text: String, table: MarkdownTable, formatted: MarkdownTable)? in
+            let font = storage.attribute(.font, at: table.range.location, effectiveRange: nil) as? NSFont ?? fallbackFont
             let formatted = MarkdownTableFormatter.format(table, in: text, font: font)
             guard formatted != text.substring(with: table.range),
                   let parsed = MarkdownTableParser.parse(formatted as NSString, excluding: []).first else { return nil }

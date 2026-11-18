@@ -23,7 +23,8 @@ enum MarkdownTableFormatter {
         let spaceWidth = (" " as NSString).size(withAttributes: [.font: font]).width
         func width(_ value: String) -> Int {
             // Measure source with the editor font, including fallback glyphs, instead of counting UTF-16 units.
-            Int(ceil((value as NSString).size(withAttributes: [.font: font]).width / max(spaceWidth, 1)))
+            // The tolerance keeps float error (7 cells measuring 7.0000001) from rounding up to an extra cell.
+            Int(ceil((value as NSString).size(withAttributes: [.font: font]).width / max(spaceWidth, 1) - 0.01))
         }
         var widths = Array(repeating: 3, count: count)
         for (index, cells) in rows.enumerated() where index != 1 {
