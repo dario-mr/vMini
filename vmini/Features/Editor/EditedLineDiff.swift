@@ -23,7 +23,7 @@ enum EditedLineDiff {
             .components(separatedBy: "\n")
         let currentLineCount = head.lineCount + currentLines.count + tail.lineCount
 
-        return Set(currentLines.difference(from: savedLines).compactMap { change in
+        let changed = Set(currentLines.difference(from: savedLines).compactMap { change in
             let lineIndex: Int
             switch change {
             case let .insert(offset, _, _):
@@ -33,6 +33,26 @@ enum EditedLineDiff {
             }
             return (0..<currentLineCount).contains(lineIndex) ? lineIndex : nil
         })
+        return absorbingBlankRuns(changed, lines: currentLines, firstLineIndex: head.lineCount)
+    }
+
+    static func absorbingBlankRuns(_ changed: Set<Int>, lines: [String], firstLineIndex: Int) -> Set<Int> {
+        var result = changed
+        var runStart: Int?
+        for (offset, line) in lines.enumerated() {
+            let lineIndex = firstLineIndex + offset
+            if changed.contains(lineIndex) {
+                if let start = runStart, changed.contains(start - 1) {
+                    result.formUnion(start..<lineIndex)
+                }
+                runStart = nil
+            } else if line.allSatisfy(\.isWhitespace) {
+                runStart = runStart ?? lineIndex
+            } else {
+                runStart = nil
+            }
+        }
+        return result
     }
 
     /// The shared prefix, plus the start and index of the line holding the first difference.
