@@ -22,15 +22,20 @@ runs:
         restore-keys: |
           ${{ runner.os }}-swiftpm-
 
-    # Reuses DuckDB build objects until the dependencies or Xcode change
+    - name: Read runner image version
+      id: runner-image
+      shell: bash
+      run: echo "version=${ImageVersion:-unknown}" >> "$GITHUB_OUTPUT"
+
+    # Reuses build objects until the dependencies, Xcode, or runner image change
     - name: Restore build products
       id: build-cache
       uses: actions/cache/restore@v6
       with:
         path: ${{ inputs.path }}/.build
-        key: ${{ runner.os }}-perf-${{ inputs.path }}-build-xcode${{ inputs.xcode-version }}-${{ hashFiles(format('{0}/Package.swift', inputs.path), format('{0}/Package.resolved', inputs.path)) }}
+        key: ${{ runner.os }}-perf-${{ inputs.path }}-build-xcode${{ inputs.xcode-version }}-image${{ steps.runner-image.outputs.version }}-${{ hashFiles(format('{0}/Package.swift', inputs.path), format('{0}/Package.resolved', inputs.path)) }}
         restore-keys: |
-          ${{ runner.os }}-perf-${{ inputs.path }}-build-xcode${{ inputs.xcode-version }}-
+          ${{ runner.os }}-perf-${{ inputs.path }}-build-xcode${{ inputs.xcode-version }}-image${{ steps.runner-image.outputs.version }}-
 
     - name: Build Release test bundle
       shell: bash

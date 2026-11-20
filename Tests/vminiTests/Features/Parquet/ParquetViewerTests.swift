@@ -134,6 +134,21 @@ final class ParquetViewerTests: XCTestCase {
         }
     }
 
+    func testSearchCancelButtonReceivesClicksWhileEditing() {
+        let toolbar = ParquetToolbarView()
+        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 720, height: 56),
+                              styleMask: [.titled], backing: .buffered, defer: false)
+        window.contentView = toolbar
+        toolbar.layoutSubtreeIfNeeded()
+        let field = toolbar.searchField
+        field.isEnabled = true
+        field.stringValue = "abc"
+        XCTAssertTrue(window.makeFirstResponder(field))
+        let cancel = (field.cell as! NSSearchFieldCell).cancelButtonRect(forBounds: field.bounds)
+        let point = field.convert(NSPoint(x: cancel.midX, y: cancel.midY), to: window.contentView?.superview)
+        XCTAssertTrue(window.contentView?.superview?.hitTest(point) === field)
+    }
+
     func testFooterRowCountsAndHiddenSyntaxControl() {
         XCTAssertEqual(ParquetSession.rowCountText(totalRows: 30), "30 rows")
         XCTAssertEqual(ParquetSession.rowCountText(totalRows: 30, matchingRows: 1), "1 of 30 rows")

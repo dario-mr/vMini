@@ -119,6 +119,11 @@ final class ParquetToolbarView: NSView, NSSearchFieldDelegate {
 final class ParquetSearchField: NSSearchField {
     var onFocusChange: ((Bool) -> Void)?
 
+    override class var cellClass: AnyClass? {
+        get { ParquetSearchFieldCell.self }
+        set {}
+    }
+
     override func becomeFirstResponder() -> Bool {
         let became = super.becomeFirstResponder()
         if became { onFocusChange?(true) }
@@ -128,5 +133,30 @@ final class ParquetSearchField: NSSearchField {
     override func textDidEndEditing(_ notification: Notification) {
         super.textDidEndEditing(notification)
         onFocusChange?(false)
+    }
+}
+
+/// Unbezeled search fields give the field editor the full width, covering the cancel button and
+/// swallowing its clicks, so the editor is kept to the left of it.
+private final class ParquetSearchFieldCell: NSSearchFieldCell {
+    override func select(
+        withFrame rect: NSRect, in controlView: NSView, editor textObj: NSText, delegate: Any?,
+        start selStart: Int, length selLength: Int
+    ) {
+        super.select(
+            withFrame: editorFrame(rect), in: controlView, editor: textObj, delegate: delegate,
+            start: selStart, length: selLength)
+    }
+
+    override func edit(
+        withFrame rect: NSRect, in controlView: NSView, editor textObj: NSText, delegate: Any?, event: NSEvent?
+    ) {
+        super.edit(withFrame: editorFrame(rect), in: controlView, editor: textObj, delegate: delegate, event: event)
+    }
+
+    private func editorFrame(_ rect: NSRect) -> NSRect {
+        var frame = rect
+        frame.size.width = min(frame.width, cancelButtonRect(forBounds: rect).minX - frame.minX)
+        return frame
     }
 }

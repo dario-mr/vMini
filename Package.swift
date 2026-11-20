@@ -8,7 +8,7 @@ let package = Package(
         .executable(name: "vmini", targets: ["vmini"])
     ],
     dependencies: [
-        .package(url: "https://github.com/duckdb/duckdb-swift", exact: "1.1.3"),
+        .package(path: "Packages/DuckDB"),
         .package(url: "https://github.com/ChimeHQ/SwiftTreeSitter", exact: "0.25.0"),
         .package(url: "https://github.com/tree-sitter-grammars/tree-sitter-ssh-config", exact: "0.5.0"),
         .package(url: "https://github.com/fwcd/tree-sitter-kotlin", exact: "0.3.8"),
@@ -18,7 +18,7 @@ let package = Package(
         .executableTarget(
             name: "vmini",
             dependencies: [
-                .product(name: "DuckDB", package: "duckdb-swift"),
+                .product(name: "DuckDB", package: "DuckDB"),
                 .product(name: "SwiftTreeSitter", package: "SwiftTreeSitter"),
                 .product(name: "TreeSitterBash", package: "TreeSitterLanguages"),
                 .product(name: "TreeSitterJSON", package: "TreeSitterLanguages"),
@@ -40,7 +40,7 @@ let package = Package(
         ),
         .testTarget(
             name: "vminiTests",
-            dependencies: ["vmini", .product(name: "DuckDB", package: "duckdb-swift")],
+            dependencies: ["vmini", .product(name: "DuckDB", package: "DuckDB")],
             path: "Tests/vminiTests",
             exclude: ["PerformanceCorpus", "Features/Parquet/Fixtures"]
         )

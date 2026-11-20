@@ -142,12 +142,13 @@ final class ParquetQueryTests: XCTestCase {
     }
 
     func testCSVExportReportsProgressAndCancels() async throws {
-        let url = try makeFile("SELECT i AS id, i::VARCHAR AS label FROM range(300000) t(i)")
+        let url = try makeFile("SELECT i AS id, i::VARCHAR AS label FROM range(10000000) t(i)")
         defer { try? FileManager.default.removeItem(at: url) }
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: directory) }
         let session = ParquetSession(url: url)
+        session.cycleSort(column: try await loaded(session).columns[0])
         await settled(session)
         let progressed = expectation(description: "Export reports a fraction")
         progressed.assertForOverFulfill = false

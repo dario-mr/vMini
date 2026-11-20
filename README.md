@@ -67,6 +67,18 @@ See [profiling.md](docs/profiling.md) for interaction profiling and benchmark in
 - GitHub Actions will run `.github/workflows/release.yml`
 - The workflow builds `build/vMini.zip` and attaches it to the GitHub Release page
 
+## Upgrade DuckDB
+
+DuckDB is linked from its prebuilt release library, committed as
+`Packages/DuckDB/Cduckdb.xcframework.zip`, so builds never compile it. To move to a new version:
+
+1. In [build-duckdb-zip.sh](scripts/build-duckdb-zip.sh), set `VERSION` and `SHA256` to the new
+   release's `libduckdb-osx-universal.zip`
+2. Run `./scripts/build-duckdb-zip.sh` to regenerate the zip
+3. Replace `Packages/DuckDB/Sources/DuckDB` with `Sources/DuckDB` from the matching
+   [duckdb-swift](https://github.com/duckdb/duckdb-swift) tag, and update the version noted in
+   `Packages/DuckDB/Package.swift`
+
 ## Regenerate app icon
 
 Override [icon_512x512@2x.png](vmini/Assets.xcassets/AppIcon.appiconset/icon_512x512@2x.png) with
