@@ -251,11 +251,18 @@ final class EditorTextEditingTests: XCTestCase {
         XCTAssertEqual(EditedLineDiff.lineIndexes(currentText: "a", savedText: "a"), [])
     }
 
+    func testEditedLinesIncludeBlankLinesEnclosedByChanges() {
+        let saved = "|\n\n\n\n"
+        let current = "|\n\ndsds\ndsad\n\n\ndsa\n\ndsadd\ndad"
+        XCTAssertEqual(EditedLineDiff.lineIndexes(currentText: current, savedText: saved), Set(2...9))
+        XCTAssertEqual(EditedLineDiff.lineIndexes(currentText: "a\n\nb\n\nc", savedText: "a\n\nc"), [2, 3])
+    }
+
     func testEditedLineDiffMatchesWholeFileDiff() {
         func wholeFileDiff(currentText: String, savedText: String) -> Set<Int> {
             let currentLines = currentText.components(separatedBy: "\n")
             let savedLines = savedText.components(separatedBy: "\n")
-            return Set(currentLines.difference(from: savedLines).compactMap { change in
+            let changed = Set(currentLines.difference(from: savedLines).compactMap { change in
                 let lineIndex: Int
                 switch change {
                 case let .insert(offset, _, _): lineIndex = offset
@@ -263,6 +270,7 @@ final class EditorTextEditingTests: XCTestCase {
                 }
                 return (0..<currentLines.count).contains(lineIndex) ? lineIndex : nil
             })
+            return EditedLineDiff.absorbingBlankRuns(changed, lines: currentLines, firstLineIndex: 0)
         }
 
         let saved = (1...40).map { "line \($0 % 7)" }.joined(separator: "\n") + "\n"
