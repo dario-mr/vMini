@@ -1,13 +1,16 @@
 import AppKit
 
-/// The search box and Clear button above the Parquet table.
+/// The search box, Clear and Export buttons above the Parquet table.
 final class ParquetToolbarView: NSView, NSSearchFieldDelegate {
     var onSearchChanged: ((String) -> Void)?
     var onClear: (() -> Void)?
+    var onExport: (() -> Void)?
+    var onCancelExport: (() -> Void)?
 
     let searchField = ParquetSearchField()
     private var searchFocused = false
     private let clearButton = AppButton(title: "Clear all", style: .primary)
+    private let exportButton = ParquetExportButton()
     private let divider = NSView()
     private let searchBox = NSView()
     private let searchIcon = NSImageView(image: NSImage(systemSymbolName: "magnifyingglass", accessibilityDescription: nil)!
@@ -41,7 +44,10 @@ final class ParquetToolbarView: NSView, NSSearchFieldDelegate {
         setClearEnabled(false)
         clearButton.target = self
         clearButton.action = #selector(clear)
-        let controls = NSStackView(views: [searchBox, clearButton])
+        exportButton.target = self
+        exportButton.action = #selector(export)
+        setExportEnabled(false)
+        let controls = NSStackView(views: [searchBox, clearButton, exportButton])
         controls.spacing = 12
         controls.alignment = .centerY
         controls.translatesAutoresizingMaskIntoConstraints = false
@@ -77,6 +83,14 @@ final class ParquetToolbarView: NSView, NSSearchFieldDelegate {
         clearButton.alphaValue = isEnabled ? 1 : 0.35
     }
 
+    func setExportEnabled(_ isEnabled: Bool) {
+        exportButton.isEnabled = isEnabled
+        exportButton.alphaValue = isEnabled ? 1 : 0.35
+    }
+
+    func setExporting(_ isExporting: Bool) { exportButton.setExporting(isExporting) }
+    func setExportProgress(_ fraction: Double?) { exportButton.setProgress(fraction) }
+
     func applyTheme() {
         layer?.backgroundColor = ParquetTableStyle.filter.cgColor
         divider.layer?.backgroundColor = ParquetTableStyle.grid.cgColor
@@ -95,6 +109,7 @@ final class ParquetToolbarView: NSView, NSSearchFieldDelegate {
     }
 
     @objc private func clear() { onClear?() }
+    @objc private func export() { exportButton.isExporting ? onCancelExport?() : onExport?() }
 
     private func applySearchBorder() {
         searchBox.layer?.borderColor = (searchFocused ? ParquetTableStyle.focusBorder : ParquetTableStyle.searchBorder).cgColor

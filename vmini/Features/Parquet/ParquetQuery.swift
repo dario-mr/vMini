@@ -41,6 +41,7 @@ struct ParquetQuery: Equatable, Sendable {
         let predicate: String
         let bindings: [ParquetConnection.Binding]
         let rows: String
+        let export: String
     }
 
     func sql(columns: [ParquetPage.Column], connection: ParquetConnection) throws -> SQL {
@@ -102,30 +103,38 @@ struct ParquetQuery: Equatable, Sendable {
         if let sort, ParquetColumnKind(type: sort.column.type) == .other {
             throw ParquetQueryError(message: "Sorting is not supported for \(sort.column.name).")
         }
+        var ordinal = "__vmini_row_order"
+        while columns.contains(where: { $0.name.caseInsensitiveCompare(ordinal) == .orderedSame }) { ordinal += "_" }
+        let fileOrder = Self.identifier(ordinal)
+        let sortOrder = sort.map { "\(Self.identifier($0.column.name)) \($0.ascending ? "ASC" : "DESC") NULLS LAST, " } ?? ""
+        let hasFileRowNumberColumn = columns.contains(where: { $0.name.caseInsensitiveCompare("file_row_number") == .orderedSame })
         let rows: String
         if sort == nil && predicates.isEmpty {
             rows = "SELECT \(projection) FROM read_parquet(?) LIMIT \(ParquetPage.rowLimit)"
-        } else {
-            var ordinal = "__vmini_row_order"
-            while columns.contains(where: { $0.name.caseInsensitiveCompare(ordinal) == .orderedSame }) { ordinal += "_" }
-            let fileOrder = Self.identifier(ordinal)
-            let sortOrder = sort.map { "\(Self.identifier($0.column.name)) \($0.ascending ? "ASC" : "DESC") NULLS LAST, " } ?? ""
+        } else if hasFileRowNumberColumn {
             // An explicit ORDER BY … LIMIT keeps memory bounded: a plain filtered LIMIT makes DuckDB buffer every
             // sparse batch to preserve file order. File order breaks ties.
-            if columns.contains(where: { $0.name.caseInsensitiveCompare("file_row_number") == .orderedSame }) {
-                rows = "WITH source AS (SELECT *, row_number() OVER () AS \(fileOrder) FROM read_parquet(?)) "
-                    + "SELECT \(projection) FROM source\(predicate) ORDER BY \(sortOrder)\(fileOrder) LIMIT \(ParquetPage.rowLimit)"
-            } else {
-                // Rank only the sort key and row number, then read full rows for the winners: sorting whole rows
-                // of wide files exhausted memory, and the parallel row number is far faster than a window function.
-                rows = "WITH source AS (SELECT * FROM read_parquet(?, file_row_number = true)), "
-                    + "top AS (SELECT file_row_number AS \(fileOrder) FROM source\(predicate) "
-                    + "ORDER BY \(sortOrder)file_row_number LIMIT \(ParquetPage.rowLimit)) "
-                    + "SELECT \(projection) FROM source JOIN top ON source.file_row_number = top.\(fileOrder) "
-                    + "ORDER BY \(sortOrder)source.file_row_number"
-            }
+            rows = "WITH source AS (SELECT *, row_number() OVER () AS \(fileOrder) FROM read_parquet(?)) "
+                + "SELECT \(projection) FROM source\(predicate) ORDER BY \(sortOrder)\(fileOrder) LIMIT \(ParquetPage.rowLimit)"
+        } else {
+            // Rank only the sort key and row number, then read full rows for the winners: sorting whole rows
+            // of wide files exhausted memory, and the parallel row number is far faster than a window function.
+            rows = "WITH source AS (SELECT * FROM read_parquet(?, file_row_number = true)), "
+                + "top AS (SELECT file_row_number AS \(fileOrder) FROM source\(predicate) "
+                + "ORDER BY \(sortOrder)file_row_number LIMIT \(ParquetPage.rowLimit)) "
+                + "SELECT \(projection) FROM source JOIN top ON source.file_row_number = top.\(fileOrder) "
+                + "ORDER BY \(sortOrder)source.file_row_number"
         }
-        return SQL(predicate: predicate, bindings: bindings, rows: rows)
+        let export: String
+        if sort == nil {
+            export = "SELECT \(projection) FROM read_parquet(?)\(predicate)"
+        } else {
+            let source = hasFileRowNumberColumn
+                ? "SELECT *, row_number() OVER () AS \(fileOrder) FROM read_parquet(?)"
+                : "SELECT *, file_row_number AS \(fileOrder) FROM read_parquet(?, file_row_number = true)"
+            export = "WITH source AS (\(source)) SELECT \(projection) FROM source\(predicate) ORDER BY \(sortOrder)\(fileOrder)"
+        }
+        return SQL(predicate: predicate, bindings: bindings, rows: rows, export: export)
     }
 
     private static func identifier(_ name: String) -> String { "\"" + name.replacingOccurrences(of: "\"", with: "\"\"") + "\"" }

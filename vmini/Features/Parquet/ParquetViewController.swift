@@ -20,6 +20,7 @@ final class ParquetViewController: NSViewController, NSTableViewDataSource, NSTa
     private var page: ParquetPage?
     private var displayedRevision = -1
     private var nearbyColumns = IndexSet()
+    private var exportTask: Task<Void, Never>?
     var pasteboard = NSPasteboard.general
 
     init(session: ParquetSession) {
@@ -134,6 +135,8 @@ final class ParquetViewController: NSViewController, NSTableViewDataSource, NSTa
             session.apply(query, debounce: true)
         }
         toolbar.onClear = { [weak self] in self?.clearFilters() }
+        toolbar.onExport = { [weak self] in self?.exportCSV() }
+        toolbar.onCancelExport = { [weak self] in self?.exportTask?.cancel() }
         view.addSubview(toolbar)
         NSLayoutConstraint.activate([
             toolbar.leadingAnchor.constraint(equalTo: view.leadingAnchor),
@@ -183,6 +186,7 @@ final class ParquetViewController: NSViewController, NSTableViewDataSource, NSTa
         tableView.gridStyleMask = page?.rows.isEmpty == false ? [.solidVerticalGridLineMask, .solidHorizontalGridLineMask] : []
         toolbar.searchField.isEnabled = page != nil
         toolbar.setClearEnabled(session.query.isFiltered)
+        toolbar.setExportEnabled(page != nil)
         headerView.update(query: session.query)
         if displayedRevision != session.resultRevision {
             displayedRevision = session.resultRevision
@@ -242,6 +246,31 @@ final class ParquetViewController: NSViewController, NSTableViewDataSource, NSTa
         toolbar.searchField.stringValue = ""
         session.clearFilters()
         headerView.update(query: session.query, resetControls: true)
+    }
+
+    private func exportCSV() {
+        guard let window = view.window, session.page != nil else { return }
+        let panel = NSSavePanel()
+        panel.allowedContentTypes = [.commaSeparatedText]
+        panel.nameFieldStringValue = session.url.deletingPathExtension().lastPathComponent + ".csv"
+        panel.beginSheetModal(for: window) { [weak self] response in
+            guard response == .OK, let destination = panel.url, let self else { return }
+            toolbar.setExporting(true)
+            exportTask = Task { @MainActor [weak self] in
+                guard let self else { return }
+                do {
+                    try await session.exportCSV(to: destination) { fraction in
+                        Task { @MainActor [weak self] in
+                            if self?.exportTask != nil { self?.toolbar.setExportProgress(fraction) }
+                        }
+                    }
+                } catch {
+                    if !Task.isCancelled { NSAlert(error: error).beginSheetModal(for: window, completionHandler: nil) }
+                }
+                exportTask = nil
+                toolbar.setExporting(false)
+            }
+        }
     }
 
     func tableView(_ tableView: NSTableView, didClick tableColumn: NSTableColumn) {
