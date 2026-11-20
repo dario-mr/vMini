@@ -18,14 +18,15 @@ final class ParquetConnection: @unchecked Sendable {
     private let connection: duckdb_connection
     private let queryLock = NSLock()
 
-    init(memoryLimit: String = "1GB") throws {
+    init(memoryLimit: String = "1GB", tracksProgress: Bool = false, spillsToDisk: Bool = false) throws {
         var config: duckdb_config?
         guard duckdb_create_config(&config) == DuckDBSuccess else {
             throw ParquetQueryError(message: "Could not create DuckDB configuration")
         }
         defer { duckdb_destroy_config(&config) }
+        let spillDirectory = spillsToDisk ? FileManager.default.temporaryDirectory.appendingPathComponent("vmini-duckdb-\(UUID().uuidString)").path : ""
         for (key, value) in [
-            "memory_limit": memoryLimit, "threads": String(max(2, ProcessInfo.processInfo.activeProcessorCount / 2)), "temp_directory": "",
+            "memory_limit": memoryLimit, "threads": String(max(2, ProcessInfo.processInfo.activeProcessorCount / 2)), "temp_directory": spillDirectory,
             "autoinstall_known_extensions": "false", "autoload_known_extensions": "false"
         ] {
             guard duckdb_set_config(config, key, value) == DuckDBSuccess else {
@@ -48,6 +49,11 @@ final class ParquetConnection: @unchecked Sendable {
         }
         self.database = database
         self.connection = connection
+        if tracksProgress {
+            for setting in ["enable_progress_bar = true", "enable_progress_bar_print = false", "progress_bar_time = 0"] {
+                _ = try query("SET \(setting)")
+            }
+        }
     }
 
     deinit {
@@ -60,6 +66,11 @@ final class ParquetConnection: @unchecked Sendable {
     func interrupt() {
         // Interrupt must bypass the query lock and run from another thread.
         duckdb_interrupt(connection)
+    }
+
+    func progress() -> Double? {
+        let percentage = duckdb_query_progress(connection).percentage
+        return percentage >= 0 ? min(percentage / 100, 1) : nil
     }
 
     func query(_ sql: String, bindings: [Binding] = [], resultRowLimit: Int? = ParquetPage.rowLimit) throws -> [[String?]] {

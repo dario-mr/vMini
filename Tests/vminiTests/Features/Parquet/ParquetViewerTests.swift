@@ -275,7 +275,7 @@ final class ParquetViewerTests: XCTestCase {
             XCTAssertGreaterThan(try XCTUnwrap(searched.matchingRows), 0)
             XCTAssertEqual(searched.totalRows, page.totalRows)
             let statusBar = try XCTUnwrap(find(EditorStatusBarView.self, in: workspace.view))
-            XCTAssertEqual(statusBar.subviews.compactMap { $0 as? NSTextField }.first?.stringValue, session.statusText)
+            XCTAssertEqual(statusBar.subviews.compactMap { $0 as? NSTextField }.first?.stringValue, session.footerText)
             session.clearFilters()
             _ = try await loadedPage(session)
             table.tableColumns[1].width = 247

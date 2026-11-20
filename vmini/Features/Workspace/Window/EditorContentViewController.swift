@@ -274,7 +274,7 @@ final class EditorContentViewController: NSViewController {
 
     private func updateStatusBar() {
         if let session = documentState.activeDocument?.parquetSession {
-            statusBarView.updateParquet(status: session.statusText)
+            statusBarView.updateParquet(status: session.footerText)
             return
         }
         statusBarView.update(

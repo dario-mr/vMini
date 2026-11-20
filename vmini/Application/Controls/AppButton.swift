@@ -1,7 +1,7 @@
 import AppKit
 
 @MainActor
-final class AppButton: NSButton {
+class AppButton: NSButton {
     enum Style {
         case primary
         case secondary
@@ -9,6 +9,7 @@ final class AppButton: NSButton {
 
     enum Layout {
         static let minimumWidth: CGFloat = 68
+        static let horizontalPadding: CGFloat = 12
         static let height: CGFloat = 28
         static let cornerRadius: CGFloat = 8
         static let secondaryBorderWidth: CGFloat = 0.8
@@ -64,6 +65,11 @@ final class AppButton: NSButton {
         didSet {
             applyTheme()
         }
+    }
+
+    override var intrinsicContentSize: NSSize {
+        let size = super.intrinsicContentSize
+        return NSSize(width: size.width + Layout.horizontalPadding * 2, height: size.height)
     }
 
     override func updateTrackingAreas() {

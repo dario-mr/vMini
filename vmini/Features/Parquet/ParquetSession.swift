@@ -17,6 +17,7 @@ final class ParquetSession {
     private(set) var page: ParquetPage?
     private(set) var resultRevision = 0
     private(set) var countError: String?
+    private(set) var fileSize: Int64?
     var isCounting: Bool {
         if case .loaded(let page) = state { return page.matchingRows == nil && countError == nil }
         return false
@@ -35,6 +36,7 @@ final class ParquetSession {
 
     func reload(from url: URL) {
         self.url = url
+        fileSize = (try? url.resourceValues(forKeys: [.fileSizeKey]).fileSize).flatMap { $0.map(Int64.init) }
         page = nil
         resultRevision += 1
         load(reconcileSchema: true)
@@ -140,6 +142,24 @@ final class ParquetSession {
         // Rows appear before their count finishes, so say why only the total is known.
         let prefix = countError == nil ? "Counting matches…" : "Could not count matches"
         return "\(prefix) · \(Self.rowCountText(totalRows: page.totalRows))"
+    }
+
+    var footerText: String {
+        guard !statusText.isEmpty, let fileSize else { return statusText }
+        return "\(statusText) · \(ByteCountFormatter.string(fromByteCount: fileSize, countStyle: .file))"
+    }
+
+    func exportCSV(to destination: URL, progress: @escaping @Sendable (Double?) -> Void) async throws {
+        guard let page else { throw ParquetQueryError(message: "The Parquet file has not loaded yet.") }
+        let url = url
+        let export = Task.detached(priority: .userInitiated) {
+            try await ParquetPage.exportCSV(from: url, to: destination, query: page.query, columns: page.columns, progress: progress)
+        }
+        try await withTaskCancellationHandler {
+            try await export.value
+        } onCancel: {
+            export.cancel()
+        }
     }
 
     static func rowCountText(totalRows: Int64, matchingRows: Int64? = nil) -> String {
