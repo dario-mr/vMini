@@ -13,6 +13,7 @@ final class EditorStatusBarView: NSView {
         static let preferredHeight: CGFloat = 32
         static let textSize: CGFloat = 12
         static let parquetTextSize: CGFloat = 13
+        static let parquetSeparatorKern: CGFloat = 4
     }
 
     var onSelectAutomaticSyntaxHighlighting: (() -> Void)?
@@ -174,10 +175,17 @@ final class EditorStatusBarView: NSView {
             .font: NSFont.systemFont(ofSize: Layout.parquetTextSize),
             .foregroundColor: AppColors.sidebarText,
         ])
-        let unit = "rows"
-        if status.string.hasSuffix(unit) {
-            status.addAttribute(.foregroundColor, value: AppColors.inactiveTabText,
-                                range: NSRange(location: status.length - unit.utf16.count, length: unit.utf16.count))
+        let text = status.string as NSString
+        let rows = text.range(of: "rows", options: .backwards)
+        let lastSpace = text.rangeOfCharacter(from: .whitespaces, options: .backwards)
+        let unit = lastSpace.location == NSNotFound ? rows : NSRange(location: NSMaxRange(lastSpace), length: text.length - NSMaxRange(lastSpace))
+        for range in [rows, unit] where range.location != NSNotFound {
+            status.addAttribute(.foregroundColor, value: AppColors.inactiveTabText, range: range)
+        }
+        var search = NSRange(location: 0, length: text.length)
+        while case let dot = text.range(of: " · ", range: search), dot.location != NSNotFound {
+            status.addAttribute(.kern, value: Layout.parquetSeparatorKern, range: NSRange(location: dot.location, length: 2))
+            search = NSRange(location: NSMaxRange(dot), length: text.length - NSMaxRange(dot))
         }
         cursorPositionLabel.attributedStringValue = status
     }

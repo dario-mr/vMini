@@ -101,6 +101,68 @@ final class ParquetQueryTests: XCTestCase {
         XCTAssertEqual(sorted.matchingRows, 5)
     }
 
+    func testCSVExportWritesAllMatchingRowsInSortOrder() async throws {
+        let url = try makeFile(#"SELECT i AS id, i % 3 AS bucket, 'a''b, "c"' AS label FROM range(1505) t(i)"#)
+        defer { try? FileManager.default.removeItem(at: url) }
+        let csv = url.deletingPathExtension().appendingPathExtension("csv")
+        defer { try? FileManager.default.removeItem(at: csv) }
+        let page = try await ParquetPage.load(from: url)
+        var query = ParquetQuery()
+        query.sort = .init(column: page.columns[1], ascending: false)
+        query.filters = [page.columns[0]: .init(operation: .greaterEqual, value: "3")]
+        try await ParquetPage.exportCSV(from: url, to: csv, query: query, columns: page.columns)
+        let lines = try String(contentsOf: csv, encoding: .utf8).split(separator: "\n")
+        XCTAssertEqual(lines.first, "id,bucket,label")
+        XCTAssertEqual(lines.count, 1 + 1502, "Export is not capped at the displayed row limit")
+        XCTAssertEqual(lines[1], #"5,2,"a'b, ""c""""#, "Ties keep file order and text is quoted")
+        XCTAssertEqual(lines.last?.hasPrefix("1503,0,"), true)
+
+        let fileRowNumber = try makeFile("SELECT i AS file_row_number, 9 - i AS score FROM range(10) t(i)")
+        defer { try? FileManager.default.removeItem(at: fileRowNumber) }
+        let columns = try await ParquetPage.load(from: fileRowNumber).columns
+        query = ParquetQuery()
+        query.sort = .init(column: columns[1])
+        try await ParquetPage.exportCSV(from: fileRowNumber, to: csv, query: query, columns: columns)
+        XCTAssertEqual(try String(contentsOf: csv, encoding: .utf8).split(separator: "\n").dropFirst().first, "9,0")
+    }
+
+    func testSortedCSVExportSpillsToDiskBeyondTheMemoryLimit() async throws {
+        let columns = (1..<8).map { "repeat('x', 40) || (i * \($0))::VARCHAR AS c\($0)" }.joined(separator: ", ")
+        let url = try makeFile("SELECT i AS id, \(columns) FROM range(300000) t(i)")
+        defer { try? FileManager.default.removeItem(at: url) }
+        let csv = url.deletingPathExtension().appendingPathExtension("csv")
+        defer { try? FileManager.default.removeItem(at: csv) }
+        let page = try await ParquetPage.load(from: url)
+        var query = ParquetQuery()
+        query.sort = .init(column: page.columns[0], ascending: false)
+        try await ParquetPage.exportCSV(from: url, to: csv, query: query, columns: page.columns, memoryLimit: "192MB")
+        let lines = try String(contentsOf: csv, encoding: .utf8).split(separator: "\n")
+        XCTAssertEqual(lines.count, 1 + 300000)
+        XCTAssertEqual(lines[1].prefix(7), "299999,")
+    }
+
+    func testCSVExportReportsProgressAndCancels() async throws {
+        let url = try makeFile("SELECT i AS id, i::VARCHAR AS label FROM range(300000) t(i)")
+        defer { try? FileManager.default.removeItem(at: url) }
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let session = ParquetSession(url: url)
+        await settled(session)
+        let progressed = expectation(description: "Export reports a fraction")
+        progressed.assertForOverFulfill = false
+        let export = Task {
+            try await session.exportCSV(to: directory.appendingPathComponent("out.csv")) { fraction in
+                if fraction != nil { progressed.fulfill() }
+            }
+        }
+        await fulfillment(of: [progressed], timeout: 10)
+        export.cancel()
+        guard case .failure(let error) = await export.result else { return XCTFail("Cancelled export completed") }
+        XCTAssertEqual((error as? ParquetQueryError)?.interrupted, true, error.localizedDescription)
+        XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath: directory.path), [])
+    }
+
     func testTypedFiltersNullsAndStableSortTies() async throws {
         let url = try makeFile("""
             SELECT * FROM (VALUES

@@ -62,13 +62,36 @@ struct ParquetPage: Sendable {
         }
     }
 
+    static func exportCSV(from url: URL, to destination: URL, query: ParquetQuery, columns: [Column], memoryLimit: String = "1GB",
+                          progress: @escaping @Sendable (Double?) -> Void = { _ in }) async throws {
+        try await withConnection(memoryLimit: memoryLimit, tracksProgress: true, spillsToDisk: true) { connection in
+            let sql = try query.sql(columns: columns, connection: connection)
+            // DuckDB 1.1.3's parallel COPY holds a sorted result in memory; one thread lets the sort spill to disk.
+            if query.sort != nil { _ = try connection.query("SET threads = 1") }
+            let poller = Task.detached {
+                while !Task.isCancelled {
+                    progress(connection.progress())
+                    try? await Task.sleep(nanoseconds: 200_000_000)
+                }
+            }
+            defer { poller.cancel() }
+            let path = "'" + destination.path.replacingOccurrences(of: "'", with: "''") + "'"
+            do {
+                _ = try connection.query("COPY (\(sql.export)) TO \(path) (FORMAT CSV, HEADER)",
+                                         bindings: [.text(url.path)] + sql.bindings)
+            } catch {
+                try? FileManager.default.removeItem(at: destination)
+                throw error
+            }
+        }
+    }
+
     var schema: Schema { Schema(columns: columns, totalRows: totalRows) }
 
-    private static func withConnection<T>(_ body: (ParquetConnection) throws -> T) async throws -> T {
-        // Keep user-requested queries running when the window is in the background.
+    private static func withConnection<T>(memoryLimit: String = "1GB", tracksProgress: Bool = false, spillsToDisk: Bool = false, _ body: (ParquetConnection) throws -> T) async throws -> T {
         let activity = ProcessInfo.processInfo.beginActivity(options: .userInitiatedAllowingIdleSystemSleep, reason: "Query Parquet rows")
         defer { ProcessInfo.processInfo.endActivity(activity) }
-        let connection = try ParquetConnection()
+        let connection = try ParquetConnection(memoryLimit: memoryLimit, tracksProgress: tracksProgress, spillsToDisk: spillsToDisk)
         return try await withTaskCancellationHandler {
             try Task.checkCancellation()
             let result = try body(connection)
