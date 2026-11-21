@@ -6,6 +6,8 @@ ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 # Exported so build.sh and app-path.sh build and locate the same configuration.
 export CONFIGURATION="${CONFIGURATION:-Debug}"
 
+xcodebuild -project "$ROOT_DIR/vmini.xcodeproj" -scheme vMini -resolvePackageDependencies >/dev/null
+
 "$ROOT_DIR/scripts/build.sh" >/dev/null &
 BUILD_PID=$!
 

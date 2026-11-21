@@ -9,7 +9,7 @@ class AppButton: NSButton {
 
     enum Layout {
         static let minimumWidth: CGFloat = 68
-        static let horizontalPadding: CGFloat = 12
+        static let horizontalPadding: CGFloat = 10
         static let height: CGFloat = 28
         static let cornerRadius: CGFloat = 8
         static let secondaryBorderWidth: CGFloat = 0.8
