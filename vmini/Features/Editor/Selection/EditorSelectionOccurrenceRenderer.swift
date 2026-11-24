@@ -6,7 +6,7 @@ private enum SelectionOccurrenceStyle {
     static let lineWidth: CGFloat = 1
     static let cornerRadius: CGFloat = 3
     static let horizontalPadding: CGFloat = 2
-    static let verticalPadding: CGFloat = 1
+    static let verticalPadding: CGFloat = -1
 }
 
 @MainActor
@@ -50,14 +50,20 @@ enum EditorSelectionOccurrenceRenderer {
             var glyphIndex = glyphRange.location
             while glyphIndex < NSMaxRange(glyphRange) {
                 var lineGlyphRange = NSRange()
-                _ = layoutManager.lineFragmentRect(
+                let lineRect = layoutManager.lineFragmentRect(
                     forGlyphAt: glyphIndex,
                     effectiveRange: &lineGlyphRange,
                     withoutAdditionalLayout: false
                 )
                 let segment = NSIntersectionRange(glyphRange, lineGlyphRange)
                 if segment.length > 0 {
+                    // The last newline before the document end reports a rect starting at x = 0, so keep it in
+                    // the text column; it still spans the empty extra line after it, which the selection covers.
+                    let extraLine = layoutManager.extraLineFragmentRect
+                    let rowRect = NSMaxRange(range) == documentLength && NSMaxRange(segment) == NSMaxRange(glyphRange)
+                        && !extraLine.isEmpty ? lineRect.union(extraLine) : lineRect
                     let glyphRect = layoutManager.boundingRect(forGlyphRange: segment, in: textContainer)
+                        .intersection(rowRect.insetBy(dx: textContainer.lineFragmentPadding, dy: 0))
                     if glyphRect.width > 0 {
                         let rect = glyphRect.offsetBy(dx: origin.x, dy: origin.y).insetBy(
                             dx: -SelectionOccurrenceStyle.horizontalPadding,
@@ -68,13 +74,15 @@ enum EditorSelectionOccurrenceRenderer {
                             cornerWidth: SelectionOccurrenceStyle.cornerRadius,
                             cornerHeight: SelectionOccurrenceStyle.cornerRadius
                         )
-                        if joinLineFragments, let previousRect, previousRect.intersects(rect) {
-                            let overlap = previousRect.intersection(rect)
+                        if joinLineFragments, let previousRect,
+                           max(previousRect.minX, rect.minX) < min(previousRect.maxX, rect.maxX) {
+                            let overlapMinX = max(previousRect.minX, rect.minX)
+                            let overlapWidth = min(previousRect.maxX, rect.maxX) - overlapMinX
                             let top = previousRect.maxY - min(SelectionOccurrenceStyle.cornerRadius, previousRect.height / 2)
                             let bottom = rect.minY + min(SelectionOccurrenceStyle.cornerRadius, rect.height / 2)
                             if bottom > top {
                                 // Cover adjoining corners along the shared sides before joining the rows.
-                                fragments.addRect(NSRect(x: overlap.minX, y: top, width: overlap.width, height: bottom - top))
+                                fragments.addRect(NSRect(x: overlapMinX, y: top, width: overlapWidth, height: bottom - top))
                             }
                         }
                         previousRect = rect

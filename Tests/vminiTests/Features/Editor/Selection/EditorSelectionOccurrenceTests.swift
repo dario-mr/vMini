@@ -221,6 +221,42 @@ final class EditorSelectionOccurrenceTests: XCTestCase {
         window.displayIfNeeded()
     }
 
+    func testRendererKeepsTrailingEmptyLinesInsideTheTextColumn() throws {
+        let textView = EditorTextView(frame: NSRect(x: 0, y: 0, width: 200, height: 100))
+        textView.font = .monospacedSystemFont(ofSize: 14, weight: .regular)
+        textView.textContainerInset = NSSize(width: 10, height: 0)
+        textView.textContainer?.containerSize = NSSize(width: 200, height: 100)
+        textView.string = "sss\nss\n\n"
+        let container = try XCTUnwrap(textView.textContainer)
+        try XCTUnwrap(textView.layoutManager).ensureLayout(for: container)
+
+        let image = NSImage(size: textView.bounds.size, flipped: true) { _ in
+            NSColor.white.setFill()
+            textView.bounds.fill()
+            EditorSelectionOccurrenceRenderer.draw(
+                in: textView, dirtyRect: textView.bounds,
+                ranges: [NSRange(location: 0, length: 8)], color: .red, joinLineFragments: true
+            )
+            return true
+        }
+        let bitmap = try XCTUnwrap(NSBitmapImageRep(data: XCTUnwrap(image.tiffRepresentation)))
+        let scale = CGFloat(bitmap.pixelsWide) / textView.bounds.width
+        // Boxes may extend 2pt of padding plus the stroke left of the text, never further.
+        let leftLimit = Int((textView.textContainerOrigin.x + container.lineFragmentPadding - 4) * scale)
+        for y in 0..<bitmap.pixelsHigh {
+            for x in 0..<max(leftLimit, 0) {
+                let pixel = try XCTUnwrap(bitmap.colorAt(x: x, y: y)?.usingColorSpace(.deviceRGB))
+                XCTAssertFalse(pixel.greenComponent < 0.9, "selection drawn left of the text at (\(x), \(y))")
+            }
+        }
+        let extraLine = try XCTUnwrap(textView.layoutManager).extraLineFragmentRect
+        let bottomBorderY = Int((extraLine.maxY + textView.textContainerOrigin.y - 1) * scale)
+        let bottomBorder = try (0..<bitmap.pixelsWide).filter { x in
+            try XCTUnwrap(bitmap.colorAt(x: x, y: bottomBorderY)?.usingColorSpace(.deviceRGB)).greenComponent < 0.9
+        }
+        XCTAssertFalse(bottomBorder.isEmpty, "the selection must cover the empty line after the final newline")
+    }
+
     func testRendererJoinsMultilineUnicodeBordersAndIgnoresStaleRanges() throws {
         let textView = EditorTextView(frame: NSRect(x: 0, y: 0, width: 200, height: 100))
         textView.font = .monospacedSystemFont(ofSize: 14, weight: .regular)
@@ -270,7 +306,7 @@ final class EditorSelectionOccurrenceTests: XCTestCase {
         let glyphs = layout.glyphRange(forCharacterRange: range, actualCharacterRange: nil)
         let bounds = layout.boundingRect(forGlyphRange: glyphs, in: try XCTUnwrap(textView.textContainer))
             .offsetBy(dx: textView.textContainerOrigin.x, dy: textView.textContainerOrigin.y)
-        for y in [bounds.minY - 2, bounds.maxY + 1] {
+        for y in [bounds.minY, bounds.maxY - 1] {
             XCTAssertFalse(try redPixelCounts(
                 for: [range], color: .red,
                 dirtyRect: NSRect(x: 0, y: y, width: textView.bounds.width, height: 1)

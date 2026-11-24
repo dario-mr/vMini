@@ -247,8 +247,17 @@ class EditorTextView: NSTextView {
             let line = text.lineRange(for: NSRange(location: selection.location, length: 0))
             if selection.location == line.location, line.location > 0 {
                 let previousLine = text.lineRange(for: NSRange(location: line.location - 1, length: 0))
-                if text.substring(with: previousLine).trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                    moveUpAndModifySelection(nil)
+                var target: Int?
+                if isBlank(previousLine, in: text) {
+                    target = previousLine.location
+                } else if isBlank(line, in: text) {
+                    var contentsEnd = 0
+                    text.getLineStart(nil, end: nil, contentsEnd: &contentsEnd, for: previousLine)
+                    target = contentsEnd
+                }
+                if let target {
+                    setSelectedRange(NSRange(location: target, length: anchor - target))
+                    scrollRangeToVisible(NSRange(location: target, length: 0))
                     return
                 }
             }
@@ -280,6 +289,10 @@ class EditorTextView: NSTextView {
             && nextSelection.upperBound == selection.location
             ? selection.location
             : nil
+    }
+
+    private func isBlank(_ line: NSRange, in text: NSString) -> Bool {
+        text.substring(with: line).trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
     @objc
