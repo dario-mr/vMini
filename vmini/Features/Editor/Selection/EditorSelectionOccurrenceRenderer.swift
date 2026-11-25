@@ -5,7 +5,7 @@ private enum SelectionOccurrenceStyle {
     static let colorOpacity: CGFloat = 0.95
     static let lineWidth: CGFloat = 1
     static let cornerRadius: CGFloat = 3
-    static let horizontalPadding: CGFloat = 2
+    static let horizontalPadding: CGFloat = -1
     static let verticalPadding: CGFloat = -1
 }
 
