@@ -160,13 +160,17 @@ final class OpenFoldersSidebarOutlineController: NSObject, NSOutlineViewDataSour
         applySelection()
 
         if node.isDirectory {
-            if outlineView.isItemExpanded(node) {
-                outlineView.collapseItem(node)
-            } else {
-                outlineView.expandItem(node)
-            }
+            toggleExpansion(of: node, in: outlineView)
         } else {
             onFileSelected?(node.url)
+        }
+    }
+
+    private func toggleExpansion(of node: FolderTreeNode, in outlineView: NSOutlineView) {
+        if outlineView.isItemExpanded(node) {
+            outlineView.animator().collapseItem(node)
+        } else {
+            outlineView.animator().expandItem(node)
         }
     }
 
@@ -174,8 +178,12 @@ final class OpenFoldersSidebarOutlineController: NSObject, NSOutlineViewDataSour
     private func keepSelectedFileOpen() {
         guard let outlineView else { return }
         let row = outlineView.clickedRow >= 0 ? outlineView.clickedRow : outlineView.selectedRow
-        guard row >= 0, let node = outlineView.item(atRow: row) as? FolderTreeNode, !node.isDirectory else { return }
-        onFileDoubleClicked?(node.url)
+        guard row >= 0, let node = outlineView.item(atRow: row) as? FolderTreeNode else { return }
+        if node.isDirectory {
+            toggleExpansion(of: node, in: outlineView)
+        } else {
+            onFileDoubleClicked?(node.url)
+        }
     }
 
     @objc
