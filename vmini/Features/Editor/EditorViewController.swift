@@ -377,7 +377,7 @@ final class EditorViewController: NSViewController, NSTextViewDelegate, @preconc
            let url = MarkdownLink.resolve(destination, relativeTo: documentURLProvider?()) {
             return url
         }
-        return WebLink.url(in: textView.string, at: index)
+        return syntaxLanguage.detectsWebLinks ? WebLink.url(in: textView.string, at: index) : nil
     }
 
     private func configureTextView() {

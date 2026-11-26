@@ -176,7 +176,10 @@ final class EditorMarkdownLinkTests: XCTestCase {
         XCTAssertNil(WebLink.url(in: source, at: source.utf16.count))
     }
 
-    func testWebURLsSupportCommandClickAndHandCursorInEveryLanguage() throws {
+    private let webLinkLanguages: [SyntaxLanguage] = [.markdown, .plaintext]
+    private var codeLanguages: [SyntaxLanguage] { SyntaxLanguage.allCases.filter { !webLinkLanguages.contains($0) } }
+
+    func testWebURLsSupportCommandClickAndHandCursorInMarkdownAndPlainText() throws {
         let (editor, textView, window) = try makeHoverEditor()
         defer { window.close() }
         let initialCursor = NSCursor.current
@@ -185,7 +188,7 @@ final class EditorMarkdownLinkTests: XCTestCase {
         let range = (editor.text as NSString).range(of: "https://example.com/a?q=1#part")
         var opened: [URL] = []
         editor.onOpenURL = { opened.append($0) }
-        for (languageIndex, language) in SyntaxLanguage.allCases.enumerated() {
+        for (languageIndex, language) in webLinkLanguages.enumerated() {
             editor.syntaxLanguage = language
             textView.setSelectedRange(NSRange(location: 0, length: 2))
             let linkPoint = try point(in: textView, at: range.location)
@@ -209,6 +212,22 @@ final class EditorMarkdownLinkTests: XCTestCase {
         XCTAssertEqual(textView.onCommandClick?(range.location), false)
     }
 
+    func testCodeFilesDoNotDetectWebLinks() async throws {
+        let editor = EditorViewController()
+        _ = editor.view
+        editor.text = "SELECT a.id FROM t a -- see https://example.com\n"
+        let storage = try XCTUnwrap(editor.textStorage)
+        let textView = try XCTUnwrap(findTextView(in: editor.view))
+        for index in [(editor.text as NSString).range(of: "a.id").location, (editor.text as NSString).range(of: "https").location] {
+            for language in codeLanguages {
+                editor.syntaxLanguage = language
+                try await Task.sleep(nanoseconds: 150_000_000)
+                XCTAssertNil(storage.attribute(.underlineStyle, at: index, effectiveRange: nil), language.rawValue)
+                XCTAssertEqual(textView.isCommandClickTarget?(index), false, language.rawValue)
+            }
+        }
+    }
+
     func testWebURLStylingSurvivesSyntaxChangesAndClearsAfterEditing() async throws {
         let editor = EditorViewController()
         _ = editor.view
@@ -216,7 +235,7 @@ final class EditorMarkdownLinkTests: XCTestCase {
         let storage = try XCTUnwrap(editor.textStorage)
         let index = (editor.text as NSString).range(of: "https").location
         let textView = try XCTUnwrap(findTextView(in: editor.view))
-        for language in SyntaxLanguage.allCases {
+        for language in webLinkLanguages {
             editor.syntaxLanguage = language
             try await Task.sleep(nanoseconds: 150_000_000)
             XCTAssertEqual(storage.attribute(.foregroundColor, at: index, effectiveRange: nil) as? NSColor, .systemBlue, language.rawValue)

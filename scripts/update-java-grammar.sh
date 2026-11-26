@@ -1,6 +1,6 @@
 #!/bin/zsh
 # Re-vendors Packages/TreeSitterJavaGrammar from an upstream tree-sitter-java tag, e.g. v0.23.5.
-# Afterwards run `swift test`: SyntaxHighlightingIssueTests fails if the new grammar can't parse the Java sample,
+# Afterwards run `swift test`: SyntaxHighlightingTests fails if the new grammar can't parse the Java sample,
 # and it crashes if TreeSitterSyntaxGrammar's extra Java query names node types the grammar dropped.
 
 set -euo pipefail
