@@ -149,10 +149,9 @@
 		C00000000000000000000054 /* TreeSitterSSHConfig in Frameworks */ = {isa = PBXBuildFile; productRef = C00000000000000000000044 /* TreeSitterSSHConfig */; };
 		C00000000000000000000055 /* TreeSitterYAML in Frameworks */ = {isa = PBXBuildFile; productRef = C00000000000000000000045 /* TreeSitterYAML */; };
 		C00000000000000000000056 /* TreeSitterKotlin in Frameworks */ = {isa = PBXBuildFile; productRef = C00000000000000000000046 /* TreeSitterKotlin */; };
-		C00000000000000000000058 /* TreeSitterSQL in Frameworks */ = {isa = PBXBuildFile; productRef = C00000000000000000000048 /* TreeSitterSQL */; };
-		C00000000000000000000059 /* TreeSitterSQLQueries in Frameworks */ = {isa = PBXBuildFile; productRef = C00000000000000000000049 /* TreeSitterSQLQueries */; };
 		C00000000000000000000061 /* TreeSitterJavaQueries in Frameworks */ = {isa = PBXBuildFile; productRef = C00000000000000000000060 /* TreeSitterJavaQueries */; };
-		D00000000000000000000001 /* SQLNestedComments.swift in Sources */ = {isa = PBXBuildFile; fileRef = D00000000000000000000002 /* SQLNestedComments.swift */; };
+		D00000000000000000000001 /* SQLSyntaxLexer.swift in Sources */ = {isa = PBXBuildFile; fileRef = D00000000000000000000002 /* SQLSyntaxLexer.swift */; };
+		D000000000000000000000A3 /* SQLKeywords.swift in Sources */ = {isa = PBXBuildFile; fileRef = D000000000000000000000A4 /* SQLKeywords.swift */; };
 		D00000000000000000000003 /* MarkdownFenceHighlighter.swift in Sources */ = {isa = PBXBuildFile; fileRef = D00000000000000000000004 /* MarkdownFenceHighlighter.swift */; };
 		E3A92C506A3C48B291041301 /* MarkdownInlineSyntaxParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3A92C506A3C48B291041302 /* MarkdownInlineSyntaxParser.swift */; };
 		D00000000000000000000005 /* TreeSitterSyntaxRegressionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D00000000000000000000006 /* TreeSitterSyntaxRegressionTests.swift */; };
@@ -341,7 +340,8 @@
 		C00000000000000000000013 /* TreeSitterSyntaxGrammar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TreeSitterSyntaxGrammar.swift; sourceTree = "<group>"; };
 		C00000000000000000000014 /* TreeSitterSyntaxParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TreeSitterSyntaxParser.swift; sourceTree = "<group>"; };
 		C00000000000000000000015 /* TreeSitterSyntaxHighlighter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TreeSitterSyntaxHighlighter.swift; sourceTree = "<group>"; };
-		D00000000000000000000002 /* SQLNestedComments.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SQLNestedComments.swift; sourceTree = "<group>"; };
+		D00000000000000000000002 /* SQLSyntaxLexer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SQLSyntaxLexer.swift; sourceTree = "<group>"; };
+		D000000000000000000000A4 /* SQLKeywords.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SQLKeywords.swift; sourceTree = "<group>"; };
 		D00000000000000000000004 /* MarkdownFenceHighlighter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownFenceHighlighter.swift; sourceTree = "<group>"; };
 		E3A92C506A3C48B291041302 /* MarkdownInlineSyntaxParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownInlineSyntaxParser.swift; sourceTree = "<group>"; };
 		D00000000000000000000006 /* TreeSitterSyntaxRegressionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TreeSitterSyntaxRegressionTests.swift; sourceTree = "<group>"; };
@@ -399,8 +399,6 @@
 				C00000000000000000000054 /* TreeSitterSSHConfig in Frameworks */,
 				C00000000000000000000055 /* TreeSitterYAML in Frameworks */,
 				C00000000000000000000056 /* TreeSitterKotlin in Frameworks */,
-				C00000000000000000000058 /* TreeSitterSQL in Frameworks */,
-				C00000000000000000000059 /* TreeSitterSQLQueries in Frameworks */,
 				C00000000000000000000061 /* TreeSitterJavaQueries in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -635,7 +633,8 @@
 				A00000000000000000000144 /* PlainTextSyntaxHighlighter.swift */,
 				C00000000000000000000013 /* TreeSitterSyntaxGrammar.swift */,
 				C00000000000000000000014 /* TreeSitterSyntaxParser.swift */,
-				D00000000000000000000002 /* SQLNestedComments.swift */,
+				D00000000000000000000002 /* SQLSyntaxLexer.swift */,
+				D000000000000000000000A4 /* SQLKeywords.swift */,
 				C00000000000000000000015 /* TreeSitterSyntaxHighlighter.swift */,
 				A00000000000000000000141 /* MarkdownSyntaxHighlighter.swift */,
 				A00000000000000000000226 /* Markdown */,
@@ -1001,8 +1000,6 @@
 				C00000000000000000000044 /* TreeSitterSSHConfig */,
 				C00000000000000000000045 /* TreeSitterYAML */,
 				C00000000000000000000046 /* TreeSitterKotlin */,
-				C00000000000000000000048 /* TreeSitterSQL */,
-				C00000000000000000000049 /* TreeSitterSQLQueries */,
 				C00000000000000000000060 /* TreeSitterJavaQueries */,
 			);
 			productName = vMini;
@@ -1192,7 +1189,8 @@
 				A00000000000000000000143 /* PlainTextSyntaxHighlighter.swift in Sources */,
 				C00000000000000000000010 /* TreeSitterSyntaxGrammar.swift in Sources */,
 				C00000000000000000000011 /* TreeSitterSyntaxParser.swift in Sources */,
-				D00000000000000000000001 /* SQLNestedComments.swift in Sources */,
+				D00000000000000000000001 /* SQLSyntaxLexer.swift in Sources */,
+				D000000000000000000000A3 /* SQLKeywords.swift in Sources */,
 				C00000000000000000000012 /* TreeSitterSyntaxHighlighter.swift in Sources */,
 				A00000000000000000000140 /* MarkdownSyntaxHighlighter.swift in Sources */,
 				A00000000000000000000220 /* MarkdownSyntaxHighlighter+AttributeStyling.swift in Sources */,
@@ -1440,8 +1438,6 @@
         C00000000000000000000044 /* TreeSitterSSHConfig */ = {isa = XCSwiftPackageProductDependency; package = C00000000000000000000033 /* tree-sitter-ssh-config */; productName = TreeSitterSSHConfig; };
         C00000000000000000000045 /* TreeSitterYAML */ = {isa = XCSwiftPackageProductDependency; package = C00000000000000000000037 /* TreeSitterLanguages */; productName = TreeSitterYAML; };
         C00000000000000000000046 /* TreeSitterKotlin */ = {isa = XCSwiftPackageProductDependency; package = C00000000000000000000035 /* tree-sitter-kotlin */; productName = TreeSitterKotlin; };
-		C00000000000000000000048 /* TreeSitterSQL */ = {isa = XCSwiftPackageProductDependency; package = C00000000000000000000037 /* TreeSitterLanguages */; productName = TreeSitterSQL; };
-		C00000000000000000000049 /* TreeSitterSQLQueries */ = {isa = XCSwiftPackageProductDependency; package = C00000000000000000000037 /* TreeSitterLanguages */; productName = TreeSitterSQLQueries; };
 		C00000000000000000000060 /* TreeSitterJavaQueries */ = {isa = XCSwiftPackageProductDependency; package = C00000000000000000000037 /* TreeSitterLanguages */; productName = TreeSitterJavaQueries; };
 		FAC000000000000000000021 /* DuckDB */ = {isa = XCSwiftPackageProductDependency; package = FAC000000000000000000022 /* Packages/DuckDB */; productName = DuckDB; };
 /* End XCSwiftPackageProductDependency section */

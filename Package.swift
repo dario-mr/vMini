@@ -28,8 +28,6 @@ let package = Package(
                 .product(name: "TreeSitterYAML", package: "TreeSitterLanguages"),
                 .product(name: "TreeSitterKotlin", package: "tree-sitter-kotlin"),
                 .product(name: "TreeSitterJava", package: "TreeSitterLanguages"),
-                .product(name: "TreeSitterSQL", package: "TreeSitterLanguages"),
-                .product(name: "TreeSitterSQLQueries", package: "TreeSitterLanguages"),
                 .product(name: "TreeSitterJavaQueries", package: "TreeSitterLanguages"),
             ],
             path: "vmini",

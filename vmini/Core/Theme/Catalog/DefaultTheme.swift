@@ -35,7 +35,7 @@ extension ThemeCatalog {
             comment: NSColor(hex: 0x75949E),
             string: NSColor(hex: 0x8FD6AB),
             variable: NSColor(hex: 0xC4B0F2),
-            keyword: NSColor(hex: 0xF55E69),
+            keyword: NSColor(hex: 0x82AAFF),
             operator: NSColor(hex: 0x91D4EB),
             builtin: NSColor(hex: 0xFAB04F),
             option: NSColor(hex: 0x73B5F5),

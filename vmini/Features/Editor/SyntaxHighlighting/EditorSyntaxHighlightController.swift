@@ -69,7 +69,7 @@ final class EditorSyntaxHighlightController {
         markdownHighlightWorkTask?.cancel()
         markdownHighlightWorkTask = nil
         textRevision &+= 1
-        if TreeSitterSyntaxGrammar.name(for: language) != nil {
+        if language != .plaintext {
             if treeSitterSessionLanguage != language {
                 treeSitterSession = nil
                 treeSitterSessionLanguage = language
@@ -159,7 +159,7 @@ final class EditorSyntaxHighlightController {
         let syntaxTheme = syntaxThemeProvider()
         let baseFont = baseFontProvider()
         var treeSitterWork: TreeSitterHighlightWork?
-        if TreeSitterSyntaxGrammar.name(for: language) != nil {
+        if language != .plaintext {
             let session = treeSitterSession ?? TreeSitterSyntaxSession(language: language)
             treeSitterSession = session
             treeSitterSessionLanguage = language

@@ -167,42 +167,28 @@ final class SyntaxHighlightingTests: XCTestCase {
         XCTAssertEqual(SyntaxLanguageResolver.resolveFenceInfoString("yml"), .yaml)
     }
 
-    func testTreeSitterGrammarSelectionAndHighlightingForEverySyntax() {
-        let cases: [(language: SyntaxLanguage, grammar: String, text: String, token: String, role: SyntaxColorRole, editToken: String, replacement: String)] = [
-            (.bash, "bash", "echo $HOME", "$HOME", .variable, "$HOME", "$USER"),
-            (.dotenv, "bash", "NAME=hello", "hello", .string, "hello", "world"),
-            (.sshconfig, "ssh_config", "Host example.com", "Host", .keyword, "example.com", "example.org"),
-            (.markdown, "markdown", "# Heading", "#", .headingMarker, "Heading", "Changed"),
-            (.json, "json", "{\"name\": 1}", "\"name\"", .propertyKey, "name", "kind"),
-            (.yaml, "yaml", "enabled: false", "false", .keyword, "false", "true"),
-            (.kotlin, "kotlin", "fun main() {}", "fun", .keyword, "main", "test"),
-            (.java, "java", "class Example {}", "class", .keyword, "Example", "Example2"),
-            (.sql, "sql", "SELECT 1 FROM users", "SELECT", .keyword, "users", "accounts"),
+    func testTreeSitterGrammarSelectionAndHighlightingForEverySyntax() throws {
+        let cases: [(language: SyntaxLanguage, text: String, token: String, role: SyntaxColorRole, editToken: String, replacement: String)] = [
+            (.bash, "echo $HOME", "$HOME", .variable, "$HOME", "$USER"),
+            (.dotenv, "NAME=hello", "hello", .string, "hello", "world"),
+            (.sshconfig, "Host example.com", "Host", .keyword, "example.com", "example.org"),
+            (.markdown, "- item", "-", .listMarker, "item", "changed"),
+            (.json, "{\"name\": 1}", "\"name\"", .propertyKey, "name", "kind"),
+            (.yaml, "enabled: false", "false", .keyword, "false", "true"),
+            (.kotlin, "fun main() {}", "fun", .keyword, "main", "test"),
+            (.java, "class Example {}", "class", .keyword, "Example", "Example2"),
         ]
         let theme = ThemeCatalog.palette(for: .default).syntaxTheme
 
         for sample in cases {
-            XCTAssertEqual(TreeSitterSyntaxGrammar.name(for: sample.language), sample.grammar)
-            guard let definition = TreeSitterSyntaxGrammar.definition(for: sample.language) else {
-                XCTFail("Missing Tree-sitter definition for \(sample.language)")
-                continue
-            }
+            let definition = try XCTUnwrap(TreeSitterSyntaxGrammar.definition(for: sample.language))
             XCTAssertTrue(definition.highlightsQuery === TreeSitterSyntaxGrammar.definition(for: sample.language)?.highlightsQuery)
-            if sample.language == .markdown {
-                XCTAssertNotNil(definition.inlineHighlightsQuery)
-                XCTAssertNotNil(definition.inlineRangesQuery)
-                XCTAssertTrue(definition.inlineHighlightsQuery === TreeSitterSyntaxGrammar.definition(for: .markdown)?.inlineHighlightsQuery)
-                XCTAssertTrue(definition.inlineRangesQuery === TreeSitterSyntaxGrammar.definition(for: .markdown)?.inlineRangesQuery)
-            }
             let storage = makeHighlightedStorage(sample.text, language: sample.language)
             let tokenRange = (sample.text as NSString).range(of: sample.token)
             XCTAssertNotEqual(tokenRange.location, NSNotFound, "Missing test token for \(sample.language)")
             let actualColor = storage.attribute(.foregroundColor, at: tokenRange.location, effectiveRange: nil) as? NSColor
-            let expectedColor = sample.language == .markdown && sample.role == .headingMarker
-                ? theme.headingMarker.withAlphaComponent(MarkdownAttributeStyler.Constants.headingMarkerAlpha)
-                : theme.color(for: sample.role)
             XCTAssertTrue(
-                actualColor?.isEqual(expectedColor) == true,
+                actualColor?.isEqual(theme.color(for: sample.role)) == true,
                 "Expected \(sample.role) on \(sample.language) token \(sample.token)"
             )
 
@@ -225,7 +211,11 @@ final class SyntaxHighlightingTests: XCTestCase {
             )
         }
 
-        XCTAssertNil(TreeSitterSyntaxGrammar.name(for: .plaintext))
+        let markdown = try XCTUnwrap(TreeSitterSyntaxGrammar.definition(for: .markdown))
+        XCTAssertTrue(markdown.inlineHighlightsQuery === TreeSitterSyntaxGrammar.definition(for: .markdown)?.inlineHighlightsQuery)
+        XCTAssertTrue(markdown.inlineRangesQuery === TreeSitterSyntaxGrammar.definition(for: .markdown)?.inlineRangesQuery)
+        XCTAssertNotNil(markdown.inlineRangesQuery)
+        XCTAssertNil(TreeSitterSyntaxGrammar.definition(for: .plaintext))
         assertColor(theme.plainText, at: 0, in: makeHighlightedStorage("plain text", language: .plaintext))
     }
 
@@ -516,7 +506,7 @@ final class SyntaxHighlightingTests: XCTestCase {
         assertColor(theme.keyword, throughout: NSRange(location: isRange.location, length: 2), in: storage)
         assertColor(theme.keyword, throughout: NSRange(location: isRange.location + 3, length: 3), in: storage)
         assertColor(theme.string, at: nsText.range(of: "alpha").location, in: storage)
-        assertColor(theme.builtin, at: nsText.range(of: "NULL").location, in: storage)
+        assertColor(theme.keyword, at: nsText.range(of: "NULL").location, in: storage)
         assertColor(theme.operator, at: nsText.range(of: "= 'alpha'").location, in: storage)
         for identifier in [
             "origin", "item_code", "entities",
@@ -534,7 +524,7 @@ final class SyntaxHighlightingTests: XCTestCase {
         }
     }
 
-    func testSQLTreeSitterIncrementalEditsMatchFreshHighlighting() {
+    func testSQLIncrementalEditsMatchFreshHighlighting() {
         assertIncrementalHighlightingMatchesFresh(
             language: .sql,
             source: "SELECT 1; -- trailing comment\nSELECT 2;",

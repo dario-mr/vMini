@@ -244,18 +244,54 @@ final class TreeSitterSyntaxRegressionTests: XCTestCase {
         XCTAssertEqual(color(at: (text as NSString).range(of: "42").location, in: storage), theme.variable)
     }
 
-    func testSQLCommentDelimitersInsideQuotesAreNotMasked() {
+    func testSQLCommentDelimitersInsideQuotesAreNotComments() {
         for text in [
             "SELECT '/* outer /* inner */ rest */';",
             "SELECT 'escaped \\' /* /* */ */';",
             "SELECT 'doubled '' /* /* */ */';",
             "SELECT \"/* /* */ */\", `/* /* */ */`, [/* /* */ */];",
             "SELECT $$/* /* */ */$$, $tag$/* /* */ */$tag$;",
-            "-- /* /* */ */\nSELECT 1;",
             "SELECT 'unterminated /* /* */ */",
         ] {
-            XCTAssertNil(SQLNestedComments.mask(in: text), text)
+            let storage = NSTextStorage(string: text)
+            apply(TreeSitterSyntaxParser(language: .sql).highlight(text: text, in: nil), to: storage)
+            XCTAssertNotEqual(color(at: (text as NSString).range(of: "/*").location, in: storage), theme.comment, text)
         }
+    }
+
+    func testSQLDollarQuotedDoBodyIsHighlightedAsCode() {
+        let text = """
+        BEGIN;
+        DO
+        $truncate_alerts$
+            DECLARE
+                removed bigint;
+            BEGIN
+                FOR country_schema IN SELECT nspname FROM pg_namespace WHERE x::text ~ '^cl[1-4]$' LOOP
+                    EXECUTE format('SELECT count(*) FROM %I.promotion_alerts', country_schema) INTO removed;
+                    RAISE NOTICE '%: truncated', country_schema;
+                END LOOP;
+            END
+        $truncate_alerts$;
+        COMMIT;
+        SELECT $$plain string$$;
+        """
+        let storage = NSTextStorage(string: text)
+        apply(TreeSitterSyntaxParser(language: .sql).highlight(text: text, in: nil), to: storage)
+        let nsText = text as NSString
+        func assertRole(_ word: String, _ expected: NSColor, options: NSString.CompareOptions = []) {
+            XCTAssertEqual(color(at: nsText.range(of: word, options: options).location, in: storage), expected, word)
+        }
+        for keyword in ["DO", "DECLARE", "BEGIN", "FOR", "IN", "LOOP", "EXECUTE", "INTO", "RAISE", "NOTICE", "END", "COMMIT"] {
+            assertRole(keyword, theme.keyword)
+        }
+        assertRole("$truncate_alerts$", theme.string)
+        assertRole("bigint", theme.builtin)
+        assertRole("text", theme.builtin)
+        assertRole("format", theme.builtin)
+        assertRole("'SELECT", theme.string)
+        assertRole("country_schema", theme.plainText)
+        assertRole("plain string", theme.string)
     }
 
     func testNestedSQLCommentDelimiterEditsMatchFreshHighlighting() {

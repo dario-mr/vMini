@@ -8,8 +8,6 @@ import TreeSitterKotlin
 import TreeSitterMarkdown
 import TreeSitterMarkdownInline
 import TreeSitterSSHConfig
-import TreeSitterSQL
-import TreeSitterSQLQueries
 import TreeSitterYAML
 
 struct TreeSitterSyntaxDefinition: Sendable {
@@ -37,20 +35,6 @@ struct TreeSitterSyntaxDefinition: Sendable {
 }
 
 enum TreeSitterSyntaxGrammar {
-    static func name(for language: SyntaxLanguage) -> String? {
-        switch language {
-        case .plaintext: nil
-        case .bash, .dotenv: "bash"
-        case .sshconfig: "ssh_config"
-        case .markdown: "markdown"
-        case .json: "json"
-        case .yaml: "yaml"
-        case .kotlin: "kotlin"
-        case .java: "java"
-        case .sql: "sql"
-        }
-    }
-
     static func definition(for syntax: SyntaxLanguage) -> TreeSitterSyntaxDefinition? {
         switch syntax {
         case .plaintext: nil
@@ -62,7 +46,7 @@ enum TreeSitterSyntaxGrammar {
         case .yaml: yaml
         case .kotlin: kotlin
         case .java: java
-        case .sql: sql
+        case .sql: nil
         }
     }
 
@@ -85,8 +69,6 @@ enum TreeSitterSyntaxGrammar {
         name: "kotlin", language: Language(language: tree_sitter_kotlin()), highlightsQuery: kotlinQuery)
     private static let java = TreeSitterSyntaxDefinition(
         name: "java", language: Language(language: tree_sitter_java()), highlightsQuery: javaQuery)
-    private static let sql = TreeSitterSyntaxDefinition(
-        name: "sql", language: Language(language: tree_sitter_sql()), highlightsQuery: sqlQuery)
 
     static func role(for capture: String, text: String, syntax: SyntaxLanguage) -> SyntaxColorRole? {
         switch capture {
@@ -95,14 +77,8 @@ enum TreeSitterSyntaxGrammar {
         case "number", "float", "boolean": return .variable
         case "variable":
             if syntax == .java { return nil } // The upstream Java query applies this capture to every identifier.
-            if syntax == .sql {
-                if let first = text.first, "\"`[".contains(first) { return .propertyKey }
-                return nil
-            }
             return .variable
         case "variable.builtin", "parameter", "embedded": return .variable
-        case "sqlParameter": return syntax == .sql ? .variable : nil
-        case "sqlCastType": return syntax == .sql ? .builtin : nil
         case "javaContextualKeyword": return syntax == .java && javaKeywords.contains(text) ? .keyword : nil
         case "keyword", "keyword.function", "keyword.return", "include", "module":
             return syntax == .bash && text == "export" ? .builtin : .keyword
@@ -223,17 +199,6 @@ enum TreeSitterSyntaxGrammar {
     (emphasis_delimiter) @emphasisMarker
     [(link_text) (image_description)] @linkText
     [(link_destination) (uri_autolink)] @linkURL
-    """#
-
-    private static let sqlQuery = (try! String(contentsOf: TreeSitterSQLQueries.Query.highlightsFileURL, encoding: .utf8)) + #"""
-
-    (ERROR) @sqlParameter
-    ; shortcut: this grammar exposes CAST's target type as an alias child; replace if it adds a cast node.
-    ((alias
-      (function_call function: (identifier) @sqlCastFunction)
-      (identifier) @sqlCastType)
-     (#match? @sqlCastFunction "^[Cc][Aa][Ss][Tt]$"))
-    ["IS"] @keyword
     """#
 
     private static let javaQuery = (try! String(contentsOf: TreeSitterJavaQueries.Query.highlightsFileURL, encoding: .utf8)) + #"""

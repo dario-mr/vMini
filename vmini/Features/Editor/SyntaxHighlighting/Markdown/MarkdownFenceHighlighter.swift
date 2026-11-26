@@ -23,7 +23,7 @@ enum MarkdownFenceHighlighter {
             index += 1
             guard let info = fence.infoString,
                   let language = SyntaxLanguageResolver.resolveFenceInfoString(info),
-                  TreeSitterSyntaxGrammar.name(for: language) != nil else { continue }
+                  language != .plaintext else { continue }
             let contentRange = fence.contentRange.clamped(toLength: text.length)
             let nestedRange = NSIntersectionRange(contentRange, targetRange)
             guard nestedRange.length > 0 else { continue }

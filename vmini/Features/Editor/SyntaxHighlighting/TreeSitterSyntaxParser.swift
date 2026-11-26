@@ -44,27 +44,23 @@ actor TreeSitterSyntaxSession {
 }
 
 final class TreeSitterSyntaxParser {
-    private static let sqlIdentifierContinuation = CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "_$"))
-
-    // SQL treats bind placeholders as parse errors; extend when supporting a new placeholder form.
-    private static let sqlParameterPattern = try! NSRegularExpression(
-        pattern: #"(?<![A-Za-z0-9_$:])(?:@@?|:|\$)[A-Za-z_0-9][A-Za-z0-9_$]*(?![A-Za-z0-9_$])|(?<![A-Za-z0-9_$])\?(?![A-Za-z0-9_$])"#
-    )
-
     private let syntax: SyntaxLanguage
     private let parser = Parser()
-    private let query: Query
+    private let query: Query?
     private let markdownInlineParser: MarkdownInlineSyntaxParser?
     private var tree: MutableTree?
     private var textLength = 0
     private var lineStarts = [0]
-    private var hadNestedSQLComments = false
+    private var sqlTokens: [TreeSitterHighlightWork.Token]?
 
     init(language syntax: SyntaxLanguage) {
-        guard let definition = TreeSitterSyntaxGrammar.definition(for: syntax) else {
-            preconditionFailure("Plaintext has no Tree-sitter grammar")
-        }
         self.syntax = syntax
+        // SQL has no grammar: it is tokenized by SQLSyntaxLexer.
+        guard let definition = TreeSitterSyntaxGrammar.definition(for: syntax) else {
+            query = nil
+            markdownInlineParser = nil
+            return
+        }
         try! parser.setLanguage(definition.language)
         query = definition.highlightsQuery
 
@@ -77,7 +73,7 @@ final class TreeSitterSyntaxParser {
         markdownInlineParser?.reset()
         textLength = 0
         lineStarts = [0]
-        hadNestedSQLComments = false
+        sqlTokens = nil
     }
 
     func highlight(
@@ -93,12 +89,7 @@ final class TreeSitterSyntaxParser {
         }
 
         var range = (requestedRange ?? fullRange).clamped(toLength: source.length)
-        let nestedComments = syntax == .sql ? SQLNestedComments.mask(in: text) : nil
-        // nested SQL comments need a full reparse; remove masking when the grammar supports nesting.
-        if nestedComments != nil || hadNestedSQLComments {
-            reset()
-            range = fullRange
-        }
+        if syntax == .sql { return sqlHighlight(source: source, range: requestedRange == nil ? nil : range) }
         for edit in edits where tree != nil {
             guard apply(edit) else { reset(); range = fullRange; break }
         }
@@ -112,10 +103,9 @@ final class TreeSitterSyntaxParser {
         }
 
         let oldTree = tree
-        hadNestedSQLComments = nestedComments != nil
-        tree = Self.parse(parser, oldTree: oldTree, source: nestedComments?.source ?? source)
+        tree = Self.parse(parser, oldTree: oldTree, source: source)
         textLength = source.length
-        guard let tree else { return TreeSitterHighlightWork(range: fullRange, tokens: []) }
+        guard let tree, let query else { return TreeSitterHighlightWork(range: fullRange, tokens: []) }
         if let oldTree {
             for change in tree.changedRanges(from: oldTree) {
                 range = NSUnionRange(range, change.bytes.range).clamped(toLength: source.length)
@@ -127,9 +117,6 @@ final class TreeSitterSyntaxParser {
             ?? source.lineRange(for: range.clamped(toLength: source.length)).clamped(toLength: source.length)
         var tokens = Self.captures(from: query, in: tree, range: range, source: source, syntax: syntax)
         tokens.append(contentsOf: inlineWork?.tokens ?? [])
-        tokens.append(contentsOf: (nestedComments?.ranges ?? []).map {
-            TreeSitterHighlightWork.Token(range: $0, role: .comment)
-        })
         tokens = tokens.filter { NSIntersectionRange($0.range, range).length > 0 }
         tokens.sort {
             if $0.range.location == $1.range.location {
@@ -168,42 +155,11 @@ final class TreeSitterSyntaxParser {
             match.captures.compactMap { capture in
                 var tokenRange = capture.range
                 guard let captureName = capture.name, tokenRange.length > 0 else { return nil }
-                if syntax == .sql, captureName == "keyword", !isWholeSQLKeyword(tokenRange, in: source) {
-                    return nil
-                }
-                var role = TreeSitterSyntaxGrammar.role(
+                let role = TreeSitterSyntaxGrammar.role(
                     for: captureName,
                     text: source.substring(with: tokenRange.clamped(toLength: source.length)),
                     syntax: syntax
                 )
-                if syntax == .sql, captureName == "sqlParameter" {
-                    let errorText = source.substring(with: tokenRange.clamped(toLength: source.length))
-                    let errorRange = NSRange(location: 0, length: (errorText as NSString).length)
-                    guard let parameter = Self.sqlParameterPattern.firstMatch(in: errorText, range: errorRange) else {
-                        return nil
-                    }
-                    tokenRange = NSRange(
-                        location: tokenRange.location + parameter.range.location,
-                        length: parameter.range.length
-                    )
-                    role = .variable
-                }
-                if syntax == .sql, captureName == "variable", tokenRange.location > 0 {
-                    let previousLocation = tokenRange.location - 1
-                    let prefix = source.substring(with: NSRange(location: previousLocation, length: 1))
-                    let repeatedColon = prefix == ":" && previousLocation > 0
-                        && source.substring(with: NSRange(location: previousLocation - 1, length: 1)) == ":"
-                    if [":", "$", "@"].contains(prefix), !repeatedColon {
-                        let repeatedAt = prefix == "@" && previousLocation > 0
-                            && source.substring(with: NSRange(location: previousLocation - 1, length: 1)) == "@"
-                        let prefixLength = repeatedAt ? 2 : 1
-                        tokenRange = NSRange(
-                            location: tokenRange.location - prefixLength,
-                            length: tokenRange.length + prefixLength
-                        )
-                        role = .variable
-                    }
-                }
                 guard let role else { return nil }
                 if syntax == .markdown, ["listMarker", "blockquoteMarker"].contains(captureName) {
                     let capturedText = source.substring(with: tokenRange)
@@ -220,18 +176,17 @@ final class TreeSitterSyntaxParser {
         }
     }
 
-    private static func isWholeSQLKeyword(_ range: NSRange, in source: NSString) -> Bool {
-        guard range.location >= 0, range.length > 0, NSMaxRange(range) <= source.length else { return false }
-        return !isSQLIdentifierContinuation(at: range.location - 1, in: source)
-            && !isSQLIdentifierContinuation(at: NSMaxRange(range), in: source)
-    }
-
-    private static func isSQLIdentifierContinuation(at offset: Int, in source: NSString) -> Bool {
-        guard offset >= 0, offset < source.length else { return false }
-        let characterRange = source.rangeOfComposedCharacterSequence(at: offset)
-        return source.substring(with: characterRange).unicodeScalars.contains {
-            Self.sqlIdentifierContinuation.contains($0)
+    private func sqlHighlight(source: NSString, range: NSRange?) -> TreeSitterHighlightWork {
+        let tokens = SQLSyntaxLexer.tokens(in: source)
+        defer {
+            sqlTokens = tokens
+            textLength = source.length
         }
+        let fullRange = NSRange(location: 0, length: source.length)
+        guard let range, let previous = sqlTokens else { return TreeSitterHighlightWork(range: fullRange, tokens: tokens) }
+        let dirty = SQLSyntaxLexer.dirtyRange(old: previous, new: tokens, edited: range, delta: source.length - textLength)
+        let lines = source.lineRange(for: dirty.clamped(toLength: source.length))
+        return TreeSitterHighlightWork(range: lines, tokens: tokens.filter { NSIntersectionRange($0.range, lines).length > 0 })
     }
 
     private func apply(_ edit: SyntaxHighlightEditContext) -> Bool {
