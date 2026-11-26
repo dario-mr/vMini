@@ -12,6 +12,10 @@ enum SyntaxLanguage: String, CaseIterable {
     case java
     case sql
 
+    var detectsWebLinks: Bool {
+        self == .markdown || self == .plaintext
+    }
+
     var displayName: String {
         switch self {
         case .plaintext:

@@ -221,7 +221,7 @@ final class EditorSyntaxHighlightController {
                     registry: highlighterRegistry
                 )
             }
-            for link in WebLink.matches(in: textStorage.string, range: targetRange) {
+            for link in language.detectsWebLinks ? WebLink.matches(in: textStorage.string, range: targetRange) : [] {
                 textStorage.addAttributes([
                     .foregroundColor: NSColor.systemBlue,
                     .underlineStyle: NSUnderlineStyle.single.rawValue

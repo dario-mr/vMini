@@ -117,7 +117,7 @@ private struct Lexer {
             role = .builtin
         } else if SQLKeywords.keywords.contains(word) {
             role = .keyword
-        } else if after < end, units[after] == ascii("(") {
+        } else if after < end, units[after] == ascii("("), !Self.tableNameIntroducers.contains(previousWord ?? "") {
             role = .builtin
         } else {
             role = nil
@@ -241,4 +241,5 @@ private struct Lexer {
     private func ascii(_ character: Unicode.Scalar) -> unichar { unichar(character.value) }
 
     private let operators = Set("=<>!~+-*/%|&^:;.()[]#@".utf16)
+    private static let tableNameIntroducers: Set<String> = ["INTO", "TABLE", "EXISTS", "REFERENCES"]
 }

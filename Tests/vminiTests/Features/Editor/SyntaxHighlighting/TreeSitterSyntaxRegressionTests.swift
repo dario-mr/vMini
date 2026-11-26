@@ -275,6 +275,8 @@ final class TreeSitterSyntaxRegressionTests: XCTestCase {
         $truncate_alerts$;
         COMMIT;
         SELECT $$plain string$$;
+        INSERT INTO users (id) VALUES (1);
+        CREATE TABLE IF NOT EXISTS orders (id int REFERENCES customers(id));
         """
         let storage = NSTextStorage(string: text)
         apply(TreeSitterSyntaxParser(language: .sql).highlight(text: text, in: nil), to: storage)
@@ -292,6 +294,9 @@ final class TreeSitterSyntaxRegressionTests: XCTestCase {
         assertRole("'SELECT", theme.string)
         assertRole("country_schema", theme.plainText)
         assertRole("plain string", theme.string)
+        for table in ["users", "orders", "customers"] {
+            assertRole(table, theme.plainText)
+        }
     }
 
     func testNestedSQLCommentDelimiterEditsMatchFreshHighlighting() {
