@@ -1,8 +1,8 @@
 import Foundation
 import SwiftTreeSitter
 import TreeSitterBash
-import TreeSitterJava
-import TreeSitterJavaQueries
+import TreeSitterJavaGrammar
+import TreeSitterJavaGrammarQueries
 import TreeSitterJSON
 import TreeSitterKotlin
 import TreeSitterMarkdown
@@ -201,14 +201,12 @@ enum TreeSitterSyntaxGrammar {
     [(link_destination) (uri_autolink)] @linkURL
     """#
 
-    private static let javaQuery = (try! String(contentsOf: TreeSitterJavaQueries.Query.highlightsFileURL, encoding: .utf8)) + #"""
+    private static let javaQuery = (try! String(contentsOf: TreeSitterJavaGrammarQueries.highlightsFileURL, encoding: .utf8)) + #"""
 
-    (text_block) @string
     (binary_integer_literal) @number
     (annotation name: (_) @builtin)
     (marker_annotation name: (_) @builtin)
     ["@interface"] @keyword
-    ["permits" "record" "yield"] @keyword
     (identifier) @javaContextualKeyword
     ["=" "+" "-" "*" "/" "%" "!" "<" ">" "&" "|" "?" "^" "~" "." ":" ";" "(" ")"
      "{" "}" "[" "]" "," "@" "+=" "-=" "*=" "/=" "%=" "&=" "|=" "^=" "==" "!=" "<=" ">="
